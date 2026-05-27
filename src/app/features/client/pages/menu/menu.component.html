@@ -6,7 +6,7 @@
       <strong>{{ selectedBranch.name }}</strong>
       <small>{{ selectedBranch.distance }} - {{ selectedBranch.estimatedTime }}</small>
     </div>
-    <button class="ghost-button" (click)="changeBranch()">Đổi chi nhánh</button>
+    <button class="ghost-button" (click)="changeBranch()">{{ 'menu.changeBranch' | translate }}</button>
   </div>
 
   <!-- Search & Filter Bar -->
@@ -15,7 +15,7 @@
       <span class="material-symbols-outlined">search</span>
       <input 
         type="text" 
-        placeholder="Tìm đồ uống..." 
+        [placeholder]="'menu.search' | translate" 
         [(ngModel)]="searchQuery"
         (input)="onSearchChange()"
       />
@@ -26,21 +26,21 @@
         [class.active]="sortBy === 'best-seller'"
         (click)="selectSort('best-seller')"
       >
-        Bán chạy
+        {{ 'menu.bestSeller' | translate }}
       </button>
       <button 
         type="button" 
         [class.active]="sortBy === 'newest'"
         (click)="selectSort('newest')"
       >
-        Mới nhất
+        {{ 'menu.newest' | translate }}
       </button>
       <button 
         type="button" 
         [class.active]="sortBy === 'price-low'"
         (click)="selectSort('price-low')"
       >
-        Giá thấp
+        {{ 'menu.priceLow' | translate }}
       </button>
     </div>
   </div>
@@ -64,7 +64,7 @@
     <div class="product-grid-section">
       <div class="product-grid">
         <article *ngFor="let product of filteredProducts" class="product-card">
-          <div class="product-image">
+          <div class="product-image" (click)="addToCart(product)" style="cursor: pointer;">
             <img [src]="product.image" [alt]="product.name" />
             <span *ngIf="product.badge" class="badge">{{ product.badge }}</span>
           </div>
@@ -76,7 +76,7 @@
                 {{ product.rating }}
               </span>
             </div>
-            <h3>{{ product.name }}</h3>
+            <h3 (click)="addToCart(product)" style="cursor: pointer;">{{ product.name }}</h3>
             <p>{{ product.description }}</p>
             <div class="product-footer">
               <strong>{{ formatPrice(product.price) }}</strong>
@@ -91,16 +91,16 @@
       <!-- Empty State -->
       <div *ngIf="filteredProducts.length === 0" class="empty-state">
         <span class="material-symbols-outlined">search_off</span>
-        <h3>Không tìm thấy sản phẩm</h3>
-        <p>Thử tìm kiếm với từ khóa khác hoặc chọn danh mục khác</p>
+        <h3>{{ 'menu.emptyTitle' | translate }}</h3>
+        <p>{{ 'menu.emptyDesc' | translate }}</p>
       </div>
     </div>
 
     <!-- Sticky Cart Sidebar (Desktop) -->
     <aside class="cart-sidebar" *ngIf="cartItems.length > 0">
       <div class="cart-header">
-        <h3>Giỏ hàng của bạn</h3>
-        <span class="cart-count">{{ cartCount }} món</span>
+        <h3>{{ 'menu.cart.title' | translate }}</h3>
+        <span class="cart-count">{{ cartCount }} {{ 'menu.cart.items' | translate }}</span>
       </div>
       
       <div class="cart-items">
@@ -119,11 +119,11 @@
 
       <div class="cart-summary">
         <div class="summary-row">
-          <span>Tạm tính</span>
+          <span>{{ 'menu.cart.subtotal' | translate }}</span>
           <strong>{{ formatPrice(cartTotal) }}</strong>
         </div>
         <button class="primary-button full-width" (click)="viewCart()">
-          Xem giỏ hàng
+          {{ 'menu.cart.viewCart' | translate }}
         </button>
       </div>
 
@@ -145,6 +145,6 @@
     (click)="viewCart()"
   >
     <span class="material-symbols-outlined">shopping_basket</span>
-    {{ cartCount }} món - {{ formatPrice(cartTotal) }}
+    {{ cartCount }} {{ 'menu.cart.items' | translate }} - {{ formatPrice(cartTotal) }}
   </button>
 </div>

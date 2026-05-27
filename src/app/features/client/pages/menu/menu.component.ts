@@ -127,22 +127,8 @@ export class MenuComponent implements OnInit {
   }
 
   addToCart(product: MockProduct): void {
-    console.log('Adding to cart:', product);
-    // TODO: Open product customization modal
-    // For now, just add to cart with default options
-    const newItem: MockCartItem = {
-      id: `cart-item-${Date.now()}`,
-      productId: product.id,
-      productName: product.name,
-      productImage: product.image,
-      quantity: 1,
-      price: product.price,
-      size: 'M',
-      iceLevel: 70,
-      sugarLevel: 100,
-      toppings: []
-    };
-    this.cartItems.push(newItem);
+    // Navigate to product detail page for customization
+    this.router.navigate(['/product', product.id]);
   }
 
   viewCart(): void {

@@ -23,12 +23,6 @@
       </a>
     </nav>
 
-    <div class="sidebar-card">
-      <span class="material-symbols-outlined">tips_and_updates</span>
-      <strong>Mock UI mode</strong>
-      <p>Dữ liệu đang mô phỏng để trực quan trước khi nối API backend.</p>
-    </div>
-
     <button type="button" class="logout-button" (click)="logout()">
       <span class="material-symbols-outlined">logout</span>
       Đăng xuất
@@ -50,6 +44,10 @@
       </div>
 
       <div class="topbar-actions">
+        <a routerLink="/" class="client-link" aria-label="Xem trang khách">
+          <span class="material-symbols-outlined">storefront</span>
+          <span>Xem trang khách</span>
+        </a>
         <span class="live-chip"><i></i> Live</span>
         <button type="button" class="icon-button" aria-label="Thông báo">
           <span class="material-symbols-outlined">notifications</span>

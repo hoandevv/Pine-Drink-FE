@@ -31,6 +31,18 @@ export class LoginPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Check for reset password success message
+    const resetSuccess = this.route.snapshot.queryParamMap.get('resetSuccess');
+    if (resetSuccess === 'true') {
+      this.toastService.success('Đặt lại mật khẩu thành công! Vui lòng đăng nhập.');
+      // Clear the query param
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true
+      });
+    }
+
     if (this.authService.isAuthenticated()) {
       // Redirect based on user role
       const redirectUrl = this.getRedirectUrlByRole();

@@ -6,7 +6,15 @@ export const API_ENDPOINTS = {
     login: '/auth/login',
     refreshToken: '/auth/refresh-token',
     logout: '/auth/logout',
-    me: '/auth/me'
+    me: '/auth/me',
+    forgotPassword: '/auth/forgot-password',
+    verifyForgotPasswordOtp: '/auth/forgot-password/verify-otp',
+    resetPassword: '/auth/reset-password'
+  },
+  profile: {
+    base: '/profile',
+    password: '/profile/password',
+    avatar: '/profile/avatar'
   },
   products: '/products',
   orders: '/orders'

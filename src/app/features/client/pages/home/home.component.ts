@@ -72,7 +72,7 @@ export class HomeComponent implements OnInit {
   }
 
   addToCart(product: MockProduct): void {
-    console.log('Adding to cart:', product);
-    // TODO: Implement add to cart logic
+    // Navigate to product detail page for customization
+    this.router.navigate(['/product', product.id]);
   }
 }

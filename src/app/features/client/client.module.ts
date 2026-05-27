@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 import { ClientRoutingModule } from './client-routing.module';
 
 // Pages
@@ -11,6 +12,9 @@ import { ProfileComponent } from './pages/profile/profile.component';
 
 // Components
 import { CartComponent } from './components/cart/cart.component';
+import { ProductDetailComponent } from './pages/product-detail/product-detail.component';
+import { PromotionsComponent } from './pages/promotions/promotions.component';
+import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.component';
 
 @NgModule({
   declarations: [
@@ -18,11 +22,16 @@ import { CartComponent } from './components/cart/cart.component';
     MenuComponent,
     StoreLocatorComponent,
     ProfileComponent,
-    CartComponent
+    CartComponent,
+    ProductDetailComponent,
+    PromotionsComponent,
+    OrderTrackingComponent
   ],
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
+    TranslateModule,
     ClientRoutingModule
   ]
 })

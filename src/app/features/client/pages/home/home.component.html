@@ -1,16 +1,16 @@
 <section class="hero-section">
   <div class="hero-copy">
-    <span class="eyebrow">Fresh brewed. Fast pickup.</span>
-    <h1>Đặt đồ uống yêu thích chỉ trong vài phút</h1>
-    <p>Chọn món, tùy chỉnh topping, đặt trước và nhận tại cửa hàng gần bạn với trải nghiệm Pine Drink mới.</p>
+    <span class="eyebrow">{{ 'home.hero.eyebrow' | translate }}</span>
+    <h1>{{ 'home.hero.title' | translate }}</h1>
+    <p>{{ 'home.hero.description' | translate }}</p>
     <div class="hero-actions">
-      <button class="primary-button" (click)="navigateToMenu()">Đặt ngay</button>
-      <button class="secondary-button" (click)="navigateToStores()">Chọn chi nhánh</button>
+      <button class="primary-button" (click)="navigateToMenu()">{{ 'home.hero.orderNow' | translate }}</button>
+      <button class="secondary-button" (click)="navigateToStores()">{{ 'home.hero.selectBranch' | translate }}</button>
     </div>
     <div class="hero-stats">
-      <span><strong>4.9/5</strong> đánh giá</span>
-      <span><strong>25+</strong> chi nhánh</span>
-      <span><strong>12 phút</strong> sẵn sàng</span>
+      <span><strong>4.9/5</strong> {{ 'home.hero.rating' | translate }}</span>
+      <span><strong>25+</strong> {{ 'home.hero.branches' | translate }}</span>
+      <span><strong>12 phút</strong> {{ 'home.hero.readyTime' | translate }}</span>
     </div>
   </div>
   <div class="hero-visual">
@@ -18,30 +18,30 @@
       <img [src]="bestSellerProducts[0].image" [alt]="bestSellerProducts[0].name" />
       <span>{{ bestSellerProducts[0].badge }}</span>
     </div>
-    <div class="floating-note">Nhận tại quán không cần xếp hàng</div>
+    <div class="floating-note">{{ 'home.hero.noQueue' | translate }}</div>
   </div>
 </section>
 
-<section class="quick-order" aria-label="Đặt hàng nhanh" *ngIf="selectedBranch">
+<section class="quick-order" [attr.aria-label]="'home.quickOrder.startOrder' | translate" *ngIf="selectedBranch">
   <div>
     <span class="material-symbols-outlined">location_on</span>
     <strong>{{ selectedBranch.name }}</strong>
-    <small>Gần bạn nhất - {{ selectedBranch.distance }}</small>
+    <small>{{ 'home.quickOrder.nearestBranch' | translate }} - {{ selectedBranch.distance }}</small>
   </div>
   <div class="order-toggle">
-    <button type="button" class="active">Nhận tại quán</button>
-    <button type="button">Giao hàng</button>
+    <button type="button" class="active">{{ 'home.quickOrder.pickupAtStore' | translate }}</button>
+    <button type="button">{{ 'home.quickOrder.delivery' | translate }}</button>
   </div>
-  <button class="primary-button compact" (click)="navigateToMenu()">Bắt đầu đặt món</button>
+  <button class="primary-button compact" (click)="navigateToMenu()">{{ 'home.quickOrder.startOrder' | translate }}</button>
 </section>
 
 <section class="section-block" id="menu">
   <div class="section-heading">
     <div>
-      <span class="eyebrow">Explore menu</span>
-      <h2>Danh mục đồ uống</h2>
+      <span class="eyebrow">{{ 'home.categories.eyebrow' | translate }}</span>
+      <h2>{{ 'home.categories.title' | translate }}</h2>
     </div>
-    <a (click)="navigateToMenu()" style="cursor: pointer;">Xem tất cả món</a>
+    <a (click)="navigateToMenu()" style="cursor: pointer;">{{ 'home.categories.viewAll' | translate }}</a>
   </div>
   <div class="category-grid">
     <article *ngFor="let category of categories" class="category-card" (click)="navigateToCategory(category.id)">
@@ -49,7 +49,7 @@
         <span class="material-symbols-outlined">{{ category.icon }}</span>
       </div>
       <h3>{{ category.name }}</h3>
-      <p>{{ category.count }} món đang bán</p>
+      <p>{{ category.count }} {{ 'home.categories.itemsAvailable' | translate }}</p>
     </article>
   </div>
 </section>
@@ -57,14 +57,14 @@
 <section class="section-block product-section" id="products">
   <div class="section-heading">
     <div>
-      <span class="eyebrow">Best sellers</span>
-      <h2>Món được yêu thích nhất</h2>
+      <span class="eyebrow">{{ 'home.bestSellers.eyebrow' | translate }}</span>
+      <h2>{{ 'home.bestSellers.title' | translate }}</h2>
     </div>
-    <a href="#promo" style="cursor: pointer;">Lấy ưu đãi</a>
+    <a href="#promo" style="cursor: pointer;">{{ 'home.bestSellers.getPromo' | translate }}</a>
   </div>
   <div class="product-grid">
     <article *ngFor="let product of bestSellerProducts" class="product-card">
-      <div class="product-image">
+      <div class="product-image" (click)="addToCart(product)" style="cursor: pointer;">
         <img [src]="product.image" [alt]="product.name" />
         <span *ngIf="product.badge">{{ product.badge }}</span>
       </div>
@@ -76,7 +76,7 @@
             {{ product.rating }}
           </span>
         </div>
-        <h3>{{ product.name }}</h3>
+        <h3 (click)="addToCart(product)" style="cursor: pointer;">{{ product.name }}</h3>
         <p>{{ product.description }}</p>
         <div class="product-footer">
           <strong>{{ formatPrice(product.price) }}</strong>
@@ -92,8 +92,8 @@
 <section class="section-block" id="promo">
   <div class="section-heading">
     <div>
-      <span class="eyebrow">Sip deals</span>
-      <h2>Ưu đãi độc quyền</h2>
+      <span class="eyebrow">{{ 'home.promos.eyebrow' | translate }}</span>
+      <h2>{{ 'home.promos.title' | translate }}</h2>
     </div>
   </div>
   <div class="promo-row">
@@ -101,7 +101,7 @@
       <span>{{ promo.code }}</span>
       <h3>{{ promo.title }}</h3>
       <p>{{ promo.description }}</p>
-      <button type="button" (click)="applyVoucher(promo.code)">Nhận ưu đãi</button>
+      <button type="button" (click)="applyVoucher(promo.code)">{{ 'home.promos.getOffer' | translate }}</button>
     </article>
   </div>
 </section>
@@ -109,33 +109,33 @@
 <section class="section-block how-section">
   <div class="step-card">
     <span>01</span>
-    <h3>Chọn chi nhánh</h3>
-    <p>Tự động gợi ý cửa hàng gần bạn.</p>
+    <h3>{{ 'home.howItWorks.step1Title' | translate }}</h3>
+    <p>{{ 'home.howItWorks.step1Desc' | translate }}</p>
   </div>
   <div class="step-card">
     <span>02</span>
-    <h3>Chọn đồ uống</h3>
-    <p>Menu đầy đủ với nhiều lựa chọn.</p>
+    <h3>{{ 'home.howItWorks.step2Title' | translate }}</h3>
+    <p>{{ 'home.howItWorks.step2Desc' | translate }}</p>
   </div>
   <div class="step-card">
     <span>03</span>
-    <h3>Tùy chỉnh topping</h3>
-    <p>Chọn size, đường, đá và topping.</p>
+    <h3>{{ 'home.howItWorks.step3Title' | translate }}</h3>
+    <p>{{ 'home.howItWorks.step3Desc' | translate }}</p>
   </div>
   <div class="step-card">
     <span>04</span>
-    <h3>Nhận hàng</h3>
-    <p>Theo dõi trạng thái và nhận tại quầy.</p>
+    <h3>{{ 'home.howItWorks.step4Title' | translate }}</h3>
+    <p>{{ 'home.howItWorks.step4Desc' | translate }}</p>
   </div>
 </section>
 
 <section class="section-block" id="stores">
   <div class="section-heading">
     <div>
-      <span class="eyebrow">Nearby stores</span>
-      <h2>Cửa hàng nổi bật</h2>
+      <span class="eyebrow">{{ 'home.stores.eyebrow' | translate }}</span>
+      <h2>{{ 'home.stores.title' | translate }}</h2>
     </div>
-    <a (click)="navigateToStores()" style="cursor: pointer;">Xem tất cả</a>
+    <a (click)="navigateToStores()" style="cursor: pointer;">{{ 'home.stores.viewAll' | translate }}</a>
   </div>
   <div class="store-grid">
     <article *ngFor="let store of nearbyBranches" class="store-card">
@@ -148,7 +148,7 @@
           <span class="material-symbols-outlined">schedule</span>
           {{ store.openTime }} - {{ store.closeTime }}
         </small>
-        <button type="button" (click)="selectBranch(store)">Đặt tại chi nhánh này</button>
+        <button type="button" (click)="selectBranch(store)">{{ 'home.stores.orderHere' | translate }}</button>
       </div>
     </article>
   </div>
