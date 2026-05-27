@@ -1,0 +1,33 @@
+import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+
+import { EmptyStateComponent } from './components/empty-state/empty-state.component';
+import { GlobalLoadingComponent } from './components/global-loading/global-loading.component';
+import { PageHeaderComponent } from './components/page-header/page-header.component';
+import { PaginationComponent } from './components/pagination/pagination.component';
+import { ToastContainerComponent } from './components/toast-container/toast-container.component';
+
+@NgModule({
+  declarations: [
+    GlobalLoadingComponent,
+    ToastContainerComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    PaginationComponent
+  ],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
+  exports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterModule,
+    GlobalLoadingComponent,
+    ToastContainerComponent,
+    PageHeaderComponent,
+    EmptyStateComponent,
+    PaginationComponent
+  ]
+})
+export class SharedModule {}

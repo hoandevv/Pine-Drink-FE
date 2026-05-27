@@ -1,0 +1,3 @@
+<app-page-header [title]="isEditMode ? 'Edit Product' : 'Create Product'" description="Reactive form base cho product, validate ro rang va de thay bang API backend that."></app-page-header>
+
+<app-product-form [form]="form" [categories]="categoryOptions" [submitting]="submitting" [isEditMode]="isEditMode" (submitted)="submit()" (cancelled)="cancel()"></app-product-form>

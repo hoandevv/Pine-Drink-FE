@@ -1,0 +1,55 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="product-form card-surface">
+  <div class="form-grid">
+    <label>
+      <span>Code</span>
+      <input type="text" formControlName="code" [readonly]="isEditMode" placeholder="PRD-001" />
+      <small *ngIf="form.get('code')?.touched && form.get('code')?.invalid">Code la bat buoc.</small>
+    </label>
+
+    <label>
+      <span>Name</span>
+      <input type="text" formControlName="name" placeholder="Pine Latte" />
+      <small *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Name la bat buoc.</small>
+    </label>
+
+    <label>
+      <span>Price</span>
+      <input type="number" min="0" formControlName="price" placeholder="45000" />
+      <small *ngIf="form.get('price')?.touched && form.get('price')?.invalid">Price phai lon hon 0.</small>
+    </label>
+
+    <label>
+      <span>Category</span>
+      <select formControlName="categoryId">
+        <option value="">Chon category</option>
+        <option *ngFor="let category of categories" [value]="category.value">{{ category.label }}</option>
+      </select>
+      <small *ngIf="form.get('categoryId')?.touched && form.get('categoryId')?.invalid">Category la bat buoc.</small>
+    </label>
+  </div>
+
+  <label>
+    <span>Image URL</span>
+    <input type="text" formControlName="imageUrl" placeholder="https://..." />
+  </label>
+
+  <label>
+    <span>Description</span>
+    <textarea rows="4" formControlName="description" placeholder="Mo ta ngan gon ve do uong"></textarea>
+  </label>
+
+  <label *ngIf="isEditMode">
+    <span>Status</span>
+    <select formControlName="status">
+      <option value="ACTIVE">ACTIVE</option>
+      <option value="INACTIVE">INACTIVE</option>
+    </select>
+  </label>
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary" [disabled]="submitting">
+      {{ submitting ? 'Dang luu...' : (isEditMode ? 'Update Product' : 'Create Product') }}
+    </button>
+  </div>
+</form>

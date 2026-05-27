@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="vi" class="light">
+<head>
+  <meta charset="utf-8">
+  <title>Pine Drink</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#164A2F",
+            "primary-hover": "#0B3320",
+            "primary-light": "#2F6B46",
+            "primary-lighter": "#B7D7A8",
+            "secondary": "#6D7468",
+            "cream": "#FFF8E7",
+            "surface": "#FFFDF5",
+            "surface-alt": "#F7F0D8",
+            "surface-dim": "#E8DDC3",
+            "yellow": "#FFC928",
+            "yellow-soft": "#FFEBA3",
+            "gold": "#D99A16",
+            "green": "#1DB954",
+            "green-hover": "#148C3F",
+            "mint": "#DFF3D4",
+            "text-primary": "#142117",
+            "text-secondary": "#69725F",
+            "border": "#E8DDC3",
+            "error": "#DC2626",
+            "error-bg": "#FEE2E2",
+            "error-text": "#991B1B",
+            "on-primary": "#FFFFFF",
+            "on-error": "#FFFFFF",
+            "background": "#FFF8E7",
+            "on-background": "#142117",
+            "on-surface": "#142117",
+            "on-surface-variant": "#69725F",
+            "primary-container": "#DFF3D4",
+            "on-primary-container": "#0B3320",
+            "primary-fixed": "#2F6B46",
+            "on-primary-fixed": "#FFF8E7",
+            "primary-fixed-dim": "#B7D7A8",
+            "on-primary-fixed-variant": "#164A2F",
+            "inverse-primary": "#B7D7A8",
+            "secondary-container": "#FFF0B8",
+            "on-secondary": "#FFFFFF",
+            "on-secondary-container": "#4B3A05",
+            "secondary-fixed": "#FFF0B8",
+            "on-secondary-fixed": "#142117",
+            "secondary-fixed-dim": "#FFE08A",
+            "on-secondary-fixed-variant": "#69725F",
+            "tertiary": "#F59E0B",
+            "tertiary-container": "#FFEBA3",
+            "on-tertiary": "#FFFFFF",
+            "on-tertiary-container": "#4B3A05",
+            "tertiary-fixed": "#FFEBA3",
+            "tertiary-fixed-dim": "#FFE08A",
+            "on-tertiary-fixed": "#142117",
+            "on-tertiary-fixed-variant": "#6D7468",
+            "error-container": "#FEE2E2",
+            "on-error-container": "#991B1B",
+            "outline": "#B7C4AA",
+            "outline-variant": "#E8DDC3",
+            "inverse-surface": "#0B3320",
+            "inverse-on-surface": "#FFF8E7",
+            "surface-tint": "#164A2F",
+            "surface-container-lowest": "#FFFFFF",
+            "surface-container-low": "#FFF8E7",
+            "surface-container": "#F7F0D8",
+            "surface-container-high": "#EFE4C8",
+            "surface-container-highest": "#E8DDC3",
+            "surface-bright": "#FFFDF5",
+            "surface-variant": "#EFE4C8"
+          },
+          borderRadius: {
+            "DEFAULT": "0.625rem",
+            "lg": "1rem",
+            "xl": "1.35rem",
+            "2xl": "1.75rem",
+            "3xl": "2.25rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "gutter": "24px",
+            "container-max": "1280px",
+            "xs": "4px",
+            "sm": "12px",
+            "margin-mobile": "16px",
+            "xl": "32px",
+            "xxl": "48px",
+            "margin-desktop": "32px",
+            "lg": "24px",
+            "md": "16px",
+            "base": "8px"
+          },
+          fontFamily: {
+            "headline-lg-mobile": ["Plus Jakarta Sans"],
+            "body-md": ["Plus Jakarta Sans"],
+            "label-sm": ["Plus Jakarta Sans"],
+            "label-lg": ["Plus Jakarta Sans"],
+            "display-lg": ["Plus Jakarta Sans"],
+            "headline-lg": ["Plus Jakarta Sans"],
+            "body-lg": ["Plus Jakarta Sans"],
+            "headline-md": ["Plus Jakarta Sans"],
+            "title-lg": ["Plus Jakarta Sans"]
+          },
+          fontSize: {
+            "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+            "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+            "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+            "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+            "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+            "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+          },
+          boxShadow: {
+            "pine": "0 24px 70px rgba(11, 51, 32, 0.14)",
+            "pine-soft": "0 14px 35px rgba(22, 74, 47, 0.10)",
+            "glow": "0 0 0 1px rgba(255, 201, 40, 0.22), 0 18px 45px rgba(217, 154, 22, 0.18)"
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 450, 'GRAD' 0, 'opsz' 24; }
+    .active-nav { border-bottom: 2px solid #FFC928; font-weight: 800; color: #164A2F; }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #FFF0B8; border-radius: 999px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #164A2F, #FFC928); border-radius: 999px; }
+    .oat-bg { background-color: #FFF8E7; }
+    .premium-shadow { box-shadow: 0 22px 60px rgba(11, 51, 32, 0.12); }
+    .hero-gradient {
+      background:
+        radial-gradient(circle at 12% 20%, rgba(255, 201, 40, 0.22) 0, transparent 30%),
+        radial-gradient(circle at 88% 10%, rgba(29, 185, 84, 0.16) 0, transparent 28%),
+        linear-gradient(135deg, #FFFDF5 0%, #FFF8E7 48%, #DFF3D4 100%);
+    }
+    .glass-card {
+      background: rgba(255, 253, 245, 0.78);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 201, 40, 0.28);
+      box-shadow: 0 20px 55px rgba(11, 51, 32, 0.12);
+    }
+  </style>
+</head>
+<body class="text-text-primary bg-surface min-h-screen">
+  <app-root></app-root>
+</body>
+</html>

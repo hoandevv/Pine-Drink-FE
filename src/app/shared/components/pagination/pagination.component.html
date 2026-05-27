@@ -1,0 +1,7 @@
+<div class="pagination" *ngIf="totalPages > 0">
+  <p>Trang {{ page + 1 }} / {{ totalPages }} - {{ totalElements }} ban ghi</p>
+  <div class="pagination-actions">
+    <button type="button" class="btn btn-secondary" (click)="previous()" [disabled]="!hasPrevious">Truoc</button>
+    <button type="button" class="btn btn-secondary" (click)="next()" [disabled]="!hasNext">Sau</button>
+  </div>
+</div>

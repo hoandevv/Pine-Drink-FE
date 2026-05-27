@@ -1,0 +1,26 @@
+<div class="min-h-screen flex w-full">
+  <!-- Left Side: Image/Branding -->
+  <div class="hidden lg:flex w-1/2 bg-primary items-center justify-center relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-primary to-primary-hover opacity-90 z-10"></div>
+    <!-- Abstract shapes -->
+    <div class="absolute -top-32 -left-32 w-96 h-96 bg-white/10 rounded-full blur-3xl z-0"></div>
+    <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-primary-light/20 rounded-full blur-3xl z-0"></div>
+    
+    <div class="z-20 p-xxl text-white max-w-xl">
+      <a routerLink="/" class="font-headline-lg text-display-lg font-extrabold mb-lg hover:opacity-80 transition-opacity cursor-pointer block">Pine Drink</a>
+      <p class="font-body-lg text-title-lg text-white/90 leading-relaxed">
+        Nền tảng quản lý và đặt hàng F&B tối ưu. Tốc độ, tiện lợi và hương vị tươi mới mỗi ngày.
+      </p>
+    </div>
+  </div>
+
+  <!-- Right Side: Auth Forms -->
+  <div class="w-full lg:w-1/2 flex items-center justify-center p-lg md:p-xxl bg-surface relative">
+    <div class="absolute top-md right-lg lg:hidden">
+      <a routerLink="/" class="font-headline-md text-title-lg font-extrabold text-primary hover:opacity-80 transition-opacity cursor-pointer">Pine Drink</a>
+    </div>
+    <div class="w-full max-w-md mt-xl lg:mt-0">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

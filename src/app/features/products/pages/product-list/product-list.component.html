@@ -1,0 +1,23 @@
+<app-page-header title="Products" description="Quan ly danh muc do uong, tim kiem nhanh va thao tac CRUD san sang noi backend.">
+  <button type="button" class="btn btn-primary" (click)="createProduct()">Create Product</button>
+</app-page-header>
+
+<section class="filters card-surface">
+  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filters-form">
+    <input type="text" formControlName="keyword" placeholder="Tim theo ten hoac code" />
+    <select formControlName="categoryId">
+      <option value="">Tat ca categories</option>
+      <option *ngFor="let category of categoryOptions" [value]="category.value">{{ category.label }}</option>
+    </select>
+    <select formControlName="status">
+      <option value="">Tat ca status</option>
+      <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+    </select>
+    <div class="filter-actions">
+      <button type="submit" class="btn btn-primary">Search</button>
+      <button type="button" class="btn btn-secondary" (click)="reset()">Reset</button>
+    </div>
+  </form>
+</section>
+
+<app-product-table [products]="products" [loading]="loading" [pageData]="pageData" (edit)="editProduct($event)" (delete)="deleteProduct($event)" (pageChange)="onPageChange($event)"></app-product-table>

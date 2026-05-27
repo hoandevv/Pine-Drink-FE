@@ -1,0 +1,16 @@
+.filters {
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filters-form {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr auto;
+  gap: 0.75rem;
+}
+
+.filter-actions { display: flex; gap: 0.75rem; }
+
+@media (max-width: 960px) {
+  .filters-form { grid-template-columns: 1fr; }
+}

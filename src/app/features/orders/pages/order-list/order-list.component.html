@@ -1,0 +1,48 @@
+<app-page-header title="Orders" description="Skeleton base cho danh sach don hang, da noi san status filter va cap nhat trang thai."></app-page-header>
+
+<section class="filters card-surface">
+  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filters-form">
+    <select formControlName="status">
+      <option value="">Tat ca status</option>
+      <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filter</button>
+  </form>
+</section>
+
+<section class="card-surface order-table">
+  <div class="table-scroll" *ngIf="orders.length > 0; else ordersEmpty">
+    <table>
+      <thead>
+        <tr>
+          <th>Order Code</th>
+          <th>Customer</th>
+          <th>Total Amount</th>
+          <th>Status</th>
+          <th>Payment</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of orders">
+          <td>{{ order.orderCode }}</td>
+          <td><strong>{{ order.customerName || 'Walk-in' }}</strong><p>{{ order.customerPhone || '-' }}</p></td>
+          <td>{{ order.totalAmount | number }} VND</td>
+          <td>
+            <select [value]="order.status" (change)="onStatusChange(order, $event)">
+              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+            </select>
+          </td>
+          <td>{{ order.paymentStatus || 'UNPAID' }}</td>
+          <td>{{ order.createdAt || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #ordersEmpty>
+    <app-empty-state title="Chua co orders" description="Khi backend tra danh sach don hang, man hinh nay se hien thi ngay."></app-empty-state>
+  </ng-template>
+
+  <app-pagination [page]="pageData.page" [size]="pageData.size" [totalPages]="pageData.totalPages" [totalElements]="pageData.totalElements" (pageChange)="onPageChange($event)"></app-pagination>
+</section>

@@ -1,0 +1,78 @@
+<div class="space-y-lg">
+  <div>
+    <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-xs">Đăng ký</h2>
+    <p class="font-body-md text-body-md text-secondary">Tạo tài khoản mới để trải nghiệm Pine Drink.</p>
+  </div>
+
+  <form [formGroup]="registerForm" (ngSubmit)="submit()" class="space-y-md">
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface">Họ và tên</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">person</span>
+        <input 
+          type="text" 
+          formControlName="fullName" 
+          placeholder="VD: Nguyễn Văn A" 
+          class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
+        />
+      </div>
+      <p *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập họ và tên.</p>
+    </div>
+
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface">Email</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">mail</span>
+        <input 
+          type="email" 
+          formControlName="email" 
+          placeholder="VD: hello@example.com" 
+          class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
+        />
+      </div>
+      <p *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập email hợp lệ.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+      <div class="space-y-xs">
+        <label class="block font-label-lg text-on-surface">Mật khẩu</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">lock</span>
+          <input 
+            type="password" 
+            formControlName="password" 
+            placeholder="Tối thiểu 6 ký tự" 
+            class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
+          />
+        </div>
+      </div>
+
+      <div class="space-y-xs">
+        <label class="block font-label-lg text-on-surface">Xác nhận</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">lock_reset</span>
+          <input 
+            type="password" 
+            formControlName="confirmPassword" 
+            placeholder="Nhập lại mật khẩu" 
+            class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
+          />
+        </div>
+      </div>
+    </div>
+    <p *ngIf="(registerForm.get('password')?.touched || registerForm.get('confirmPassword')?.touched) && (registerForm.get('password')?.invalid || registerForm.get('confirmPassword')?.invalid)" class="text-error text-label-sm mt-1">Vui lòng kiểm tra lại mật khẩu (tối thiểu 6 ký tự).</p>
+
+    <button 
+      type="submit" 
+      class="w-full py-sm mt-md bg-primary text-white rounded-xl font-headline-md text-label-lg shadow-md hover:bg-primary-container hover:text-on-primary-container hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:shadow-md"
+      [disabled]="submitting || registerForm.invalid"
+    >
+      {{ submitting ? 'Đang tạo tài khoản...' : 'Đăng ký ngay' }}
+    </button>
+  </form>
+
+  <p class="text-center text-body-md text-secondary mt-lg">
+    Đã có tài khoản? 
+    <a routerLink="/auth/login" class="text-primary font-bold hover:underline">Đăng nhập</a>
+  </p>
+</div>

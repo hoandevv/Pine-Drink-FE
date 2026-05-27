@@ -1,0 +1,42 @@
+<app-page-header title="Dashboard" description="Tong quan van hanh cua cua hang, san sang thay bang API thong ke that."></app-page-header>
+
+<section class="metrics-grid">
+  <article class="metric-card card-surface" *ngFor="let metric of metrics">
+    <p>{{ metric.title }}</p>
+    <h3>{{ metric.value }}</h3>
+    <span>{{ metric.delta }}</span>
+  </article>
+</section>
+
+<section class="dashboard-grid">
+  <article class="card-surface panel">
+    <div class="panel-heading">
+      <h3>Best Selling Drinks</h3>
+      <span>Mock data</span>
+    </div>
+    <div class="seller-row" *ngFor="let item of bestSellers">
+      <div>
+        <strong>{{ item.name }}</strong>
+        <p>{{ item.category }}</p>
+      </div>
+      <span>{{ item.sold }} cups</span>
+    </div>
+  </article>
+
+  <article class="card-surface panel">
+    <div class="panel-heading">
+      <h3>Recent Orders</h3>
+      <span>Ready for API</span>
+    </div>
+    <div class="recent-row" *ngFor="let order of recentOrders">
+      <div>
+        <strong>{{ order.code }}</strong>
+        <p>{{ order.customer }}</p>
+      </div>
+      <div class="recent-meta">
+        <strong>{{ order.amount }}</strong>
+        <span class="status-chip">{{ order.status }}</span>
+      </div>
+    </div>
+  </article>
+</section>
