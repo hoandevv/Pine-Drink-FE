@@ -18,6 +18,7 @@ export class LoginPageComponent implements OnInit {
   });
 
   submitting = false;
+  showPassword = false;
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -29,7 +30,7 @@ export class LoginPageComponent implements OnInit {
 
   ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/admin/dashboard']);
     }
   }
 
@@ -41,7 +42,7 @@ export class LoginPageComponent implements OnInit {
 
     this.submitting = true;
     const request: LoginRequest = this.loginForm.getRawValue();
-    const redirectUrl = this.route.snapshot.queryParamMap.get('redirectUrl') || '/dashboard';
+    const redirectUrl = this.route.snapshot.queryParamMap.get('redirectUrl') || '/admin/dashboard';
 
     this.authService.login(request).subscribe({
       next: () => {
@@ -55,5 +56,9 @@ export class LoginPageComponent implements OnInit {
         this.submitting = false;
       }
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }

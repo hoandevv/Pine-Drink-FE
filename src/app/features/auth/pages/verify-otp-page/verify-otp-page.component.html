@@ -1,0 +1,37 @@
+<div class="space-y-lg">
+  <div>
+    <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-xs">Xác thực OTP</h2>
+    <p class="font-body-md text-body-md text-secondary">Nhập mã OTP được gửi tới email để kích hoạt tài khoản.</p>
+  </div>
+
+  <form [formGroup]="otpForm" (ngSubmit)="submit()" class="space-y-md">
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface" for="otp-email">Email</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">mail</span>
+        <input id="otp-email" type="email" formControlName="email" placeholder="hello@example.com" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+      </div>
+      <p *ngIf="otpForm.get('email')?.touched && otpForm.get('email')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập email hợp lệ.</p>
+    </div>
+
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface" for="otp-code">Mã OTP</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">password</span>
+        <input id="otp-code" type="text" inputmode="numeric" maxlength="6" formControlName="otp" placeholder="123456" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md tracking-[0.35em] transition-all outline-none" />
+      </div>
+      <p *ngIf="otpForm.get('otp')?.touched && otpForm.get('otp')?.invalid" class="text-error text-label-sm mt-1">OTP phải gồm 6 chữ số.</p>
+    </div>
+
+    <button type="submit" class="w-full py-sm mt-md bg-primary text-white rounded-xl font-headline-md text-label-lg shadow-md hover:bg-primary-container hover:text-on-primary-container hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:shadow-md" [disabled]="submitting || otpForm.invalid">
+      {{ submitting ? 'Đang xác thực...' : 'Kích hoạt tài khoản' }}
+    </button>
+  </form>
+
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-sm text-body-md text-secondary">
+    <button id="resend-register-otp-button" type="button" class="text-primary font-bold hover:underline disabled:opacity-60" [disabled]="resending" (click)="resendOtp()">
+      {{ resending ? 'Đang gửi lại...' : 'Gửi lại OTP' }}
+    </button>
+    <a routerLink="/auth/login" class="text-primary font-bold hover:underline">Quay lại đăng nhập</a>
+  </div>
+</div>

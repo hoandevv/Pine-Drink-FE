@@ -49,7 +49,8 @@ export class TokenService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.getAccessToken();
+    const token = this.getAccessToken();
+    return !!token && !this.isTokenExpired(token);
   }
 
   getCurrentUserFromToken(): AuthUser | null {
@@ -58,27 +59,46 @@ export class TokenService {
       return this.getStoredUser();
     }
 
+    const payload = this.decodeTokenPayload(token);
+    const storedUser = this.getStoredUser();
+
+    if (!payload) {
+      return storedUser;
+    }
+
+    return {
+      id: payload.sub ?? storedUser?.id ?? '',
+      brandId: storedUser?.brandId,
+      username: payload.username ?? payload.email ?? storedUser?.username ?? 'User',
+      fullName: storedUser?.fullName,
+      email: payload.email ?? storedUser?.email ?? '',
+      phone: storedUser?.phone,
+      avatarUrl: storedUser?.avatarUrl,
+      status: storedUser?.status,
+      lastLoginAt: storedUser?.lastLoginAt,
+      roles: payload.roles ?? storedUser?.roles ?? []
+    };
+  }
+
+  isTokenExpired(token: string): boolean {
+    const payload = this.decodeTokenPayload(token);
+    if (!payload?.exp) {
+      return false;
+    }
+
+    return payload.exp * 1000 <= Date.now();
+  }
+
+  private decodeTokenPayload(token: string): { sub?: string; username?: string; email?: string; roles?: string[]; exp?: number } | null {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      return this.getStoredUser();
+      return null;
     }
 
     try {
-      const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) as {
-        sub?: string;
-        username?: string;
-        email?: string;
-        roles?: string[];
-      };
-
-      return {
-        id: payload.sub ?? '',
-        username: payload.username ?? payload.email ?? this.getStoredUser()?.username ?? 'User',
-        email: payload.email ?? this.getStoredUser()?.email ?? '',
-        roles: payload.roles ?? this.getStoredUser()?.roles ?? []
-      };
+      return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
     } catch {
-      return this.getStoredUser();
+      return null;
     }
   }
 }

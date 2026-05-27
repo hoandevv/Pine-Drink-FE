@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+
+import { AuthService } from '../../../../core/services/auth.service';
+import { ToastService } from '../../../../core/services/toast.service';
+import { RegisterRequest } from '../../models/register.model';
 
 @Component({
   selector: 'app-register-page',
@@ -10,28 +14,81 @@ import { Router } from '@angular/router';
 export class RegisterPageComponent implements OnInit {
   registerForm!: FormGroup;
   submitting = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
-  constructor(private fb: FormBuilder, private router: Router) {}
+  constructor(
+    private readonly fb: FormBuilder,
+    private readonly router: Router,
+    private readonly authService: AuthService,
+    private readonly toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
-    this.registerForm = this.fb.group({
-      fullName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', Validators.required]
-    });
+    this.registerForm = this.fb.group(
+      {
+        username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50), Validators.pattern(/^[a-zA-Z0-9_]+$/)]],
+        fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
+        email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+        phone: ['', [Validators.pattern(/^[0-9]{10,20}$/)]],
+        password: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(8),
+            Validators.maxLength(100),
+            Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+          ]
+        ],
+        confirmPassword: ['', Validators.required],
+        siteKey: ['PINE_DRINK_WEB', [Validators.required, Validators.maxLength(100)]]
+      },
+      { validators: this.passwordMatchValidator }
+    );
   }
 
   submit(): void {
-    if (this.registerForm.valid) {
-      this.submitting = true;
-      // Mock API call
-      setTimeout(() => {
-        this.submitting = false;
-        this.router.navigate(['/auth/login']);
-      }, 1500);
-    } else {
+    if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
+      return;
     }
+
+    this.submitting = true;
+    const { confirmPassword: _confirmPassword, ...request } = this.registerForm.getRawValue();
+
+    this.authService.register(request as RegisterRequest).subscribe({
+      next: (response) => {
+        this.toastService.success('Tạo tài khoản thành công. Vui lòng nhập OTP để kích hoạt.');
+        this.router.navigate(['/auth/verify-otp'], {
+          queryParams: { email: response.email }
+        });
+      },
+      error: () => {
+        this.submitting = false;
+      },
+      complete: () => {
+        this.submitting = false;
+      }
+    });
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+      return;
+    }
+
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password')?.value;
+    const confirmPassword = control.get('confirmPassword')?.value;
+
+    if (!password || !confirmPassword) {
+      return null;
+    }
+
+    return password === confirmPassword ? null : { passwordMismatch: true };
   }
 }
