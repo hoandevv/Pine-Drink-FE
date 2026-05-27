@@ -11,7 +11,10 @@ const routes: Routes = [
     path: '',
     component: ClientLayoutComponent,
     children: [
-      // Client routes can be added here
+      {
+        path: '',
+        loadChildren: () => import('./features/client/client.module').then((m) => m.ClientModule)
+      }
     ]
   },
   {

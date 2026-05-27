@@ -1,0 +1,285 @@
+<div class="profile-page">
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="profile-header-content">
+      <div class="profile-avatar">
+        <div class="avatar-circle">
+          <span class="material-symbols-outlined">account_circle</span>
+        </div>
+        <button class="edit-avatar-btn" type="button">
+          <span class="material-symbols-outlined">photo_camera</span>
+        </button>
+      </div>
+      
+      <div class="profile-info">
+        <h1>{{ user.name }}</h1>
+        <p class="email">{{ user.email }}</p>
+        <div class="member-badge">
+          <span class="material-symbols-outlined">workspace_premium</span>
+          <span>Thành viên từ {{ formatDate(user.memberSince) }}</span>
+        </div>
+      </div>
+
+      <div class="loyalty-card">
+        <div class="loyalty-icon">
+          <span class="material-symbols-outlined">stars</span>
+        </div>
+        <div class="loyalty-info">
+          <span class="points">{{ user.loyaltyPoints }}</span>
+          <span class="label">Điểm tích lũy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="profile-tabs">
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'info'"
+      (click)="setActiveTab('info')">
+      <span class="material-symbols-outlined">person</span>
+      <span>Thông tin</span>
+    </button>
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'orders'"
+      (click)="setActiveTab('orders')">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span>Đơn hàng</span>
+    </button>
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'favorites'"
+      (click)="setActiveTab('favorites')">
+      <span class="material-symbols-outlined">favorite</span>
+      <span>Yêu thích</span>
+    </button>
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'settings'"
+      (click)="setActiveTab('settings')">
+      <span class="material-symbols-outlined">settings</span>
+      <span>Cài đặt</span>
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="profile-content">
+    <!-- Personal Info Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'info'">
+      <div class="info-section">
+        <div class="section-header">
+          <h2>Thông tin cá nhân</h2>
+          <button type="button" class="edit-button" (click)="editProfile()">
+            <span class="material-symbols-outlined">edit</span>
+            <span>Chỉnh sửa</span>
+          </button>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="info-details">
+              <label>Họ và tên</label>
+              <p>{{ user.name }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">mail</span>
+            </div>
+            <div class="info-details">
+              <label>Email</label>
+              <p>{{ user.email }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">call</span>
+            </div>
+            <div class="info-details">
+              <label>Số điện thoại</label>
+              <p>{{ user.phone }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">cake</span>
+            </div>
+            <div class="info-details">
+              <label>Ngày sinh</label>
+              <p>01/01/1990</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Section -->
+      <div class="info-section">
+        <div class="section-header">
+          <h2>Địa chỉ giao hàng</h2>
+          <button type="button" class="add-button">
+            <span class="material-symbols-outlined">add</span>
+            <span>Thêm địa chỉ</span>
+          </button>
+        </div>
+
+        <div class="address-list">
+          <div class="address-card">
+            <div class="address-badge">Mặc định</div>
+            <h3>Nhà riêng</h3>
+            <p>123 Xuân Thủy, Cầu Giấy, Hà Nội</p>
+            <div class="address-actions">
+              <button type="button">Chỉnh sửa</button>
+              <button type="button">Xóa</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'orders'">
+      <div class="orders-section">
+        <div class="section-header">
+          <h2>Lịch sử đơn hàng</h2>
+          <div class="order-filter">
+            <button type="button" class="filter-btn active">Tất cả</button>
+            <button type="button" class="filter-btn">Hoàn thành</button>
+            <button type="button" class="filter-btn">Đang xử lý</button>
+          </div>
+        </div>
+
+        <div class="orders-list">
+          <div class="order-card" *ngFor="let order of recentOrders">
+            <div class="order-header">
+              <div class="order-id">
+                <span class="material-symbols-outlined">receipt</span>
+                <strong>{{ order.id }}</strong>
+              </div>
+              <span class="order-status" [ngClass]="getStatusClass(order.status)">
+                {{ getStatusText(order.status) }}
+              </span>
+            </div>
+
+            <div class="order-body">
+              <div class="order-info">
+                <div class="order-detail">
+                  <span class="material-symbols-outlined">calendar_today</span>
+                  <span>{{ formatDate(order.date) }}</span>
+                </div>
+                <div class="order-detail">
+                  <span class="material-symbols-outlined">shopping_bag</span>
+                  <span>{{ order.items }} món</span>
+                </div>
+              </div>
+              <div class="order-total">
+                <span class="label">Tổng cộng:</span>
+                <strong>{{ formatPrice(order.total) }}</strong>
+              </div>
+            </div>
+
+            <div class="order-actions">
+              <button type="button" class="secondary-btn">Xem chi tiết</button>
+              <button type="button" class="primary-btn">Đặt lại</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favorites Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'favorites'">
+      <div class="favorites-section">
+        <div class="section-header">
+          <h2>Món yêu thích</h2>
+        </div>
+
+        <div class="empty-state">
+          <span class="material-symbols-outlined">favorite_border</span>
+          <h3>Chưa có món yêu thích</h3>
+          <p>Thêm các món bạn thích để đặt hàng nhanh hơn</p>
+          <button type="button" class="primary-button" routerLink="/menu">
+            Khám phá menu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'settings'">
+      <div class="settings-section">
+        <div class="section-header">
+          <h2>Cài đặt tài khoản</h2>
+        </div>
+
+        <div class="settings-list">
+          <div class="setting-item" (click)="changePassword()">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">lock</span>
+            </div>
+            <div class="setting-info">
+              <h3>Đổi mật khẩu</h3>
+              <p>Cập nhật mật khẩu để bảo mật tài khoản</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">notifications</span>
+            </div>
+            <div class="setting-info">
+              <h3>Thông báo</h3>
+              <p>Quản lý thông báo đơn hàng và khuyến mãi</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">language</span>
+            </div>
+            <div class="setting-info">
+              <h3>Ngôn ngữ</h3>
+              <p>Tiếng Việt</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">help</span>
+            </div>
+            <div class="setting-info">
+              <h3>Trợ giúp & Hỗ trợ</h3>
+              <p>Câu hỏi thường gặp và liên hệ hỗ trợ</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item danger" (click)="logout()">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">logout</span>
+            </div>
+            <div class="setting-info">
+              <h3>Đăng xuất</h3>
+              <p>Thoát khỏi tài khoản hiện tại</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

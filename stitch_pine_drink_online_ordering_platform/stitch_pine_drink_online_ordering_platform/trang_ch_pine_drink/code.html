@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pine Drink - Đặt đồ uống yêu thích chỉ trong vài phút</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed": "#e1e3e4",
+                    "surface-dim": "#d4dbdd",
+                    "surface": "#f4fafd",
+                    "on-primary-container": "#fffbff",
+                    "primary": "#b71422",
+                    "secondary-container": "#e9e2d3",
+                    "on-background": "#161d1f",
+                    "on-surface-variant": "#5b403e",
+                    "surface-container-highest": "#dde4e6",
+                    "outline-variant": "#e4beba",
+                    "on-surface": "#161d1f",
+                    "tertiary": "#5a5c5d",
+                    "error-container": "#ffdad6",
+                    "background": "#f4fafd",
+                    "on-secondary": "#ffffff",
+                    "outline": "#8f6f6d",
+                    "on-secondary-fixed": "#1e1b13",
+                    "on-primary-fixed": "#410004",
+                    "primary-fixed-dim": "#ffb3ae",
+                    "secondary": "#635e53",
+                    "tertiary-container": "#737576",
+                    "inverse-surface": "#2b3234",
+                    "on-tertiary-fixed": "#191c1d",
+                    "on-tertiary-container": "#fcfdfe",
+                    "inverse-on-surface": "#ebf2f4",
+                    "error": "#ba1a1a",
+                    "surface-tint": "#ba1724",
+                    "on-secondary-container": "#696458",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#4b463c",
+                    "on-primary-fixed-variant": "#930014",
+                    "secondary-fixed-dim": "#cdc6b8",
+                    "primary-container": "#db3237",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "primary-fixed": "#ffdad7",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "surface-container-high": "#e2e9ec",
+                    "surface-container": "#e8eff1",
+                    "surface-bright": "#f4fafd",
+                    "surface-container-low": "#eef5f7",
+                    "inverse-primary": "#ffb3ae",
+                    "secondary-fixed": "#e9e2d3",
+                    "surface-variant": "#dde4e6",
+                    "on-primary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "container-max": "1280px",
+                    "xs": "4px",
+                    "sm": "12px",
+                    "margin-mobile": "16px",
+                    "xl": "32px",
+                    "xxl": "48px",
+                    "margin-desktop": "32px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f4fafd; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .active-nav { border-bottom: 2px solid #b71422; font-weight: 700; color: #b71422; }
+        .custom-scrollbar::-webkit-scrollbar { height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #b71422; border-radius: 10px; }
+        .oat-bg { background-color: #FDF5E6; }
+        .premium-shadow { box-shadow: 0px 10px 30px rgba(45, 52, 54, 0.08); }
+        .hero-gradient { background: linear-gradient(135deg, #f4fafd 0%, #e8eff1 100%); }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-surface shadow-sm">
+<div class="flex items-center gap-xl">
+<span class="text-headline-md font-headline-md font-extrabold text-primary">Pine Drink</span>
+<nav class="hidden md:flex gap-lg items-center">
+<a class="text-label-lg font-label-lg text-primary font-bold border-b-2 border-primary" href="#">Trang chủ</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Menu</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Khuyến mãi</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Theo dõi đơn</a>
+<a class="text-label-lg font-label-lg text-on-surface-variant hover:text-primary transition-colors duration-200" href="#">Cửa hàng</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="relative p-base hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface">shopping_cart</span>
+<span class="absolute top-0 right-0 bg-primary text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">2</span>
+</button>
+<button class="p-base hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface">person</span>
+</button>
+<button class="hidden md:block bg-primary text-white px-lg py-xs rounded-lg font-label-lg hover:brightness-110 active:scale-95 transition-all">Login</button>
+</div>
+</header>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="hero-gradient relative overflow-hidden py-xxl md:py-[100px]">
+<div class="max-w-container-max mx-auto px-margin-desktop flex flex-col md:flex-row items-center gap-xxl">
+<div class="flex-1 space-y-lg z-10">
+<h1 class="text-display-lg font-display-lg text-on-background leading-tight">
+                        Đặt đồ uống yêu thích <br/><span class="text-primary">chỉ trong vài phút</span>
+</h1>
+<p class="text-body-lg font-body-lg text-secondary max-w-[500px]">
+                        Chọn món, tùy chỉnh topping, đặt trước và nhận tại cửa hàng gần bạn. Trải nghiệm tốc độ và hương vị tươi mới mỗi ngày.
+                    </p>
+<div class="flex gap-md">
+<button class="bg-primary text-white px-xl py-md rounded-xl font-headline-md hover:brightness-110 shadow-lg active:scale-95 transition-all">Đặt ngay</button>
+<button class="border-2 border-primary text-primary px-xl py-md rounded-xl font-headline-md hover:bg-primary/5 active:scale-95 transition-all">Xem menu</button>
+</div>
+</div>
+<div class="flex-1 relative">
+<div class="absolute -top-10 -right-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+<img alt="Hero Beverage" class="relative z-10 w-full max-w-[500px] drop-shadow-2xl rounded-3xl" data-alt="A high-quality, professional photograph of a premium bubble tea with brown sugar syrup drizzled down the glass. The drink features chewy tapioca pearls at the bottom and a thick layer of creamy cheese foam on top. It is set against a clean, bright minimalist background with soft sunlight casting gentle shadows. The vibrant red straw provides a pop of corporate primary color to the energetic and fresh composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5hx3wlC7ce1L_m6iVaOBl7gkmMD-3GM5dnRhzNTBOAHL1Mxp1nXNa9tDysiFc4eNR5cNJa092RkDTBwCoWhDw31-nv72x45KdeuH6mfZmvSY2HiHDtUNC8YKHcC5dD8kv5pnb8RX0Vkeh843IetOuVErlcq_QQVrMrAaY89Xv7I9Nwq1Y4T_iC4arvmKu8-ks6G8cpi1546cDv5cGWxdCq18tnukAKPqTtF8Qz7VvZtqKqy_Fhp0K5ilXkjGyiYGOyKf9UVmDaA"/>
+</div>
+</div>
+</section>
+<!-- Quick Order Bar -->
+<section class="max-w-container-max mx-auto px-margin-desktop -mt-base md:-mt-xl relative z-20">
+<div class="bg-surface-container-lowest premium-shadow p-lg rounded-xl md:flex items-center gap-lg">
+<div class="flex-1 flex items-center gap-md bg-surface-container-low px-md py-sm rounded-lg mb-md md:mb-0">
+<span class="material-symbols-outlined text-primary">location_on</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-body-md font-body-md" placeholder="Chọn chi nhánh gần bạn" type="text"/>
+</div>
+<div class="flex bg-surface-container-low p-xs rounded-lg mb-md md:mb-0">
+<button class="bg-white text-primary px-md py-xs rounded-lg shadow-sm font-label-lg">Nhận tại quán</button>
+<button class="text-on-surface-variant px-md py-xs rounded-lg font-label-lg">Giao hàng</button>
+</div>
+<button class="w-full md:w-auto bg-primary text-white px-xl py-md rounded-lg font-label-lg whitespace-nowrap active:scale-95 transition-transform">Bắt đầu đặt món</button>
+</div>
+<p class="mt-sm text-label-sm font-label-sm text-secondary px-base flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">info</span>
+                Bạn đang ở gần chi nhánh: <span class="text-primary font-bold">Lumo Drink Cầu Giấy</span>
+</p>
+</section>
+<!-- Category Section -->
+<section class="py-xxl max-w-container-max mx-auto px-margin-desktop">
+<h2 class="text-headline-lg font-headline-lg mb-xl">Danh mục đồ uống</h2>
+<div class="flex md:grid md:grid-cols-6 gap-md overflow-x-auto custom-scrollbar pb-md">
+<div class="min-w-[120px] bg-white p-lg rounded-xl flex flex-col items-center gap-sm hover:border-primary border-2 border-transparent transition-all cursor-pointer shadow-sm group">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-full group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="coffee">coffee</span>
+</div>
+<span class="text-label-lg font-label-lg">Trà sữa</span>
+</div>
+<div class="min-w-[120px] bg-white p-lg rounded-xl flex flex-col items-center gap-sm hover:border-primary border-2 border-transparent transition-all cursor-pointer shadow-sm group">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-full group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="local_bar">local_bar</span>
+</div>
+<span class="text-label-lg font-label-lg">Trà trái cây</span>
+</div>
+<div class="min-w-[120px] bg-white p-lg rounded-xl flex flex-col items-center gap-sm hover:border-primary border-2 border-transparent transition-all cursor-pointer shadow-sm group">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-full group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="restaurant">restaurant</span>
+</div>
+<span class="text-label-lg font-label-lg">Cafe</span>
+</div>
+<div class="min-w-[120px] bg-white p-lg rounded-xl flex flex-col items-center gap-sm hover:border-primary border-2 border-transparent transition-all cursor-pointer shadow-sm group">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-full group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="icecream">icecream</span>
+</div>
+<span class="text-label-lg font-label-lg">Đá xay</span>
+</div>
+<div class="min-w-[120px] bg-white p-lg rounded-xl flex flex-col items-center gap-sm hover:border-primary border-2 border-transparent transition-all cursor-pointer shadow-sm group">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-full group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="eco">eco</span>
+</div>
+<span class="text-label-lg font-label-lg">Matcha</span>
+</div>
+<div class="min-w-[120px] bg-white p-lg rounded-xl flex flex-col items-center gap-sm hover:border-primary border-2 border-transparent transition-all cursor-pointer shadow-sm group">
+<div class="w-12 h-12 bg-secondary-container flex items-center justify-center rounded-full group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary" data-icon="add_circle">add_circle</span>
+</div>
+<span class="text-label-lg font-label-lg">Topping</span>
+</div>
+</div>
+</section>
+<!-- Best Seller Section -->
+<section class="bg-surface-container-low py-xxl">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="flex justify-between items-end mb-xl">
+<div>
+<h2 class="text-headline-lg font-headline-lg">Bán Chạy Nhất</h2>
+<p class="text-body-md font-body-md text-secondary">Những món uống được yêu thích nhất tuần qua</p>
+</div>
+<a class="text-primary font-bold hover:underline" href="#">Xem tất cả</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-lg">
+<!-- Product 1 -->
+<div class="bg-white rounded-xl overflow-hidden premium-shadow group transition-transform hover:-translate-y-2">
+<div class="relative h-64">
+<img alt="Trà sữa trân châu" class="w-full h-full object-cover" data-alt="A close-up shot of a Black Sugar Pearl Milk Tea in a sleek plastic cup, showing rich dark brown sugar syrup marbling into white fresh milk. The bottom is filled with shiny black tapioca pearls. The setting is a bright, modern cafe with a clean, airy aesthetic. High-key natural lighting illuminates the texture of the drink, while the red brand accents of the cafe are visible in the soft-focus background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPPf93T-znqPu-vP6R6HN5Uzm_EwRq9lgdgrJQ6yhhXd8C414xYiNalh4pxbtnUUK7MwnvTEAHqDEcPOjZuiBJ6kc5adVVtbcGI-j6IlYWyEPwftmBYhwBysVmvD-jGL2hrd1SFlFHBrZN7gnXc06FpbHOeUtIvNFu66KfNOQQoB-myh25sUuRIDll7XKme69ZllUe95OI-BJJfg70QCXD1xmQadIZ2z6tpYaxt2wcboQn4ezpdT6N-b1RifUEaaQF9LqTEgUuuw"/>
+<span class="absolute top-md left-md bg-primary text-white text-label-sm font-label-sm px-sm py-xs rounded-full">Best Seller</span>
+<button class="absolute bottom-md right-md bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<div class="p-lg">
+<h3 class="text-title-lg font-title-lg mb-xs">Trà sữa trân châu đường đen</h3>
+<p class="text-body-md text-secondary mb-md line-clamp-2">Sự kết hợp hoàn hảo giữa sữa tươi thanh trùng và trân châu đường đen dẻo dai.</p>
+<span class="text-primary font-bold text-headline-md">39.000đ</span>
+</div>
+</div>
+<!-- Product 2 -->
+<div class="bg-white rounded-xl overflow-hidden premium-shadow group transition-transform hover:-translate-y-2">
+<div class="relative h-64">
+<img alt="Matcha Latte" class="w-full h-full object-cover" data-alt="A vibrant Matcha Latte with a thick, velvety layer of white cheese foam on top, served in a glass. The deep green matcha layer contrasts beautifully with the white cream. The shot is taken in a professional studio setting with soft side lighting and a minimalist white background. The overall style is modern corporate F&amp;B photography with a focus on appetite appeal and meticulous cleanliness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjHkLWOIOuPe1YYs_JoQbAyz3nYPlf-YuEdfbkFLb8lBE2zZsc2M7Xhq3mfk7dulVeiwkPE5wDaFW_qgAk3nrzx91lBLiyNVQSmE7AF7-pkUX-6TZxWjNUt5w5pNmZ921FcuyRI6Zm2DzPPJYg3HdXPu1xDudSK2OguS85wnCmjSDCDjAwXkKNDlV9aYba4IhMa7S2nMH8_OTBWU8tDMto6annz3Oub9zEcbSwWpEwSTdpE2ak1kYXd0LR0m5Mv9YlOkg9HDo1LA"/>
+<span class="absolute top-md left-md bg-primary text-white text-label-sm font-label-sm px-sm py-xs rounded-full">Best Seller</span>
+<button class="absolute bottom-md right-md bg-primary text-white w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<div class="p-lg">
+<h3 class="text-title-lg font-title-lg mb-xs">Matcha Latte kem cheese</h3>
+<p class="text-body-md text-secondary mb-md line-clamp-2">Bột matcha Uji cao cấp hòa quyện cùng lớp kem cheese mặn mặn béo ngậy.</p>
+<span class="text-primary font-bold text-headline-md">45.000đ</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Promotion Section -->
+<section class="py-xxl">
+<div class="max-w-container-max mx-auto px-margin-desktop overflow-hidden">
+<h2 class="text-headline-lg font-headline-lg mb-xl">Ưu đãi độc quyền</h2>
+<div class="flex gap-lg overflow-x-auto pb-md custom-scrollbar">
+<div class="min-w-[80%] md:min-w-[45%] h-[200px] bg-primary rounded-2xl relative flex items-center p-xl overflow-hidden">
+<div class="z-10 text-white space-y-sm">
+<h3 class="text-headline-md font-headline-md">Mua 2 tặng 1 <br/> mỗi thứ 4 hàng tuần</h3>
+<p class="text-body-md">Áp dụng cho các dòng trà trái cây</p>
+<button class="bg-white text-primary px-lg py-xs rounded-lg font-label-lg mt-md">Nhận ưu đãi</button>
+</div>
+<img alt="Promo 1" class="absolute right-0 top-0 h-full w-1/2 object-cover opacity-60" data-alt="Abstract colorful fresh fruits splash with tea. A dynamic and energetic composition of sliced oranges and strawberries splashing into a pool of tea with water droplets captured in mid-air. The background is a clean white, and the lighting is high-key and bright, creating a youthful and tech-forward F&amp;B startup aesthetic with vibrant primary colors." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeHv2YcPozMBTnYLG8kQUMof0g-6E3LaLMPZOWsCutE_xPoHzDV2fzAsNeguwKCpdnJ6FfMtDIfi9zE_-waq3aGBUwGLbP-y4TF1QqXsi1ul_J4grubUVFg5gi_y5wCiY0v0MGfzIxtwPClYDBzAwhhx51WM2G08a5Xcov1RffTXGOvn1lundP5Mnpf3zDgJoIZA4YHFcxmZ7JtUZ58qkB3sBVQhLiFAxkGoYO03bYXCQ9GzFDqkxsYi5W8_Jmq435C_1TpylMwg"/>
+</div>
+<div class="min-w-[80%] md:min-w-[45%] h-[200px] bg-secondary-container rounded-2xl relative flex items-center p-xl overflow-hidden">
+<div class="z-10 text-on-secondary-container space-y-sm">
+<h3 class="text-headline-md font-headline-md">Giảm 20% <br/> cho đơn hàng đầu tiên</h3>
+<p class="text-body-md font-body-md">Nhập mã: PINEWELCOME</p>
+<button class="bg-primary text-white px-lg py-xs rounded-lg font-label-lg mt-md">Đặt ngay</button>
+</div>
+<img alt="Promo 2" class="absolute right-0 top-0 h-full w-1/2 object-cover opacity-40" data-alt="A modern kitchen background with soft out-of-focus elements, featuring a clean oat cream color palette. A sleek delivery bag sits on a white counter. The lighting is warm and inviting, evoking the speed and efficiency of modern F&amp;B delivery. The mood is meticulously clean and youthful." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFn2uZMxJcoTWQnYLW6UecEEpl4mbyLXd5FFfogdqvHDxs4K2tZ_JGDqduw0j8ynrfPNGOvVDaIH4LltfWDpXT-5YWVLs8b09MOiJpwhjJ-4HMVOzTl1uXNfqoRNAPJB78jxHF5ni2BwXZ8tNjj5gVeweknxksvG0O5B8NVXVQoTSDPoH-5BoTPTK5sNnc4xzW-QBX4W1j-BVkNgSvg0r0sv7fNtv02Y3QoeJd6c4VgF_Ux2UoO7xRqpW7x0SjlRV4uJT_Odn49g"/>
+</div>
+</div>
+</div>
+</section>
+<!-- How it works -->
+<section class="bg-surface py-xxl">
+<div class="max-w-container-max mx-auto px-margin-desktop text-center">
+<h2 class="text-headline-lg font-headline-lg mb-xl">Đặt hàng cực dễ</h2>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-lg">
+<div class="space-y-md">
+<div class="w-16 h-16 bg-white shadow-md rounded-full flex items-center justify-center mx-auto">
+<span class="material-symbols-outlined text-primary text-3xl">storefront</span>
+</div>
+<h4 class="font-bold">Chọn chi nhánh</h4>
+<p class="text-label-sm text-secondary">Tìm cửa hàng gần bạn nhất</p>
+</div>
+<div class="space-y-md">
+<div class="w-16 h-16 bg-white shadow-md rounded-full flex items-center justify-center mx-auto">
+<span class="material-symbols-outlined text-primary text-3xl">coffee</span>
+</div>
+<h4 class="font-bold">Chọn đồ uống</h4>
+<p class="text-label-sm text-secondary">Menu đa dạng và tươi mới</p>
+</div>
+<div class="space-y-md">
+<div class="w-16 h-16 bg-white shadow-md rounded-full flex items-center justify-center mx-auto">
+<span class="material-symbols-outlined text-primary text-3xl">tune</span>
+</div>
+<h4 class="font-bold">Tùy chỉnh topping</h4>
+<p class="text-label-sm text-secondary">Thêm trân châu, kem cheese...</p>
+</div>
+<div class="space-y-md">
+<div class="w-16 h-16 bg-white shadow-md rounded-full flex items-center justify-center mx-auto">
+<span class="material-symbols-outlined text-primary text-3xl">shopping_bag</span>
+</div>
+<h4 class="font-bold">Nhận đồ tại quán</h4>
+<p class="text-label-sm text-secondary">Không cần chờ đợi lâu</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Store Section -->
+<section class="py-xxl max-w-container-max mx-auto px-margin-desktop">
+<div class="flex justify-between items-end mb-xl">
+<h2 class="text-headline-lg font-headline-lg">Cửa hàng nổi bật</h2>
+<a class="text-primary font-bold hover:underline" href="#">Xem tất cả cửa hàng</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-xl">
+<div class="flex flex-col md:flex-row bg-white rounded-xl overflow-hidden premium-shadow">
+<img alt="Store 1" class="w-full md:w-1/3 h-48 md:h-auto object-cover" data-alt="The modern, minimalist exterior of a Pine Drink coffee shop featuring large glass windows and light wood accents. The architecture is sleek with clean lines and a vibrant red logo sign. People are seen enjoying drinks inside the airy, well-lit space. The surroundings are urban and trendy, lit by soft afternoon sun." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfsfszHrAZ8tTQUfeZrd4ozHVLqvv7qbLIqHkmQtPmkYB0hqiMRKWIhqPoe8kBvRmls1iFJ3hCKnEqXRxfj110iCdQal7-Zw506sB3P-N3QjCaIywtu7y2zewNE08fHnJsDZqlWtnRLzRR8-iR0HBj4DgQq3Ox6SeyWwhaEABqrgNGvY0VYkKCf8BCoohZRvTYtQq2yX28n8JCg1dPKZWPX3sSzeLhbr2MTaXhsouonusyJ89BAVFql3xvTFqkiib4hwXVK9ZIlw"/>
+<div class="p-lg flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-title-lg font-title-lg text-on-surface">Pine Drink Cầu Giấy</h3>
+<p class="text-body-md text-secondary mt-xs">123 Xuân Thủy, Cầu Giấy, Hà Nội</p>
+<p class="text-label-sm text-primary mt-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                Mở cửa: 07:00 - 22:30
+                            </p>
+</div>
+<button class="mt-lg w-full bg-primary text-white py-md rounded-lg font-label-lg hover:brightness-110 active:scale-95 transition-all">Đặt tại chi nhánh này</button>
+</div>
+</div>
+<div class="flex flex-col md:flex-row bg-white rounded-xl overflow-hidden premium-shadow">
+<img alt="Store 2" class="w-full md:w-1/3 h-48 md:h-auto object-cover" data-alt="Interior of a chic, modern drink shop with minimalist furniture, high-quality lighting, and a clutter-free design. The atmosphere is quiet yet energetic, with a professional espresso machine and clean counter space. Large potted plants add a touch of freshness. The color palette is composed of soft oats, whites, and brand-identifying red accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxujrd20N1BRuTzQqboiprFW-Wv_hd4zx2aslUsTvI0HcVQsiiRh0o4j1v7D5u-S7vKu3ONFn-Bex9Dk2vOrZPcE45qWYQFiHpXmtcQbupQjhjaQfwSvPrjVQ5iEU89c7t4fGi6Rd0ekcPDeAlY2id9Oc1adQoIF13IBs6OgNzT8q0dYjdbH3IDrA4g1lI3hS_jskS49eFKaY8XcihCaUU3UWkBZvZfhpKfxRfa7edLc0twynN9djkX4m6z6t-GNK7IjuZuepEUw"/>
+<div class="p-lg flex-1 flex flex-col justify-between">
+<div>
+<h3 class="text-title-lg font-title-lg text-on-surface">Pine Drink Hoàn Kiếm</h3>
+<p class="text-body-md text-secondary mt-xs">45 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội</p>
+<p class="text-label-sm text-primary mt-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                                Mở cửa: 08:00 - 23:00
+                            </p>
+</div>
+<button class="mt-lg w-full bg-primary text-white py-md rounded-lg font-label-lg hover:brightness-110 active:scale-95 transition-all">Đặt tại chi nhánh này</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-xl px-margin-desktop grid grid-cols-1 md:grid-cols-4 gap-lg bg-surface-container mt-xxl border-t border-surface-container-highest">
+<div class="space-y-md">
+<span class="text-headline-md font-headline-md font-extrabold text-primary">Pine Drink</span>
+<p class="text-body-md font-body-md text-on-surface-variant">Thương hiệu F&amp;B hiện đại cho thế hệ mới. Đem lại trải nghiệm thưởng thức đồ uống nhanh chóng và chất lượng nhất.</p>
+<div class="flex gap-md">
+<a class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">social_leaderboard</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">alternate_email</span>
+</a>
+</div>
+</div>
+<div class="space-y-sm">
+<h4 class="font-bold text-on-surface">Về chúng tôi</h4>
+<ul class="space-y-xs text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors text-label-sm font-label-sm" href="#">About Us</a></li>
+<li><a class="hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Sustainability</a></li>
+<li><a class="hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Careers</a></li>
+</ul>
+</div>
+<div class="space-y-sm">
+<h4 class="font-bold text-on-surface">Chính sách</h4>
+<ul class="space-y-xs text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Terms of Service</a></li>
+<li><a class="hover:text-primary transition-colors text-label-sm font-label-sm" href="#">Contact</a></li>
+</ul>
+</div>
+<div class="space-y-sm">
+<h4 class="font-bold text-on-surface">Liên hệ</h4>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Hotline: 1900 1234</p>
+<p class="text-label-sm font-label-sm text-on-surface-variant">Email: hello@pinedrink.com</p>
+<p class="text-body-md font-body-md text-on-surface-variant mt-md">© 2024 Pine Drink F&amp;B Startup. All rights reserved.</p>
+</div>
+</footer>
+<!-- FAB for Cart (Mobile only) -->
+<button class="md:hidden fixed bottom-md right-md bg-primary text-white p-lg rounded-full shadow-2xl z-50 flex items-center gap-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined">shopping_basket</span>
+<span class="font-bold">2 món • 84k</span>
+</button>
+<script>
+        // Micro-interactions and hover effects
+        document.querySelectorAll('.active\\:scale-95').forEach(button => {
+            button.addEventListener('mousedown', () => {
+                button.classList.add('scale-95');
+            });
+            button.addEventListener('mouseup', () => {
+                button.classList.remove('scale-95');
+            });
+            button.addEventListener('mouseleave', () => {
+                button.classList.remove('scale-95');
+            });
+        });
+    </script>
+</body></html>

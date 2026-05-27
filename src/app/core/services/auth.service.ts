@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { LoginRequest } from '../../features/auth/models/login-request.model';
@@ -22,6 +22,8 @@ import { TokenService } from './token.service';
 })
 export class AuthService {
   private readonly authBaseUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.tokenService.getCurrentUserFromToken());
+  public readonly currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(
     private readonly http: HttpClient,
@@ -51,6 +53,7 @@ export class AuthService {
       tap((response) => {
         this.tokenService.setTokens(response.data.accessToken, response.data.refreshToken);
         this.tokenService.setCurrentUser(response.data.account);
+        this.currentUserSubject.next(response.data.account);
       }),
       map((response) => response.data)
     );
@@ -77,19 +80,23 @@ export class AuthService {
     }
 
     this.tokenService.clearTokens();
+    this.currentUserSubject.next(null);
   }
 
   getProfile(): Observable<AuthUser> {
     return this.http
       .get<BaseResponse<AuthUser>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.me}`)
       .pipe(
-        tap((response) => this.tokenService.setCurrentUser(response.data)),
+        tap((response) => {
+          this.tokenService.setCurrentUser(response.data);
+          this.currentUserSubject.next(response.data);
+        }),
         map((response) => response.data)
       );
   }
 
   getCurrentUser(): AuthUser | null {
-    return this.tokenService.getCurrentUserFromToken();
+    return this.currentUserSubject.value;
   }
 
   isAuthenticated(): boolean {

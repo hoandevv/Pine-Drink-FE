@@ -1,0 +1,179 @@
+<div class="store-locator-page">
+  <!-- Left Panel: Branch List -->
+  <div class="branch-list-panel">
+    <div class="panel-header">
+      <h1>Chọn chi nhánh gần bạn</h1>
+      <p>Tìm cửa hàng Pine Drink gần nhất để đặt hàng</p>
+    </div>
+
+    <!-- Search Box -->
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input 
+        type="text" 
+        placeholder="Nhập quận, đường hoặc tên chi nhánh..." 
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+      />
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="filter-chips">
+      <button 
+        type="button" 
+        [class.active]="filterNearby"
+        (click)="toggleFilter('nearby')"
+      >
+        <span class="material-symbols-outlined">near_me</span>
+        Gần tôi
+      </button>
+      <button 
+        type="button" 
+        [class.active]="filterOpen"
+        (click)="toggleFilter('open')"
+      >
+        <span class="material-symbols-outlined">schedule</span>
+        Đang mở cửa
+      </button>
+      <button 
+        type="button" 
+        [class.active]="filterPickup"
+        (click)="toggleFilter('pickup')"
+      >
+        <span class="material-symbols-outlined">shopping_bag</span>
+        Có pickup
+      </button>
+      <button 
+        type="button" 
+        [class.active]="filterDelivery"
+        (click)="toggleFilter('delivery')"
+      >
+        <span class="material-symbols-outlined">local_shipping</span>
+        Có delivery
+      </button>
+    </div>
+
+    <!-- Branch Cards -->
+    <div class="branch-cards">
+      <article 
+        *ngFor="let branch of filteredBranches" 
+        class="branch-card"
+        [class.selected]="selectedBranch?.id === branch.id"
+        (click)="selectBranch(branch)"
+      >
+        <div class="branch-header">
+          <div>
+            <h3>{{ branch.name }}</h3>
+            <span class="distance-badge">{{ branch.distance }}</span>
+          </div>
+          <span class="status-badge" [class]="getStatusClass(branch)">
+            {{ getStatusText(branch) }}
+          </span>
+        </div>
+
+        <div class="branch-info">
+          <div class="info-row">
+            <span class="material-symbols-outlined">location_on</span>
+            <p>{{ branch.address }}</p>
+          </div>
+          <div class="info-row">
+            <span class="material-symbols-outlined">schedule</span>
+            <p>{{ branch.openTime }} - {{ branch.closeTime }}</p>
+          </div>
+          <div class="info-row">
+            <span class="material-symbols-outlined">phone</span>
+            <p>{{ branch.phone }}</p>
+          </div>
+        </div>
+
+        <div class="branch-services">
+          <span *ngIf="branch.hasPickup" class="service-tag">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            Pickup
+          </span>
+          <span *ngIf="branch.hasDelivery" class="service-tag">
+            <span class="material-symbols-outlined">local_shipping</span>
+            Delivery
+          </span>
+          <span class="service-tag time">
+            <span class="material-symbols-outlined">timer</span>
+            {{ branch.estimatedTime }}
+          </span>
+        </div>
+
+        <button 
+          class="primary-button full-width" 
+          (click)="confirmBranch(branch); $event.stopPropagation()"
+        >
+          Chọn chi nhánh này
+        </button>
+      </article>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredBranches.length === 0" class="empty-state">
+        <span class="material-symbols-outlined">location_off</span>
+        <h3>Không tìm thấy chi nhánh</h3>
+        <p>Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Map -->
+  <div class="map-panel">
+    <div class="map-container">
+      <!-- Map Placeholder -->
+      <div class="map-placeholder">
+        <img 
+          [src]="mapImageUrl" 
+          alt="Map of Hanoi"
+        />
+        
+        <!-- Location Markers -->
+        <div 
+          *ngFor="let branch of filteredBranches; let i = index" 
+          class="map-marker"
+          [style.top.%]="30 + (i * 15)"
+          [style.left.%]="40 + (i * 10)"
+          [class.selected]="selectedBranch?.id === branch.id"
+          (click)="selectBranch(branch)"
+        >
+          <span class="material-symbols-outlined">location_on</span>
+          <div class="marker-tooltip">
+            <strong>{{ branch.name }}</strong>
+            <p>{{ branch.distance }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Map Controls -->
+      <div class="map-controls">
+        <button type="button" class="map-control-btn" title="My Location">
+          <span class="material-symbols-outlined">my_location</span>
+        </button>
+        <button type="button" class="map-control-btn" title="Zoom In">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+        <button type="button" class="map-control-btn" title="Zoom Out">
+          <span class="material-symbols-outlined">remove</span>
+        </button>
+      </div>
+
+      <!-- Selected Branch Info Card -->
+      <div *ngIf="selectedBranch" class="selected-branch-card">
+        <img [src]="selectedBranch.image" [alt]="selectedBranch.name" />
+        <div class="card-content">
+          <h4>{{ selectedBranch.name }}</h4>
+          <p>{{ selectedBranch.address }}</p>
+          <div class="card-meta">
+            <span>{{ selectedBranch.distance }}</span>
+            <span>•</span>
+            <span>{{ selectedBranch.estimatedTime }}</span>
+          </div>
+          <button class="primary-button" (click)="confirmBranch(selectedBranch)">
+            Chọn chi nhánh
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

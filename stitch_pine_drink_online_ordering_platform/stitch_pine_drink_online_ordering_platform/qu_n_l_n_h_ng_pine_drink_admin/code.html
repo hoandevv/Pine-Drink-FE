@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Management | Pine Drink Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "inverse-primary": "#ffb3ae",
+                    "tertiary-container": "#737576",
+                    "surface-dim": "#d4dbdd",
+                    "on-tertiary-fixed-variant": "#454748",
+                    "on-tertiary-fixed": "#191c1d",
+                    "surface-container-high": "#e2e9ec",
+                    "background": "#f4fafd",
+                    "surface-container-low": "#eef5f7",
+                    "on-primary-fixed": "#410004",
+                    "surface-container-lowest": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-tertiary": "#ffffff",
+                    "surface-container": "#e8eff1",
+                    "on-secondary": "#ffffff",
+                    "surface-container-highest": "#dde4e6",
+                    "primary-fixed-dim": "#ffb3ae",
+                    "on-secondary-fixed": "#1e1b13",
+                    "surface-tint": "#ba1724",
+                    "on-primary-container": "#fffbff",
+                    "on-background": "#161d1f",
+                    "inverse-surface": "#2b3234",
+                    "primary-fixed": "#ffdad7",
+                    "tertiary": "#5a5c5d",
+                    "on-tertiary-container": "#fcfdfe",
+                    "on-primary-fixed-variant": "#930014",
+                    "on-error-container": "#93000a",
+                    "outline": "#8f6f6d",
+                    "primary": "#b71422",
+                    "outline-variant": "#e4beba",
+                    "on-secondary-container": "#696458",
+                    "on-secondary-fixed-variant": "#4b463c",
+                    "primary-container": "#db3237",
+                    "surface-variant": "#dde4e6",
+                    "secondary": "#635e53",
+                    "tertiary-fixed-dim": "#c5c7c8",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#e9e2d3",
+                    "inverse-on-surface": "#ebf2f4",
+                    "tertiary-fixed": "#e1e3e4",
+                    "secondary-fixed-dim": "#cdc6b8",
+                    "on-surface-variant": "#5b403e",
+                    "on-surface": "#161d1f",
+                    "surface": "#f4fafd",
+                    "secondary-fixed": "#e9e2d3",
+                    "surface-bright": "#f4fafd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xl": "32px",
+                    "xxl": "48px",
+                    "margin-desktop": "32px",
+                    "sm": "12px",
+                    "md": "16px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "container-max": "1280px",
+                    "base": "8px",
+                    "xs": "4px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "label-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "title-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "title-lg": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #dde4e6; border-radius: 10px; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen w-64 fixed left-0 top-0 z-50 bg-surface-container-lowest border-r border-outline-variant/30 flex flex-col py-xl px-md space-y-base shadow-md">
+<div class="px-md mb-xl">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined" data-icon="local_drink">local_drink</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-extrabold text-primary">Pine Drink</h1>
+<p class="font-label-sm text-label-sm text-secondary">Admin Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-xs">
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-lg text-label-lg">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm bg-secondary-container text-on-secondary-container rounded-lg font-bold transition-all duration-300 hover:scale-[1.02] active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-lg text-label-lg">Orders</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-lg text-label-lg">Inventory</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-lg text-label-lg">Customers</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+<span class="font-label-lg text-label-lg">Analytics</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg transition-all duration-300 hover:scale-[1.02] active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-lg text-label-lg">Settings</span>
+</a>
+</nav>
+<div class="pt-base border-t border-outline-variant/20 space-y-xs">
+<button class="w-full bg-primary text-white py-md rounded-xl font-bold flex items-center justify-center gap-sm mb-md transition-transform active:scale-95 shadow-sm">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                New Delivery
+            </button>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="font-label-lg text-label-lg">Support</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-lg text-label-lg">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="flex justify-between items-center px-lg py-md w-full sticky top-0 bg-surface-container-lowest shadow-sm z-40">
+<div class="flex items-center gap-xl">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Orders</h2>
+<div class="relative w-80">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-xl pr-md py-sm focus:ring-2 focus:ring-primary text-body-md" placeholder="Search by ID or customer..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center text-secondary hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="flex items-center gap-sm ml-md pl-md border-l border-outline-variant/30">
+<img alt="Admin Profile" class="w-9 h-9 rounded-full object-cover border-2 border-surface-container-high" data-alt="A close-up professional headshot of a young male administrator in a brightly lit, modern tech office environment. He is smiling warmly, conveying confidence and youthful professionalism. The background is softly blurred, showing hints of clean, white minimalist architecture and lush green plants, adhering to a high-end startup aesthetic with vibrant lighting and clean lines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtoghm4YRNtzxnBZy8dAtyAO1k4gchbt_cEqxkaESx0Zn8JiyzPJ2HUMXh4AOUQQC62ELdEACXFbDEfI4xurWXAPjsoesoBrvfqBDgg6Nx8BSgLvDPTGFzoSdayEdbQRfVwV0d7XE8KocJi11mIogpHR5tDSMfEkUgYChP-6R6w6b0Hl8NjYeXiBLL1dO1uNm8xeoAbDLiVjKfr39FwApwulK4_dotQQdo7ACu4-psCzPR7uY3IPsDBEZykmfKDtm5IW8WEzeu1Q"/>
+<div class="hidden lg:block text-left">
+<p class="font-label-lg text-label-lg text-on-surface">Alex Rivera</p>
+<p class="font-label-sm text-label-sm text-secondary">Manager</p>
+</div>
+</div>
+</div>
+</header>
+<section class="p-lg flex-1">
+<!-- Filter Bar -->
+<div class="glass-card rounded-xl p-md mb-lg shadow-sm border border-outline-variant/10 flex flex-wrap items-center justify-between gap-md">
+<div class="flex flex-wrap items-center gap-sm">
+<div class="flex flex-col">
+<label class="font-label-sm text-label-sm text-secondary mb-1 ml-1">Branch</label>
+<select class="bg-surface-container-low border-none rounded-lg px-md py-sm font-label-lg text-on-surface-variant focus:ring-2 focus:ring-primary min-w-[160px]">
+<option>Central Park</option>
+<option>West Side</option>
+<option>Downtown</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label class="font-label-sm text-label-sm text-secondary mb-1 ml-1">Order Type</label>
+<select class="bg-surface-container-low border-none rounded-lg px-md py-sm font-label-lg text-on-surface-variant focus:ring-2 focus:ring-primary min-w-[140px]">
+<option>All Types</option>
+<option>Pickup</option>
+<option>Delivery</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label class="font-label-sm text-label-sm text-secondary mb-1 ml-1">Date Range</label>
+<button class="bg-surface-container-low border-none rounded-lg px-md py-sm font-label-lg text-on-surface-variant flex items-center gap-sm">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                            Today, Oct 24
+                        </button>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="flex items-center gap-xs px-md py-sm rounded-lg border-2 border-primary text-primary font-bold hover:bg-primary-fixed transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+                        More Filters
+                    </button>
+<button class="flex items-center gap-xs px-md py-sm rounded-lg bg-surface-container-high text-on-surface font-bold hover:bg-surface-container-highest transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                        Export
+                    </button>
+</div>
+</div>
+<!-- Status Tabs -->
+<div class="flex gap-md border-b border-outline-variant/20 mb-lg overflow-x-auto custom-scrollbar whitespace-nowrap">
+<button class="px-md py-sm font-label-lg text-primary border-b-2 border-primary font-bold">All Orders (124)</button>
+<button class="px-md py-sm font-label-lg text-secondary hover:text-primary transition-colors">Pending (8)</button>
+<button class="px-md py-sm font-label-lg text-secondary hover:text-primary transition-colors">Confirmed (15)</button>
+<button class="px-md py-sm font-label-lg text-secondary hover:text-primary transition-colors">Preparing (12)</button>
+<button class="px-md py-sm font-label-lg text-secondary hover:text-primary transition-colors">Ready (4)</button>
+<button class="px-md py-sm font-label-lg text-secondary hover:text-primary transition-colors">Completed (82)</button>
+<button class="px-md py-sm font-label-lg text-secondary hover:text-primary transition-colors">Cancelled (3)</button>
+</div>
+<!-- Bento/Table Hybrid View -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant/20">
+<tr>
+<th class="px-lg py-md font-label-sm text-label-sm text-secondary uppercase tracking-wider">Order Info</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-secondary uppercase tracking-wider">Customer</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-secondary uppercase tracking-wider">Branch &amp; Type</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-secondary uppercase tracking-wider">Status</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-secondary uppercase tracking-wider text-right">Amount</th>
+<th class="px-lg py-md font-label-sm text-label-sm text-secondary uppercase tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Order Row 1: Pending -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface font-bold">#PD-9842</span>
+<span class="font-label-sm text-secondary">2 min ago • 3 Items</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">JD</div>
+<span class="font-label-lg text-on-surface">Jane Doe</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface">Central Park</span>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="delivery_dining">delivery_dining</span>
+<span class="font-label-sm">Delivery</span>
+</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-[#FEF9C3] text-[#713F12] rounded-full font-label-sm text-[11px] font-bold uppercase tracking-tight">Pending</span>
+</td>
+<td class="px-lg py-md text-right">
+<span class="font-label-lg text-on-surface font-bold">$24.50</span>
+</td>
+<td class="px-lg py-md text-right">
+<div class="flex items-center justify-end gap-xs opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-container" title="Confirm Order">
+<span class="material-symbols-outlined text-[18px]" data-icon="check">check</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Order Row 2: Preparing -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface font-bold">#PD-9841</span>
+<span class="font-label-sm text-secondary">15 min ago • 2 Items</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a young adult male with a friendly expression, set against a bright, airy coffee shop background with soft natural lighting. The image emphasizes a clean, urban lifestyle aesthetic with fresh color tones and high-key brightness, consistent with a premium F&amp;B brand's customer profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmEs7Ba3qQBmfCSwkZVV-2zpYU3dfp-8wXVgbIghetujbIvAk2pT1GbbJaOqCMiFaW7925swNrejrhj6QTdc3B4cAzSCTZoIGQNgdZOrc4jzSFAP5hHNJWFyD62f7EWtyGZbL-m0hPe3raTqA_CFLGok4KUjbC9VAYnj2OCs-AcPYnIB3Q_1glEqWxMAVRcFAevzKaLV2426__aRl4fKQAp-8A-YoY1dH_x5KFQNQyLboUSGEeWHpa5cufY2CH5JuVEd2BEBaCgQ"/>
+</div>
+<span class="font-label-lg text-on-surface">Mark Smith</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface">Downtown</span>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="takeout_dining">takeout_dining</span>
+<span class="font-label-sm">Pickup</span>
+</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-[#FFEDD5] text-[#9A3412] rounded-full font-label-sm text-[11px] font-bold uppercase tracking-tight">Preparing</span>
+</td>
+<td class="px-lg py-md text-right">
+<span class="font-label-lg text-on-surface font-bold">$18.20</span>
+</td>
+<td class="px-lg py-md text-right">
+<div class="flex items-center justify-end gap-xs opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-sm py-1 rounded-lg bg-primary-container text-white font-label-sm flex items-center gap-xs hover:bg-primary transition-colors">
+                                        Update Status
+                                    </button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[18px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Order Row 3: Ready -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface font-bold">#PD-9838</span>
+<span class="font-label-sm text-secondary">42 min ago • 5 Items</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">LW</div>
+<span class="font-label-lg text-on-surface">Linda Wu</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface">West Side</span>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="delivery_dining">delivery_dining</span>
+<span class="font-label-sm">Delivery</span>
+</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-[#DCFCE7] text-[#166534] rounded-full font-label-sm text-[11px] font-bold uppercase tracking-tight">Ready</span>
+</td>
+<td class="px-lg py-md text-right">
+<span class="font-label-lg text-on-surface font-bold">$56.00</span>
+</td>
+<td class="px-lg py-md text-right">
+<div class="flex items-center justify-end gap-xs opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="px-sm py-1 rounded-lg bg-primary text-white font-label-sm flex items-center gap-xs hover:bg-primary-container transition-colors">
+                                        Assign Driver
+                                    </button>
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[18px]" data-icon="visibility">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Order Row 4: Cancelled -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface font-bold">#PD-9835</span>
+<span class="font-label-sm text-secondary">1 hr ago • 1 Item</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">RK</div>
+<span class="font-label-lg text-on-surface">Robert King</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface">Downtown</span>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="takeout_dining">takeout_dining</span>
+<span class="font-label-sm">Pickup</span>
+</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-error-container text-on-error-container rounded-full font-label-sm text-[11px] font-bold uppercase tracking-tight">Cancelled</span>
+</td>
+<td class="px-lg py-md text-right">
+<span class="font-label-lg text-on-surface font-bold">$9.50</span>
+</td>
+<td class="px-lg py-md text-right">
+<div class="flex items-center justify-end gap-xs opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[18px]" data-icon="history">history</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Order Row 5: Completed -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface font-bold">#PD-9830</span>
+<span class="font-label-sm text-secondary">2 hrs ago • 4 Items</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">AM</div>
+<span class="font-label-lg text-on-surface">Alice Miller</span>
+</div>
+</td>
+<td class="px-lg py-md">
+<div class="flex flex-col">
+<span class="font-label-lg text-on-surface">Central Park</span>
+<div class="flex items-center gap-xs text-secondary">
+<span class="material-symbols-outlined text-[16px]" data-icon="delivery_dining">delivery_dining</span>
+<span class="font-label-sm">Delivery</span>
+</div>
+</div>
+</td>
+<td class="px-lg py-md">
+<span class="px-md py-xs bg-surface-variant text-on-surface-variant rounded-full font-label-sm text-[11px] font-bold uppercase tracking-tight">Completed</span>
+</td>
+<td class="px-lg py-md text-right">
+<span class="font-label-lg text-on-surface font-bold">$42.80</span>
+</td>
+<td class="px-lg py-md text-right">
+<div class="flex items-center justify-end gap-xs opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="w-8 h-8 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center hover:bg-surface-container-highest">
+<span class="material-symbols-outlined text-[18px]" data-icon="receipt">receipt</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination Footer -->
+<div class="px-lg py-md flex items-center justify-between bg-surface-container-lowest border-t border-outline-variant/20">
+<p class="font-label-sm text-secondary">Showing 1-10 of 124 orders</p>
+<div class="flex items-center gap-xs">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center border border-outline-variant/30 text-secondary hover:bg-surface-container-low disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded-lg bg-primary text-white font-label-sm font-bold">1</button>
+<button class="w-8 h-8 rounded-lg font-label-sm text-secondary hover:bg-surface-container-low transition-colors">2</button>
+<button class="w-8 h-8 rounded-lg font-label-sm text-secondary hover:bg-surface-container-low transition-colors">3</button>
+<span class="text-secondary mx-xs">...</span>
+<button class="w-8 h-8 rounded-lg font-label-sm text-secondary hover:bg-surface-container-low transition-colors">13</button>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center border border-outline-variant/30 text-secondary hover:bg-surface-container-low">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer (Shared Component) -->
+<footer class="flex justify-between items-center px-xl py-lg mt-auto bg-surface-container-low border-t border-outline-variant/20">
+<p class="font-label-sm text-label-sm text-on-surface-variant">© 2024 Pine Drink F&amp;B. Powered by Pine Tech.</p>
+<div class="flex items-center gap-lg">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">API Status</a>
+</div>
+</footer>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-xl right-xl w-14 h-14 rounded-full bg-primary text-white shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform z-50">
+<span class="material-symbols-outlined text-[32px]" data-icon="chat_bubble">chat_bubble</span>
+</button>
+<script>
+        // Simple micro-interaction for rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (!e.target.closest('button')) {
+                    // Logic for opening detail sidebar could go here
+                    console.log('Open details for row');
+                }
+            });
+        });
+    </script>
+</body></html>

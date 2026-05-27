@@ -1,0 +1,190 @@
+<div class="cart-page">
+  <div class="cart-container">
+    <!-- Cart Header -->
+    <div class="cart-header">
+      <button class="back-button" (click)="continueShopping()">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Tiếp tục mua hàng
+      </button>
+      <h1>Giỏ hàng của bạn</h1>
+      <p *ngIf="cartItems.length > 0">{{ cartItems.length }} sản phẩm</p>
+    </div>
+
+    <!-- Empty Cart State -->
+    <div *ngIf="cartItems.length === 0" class="empty-cart">
+      <span class="material-symbols-outlined">shopping_cart</span>
+      <h2>Giỏ hàng trống</h2>
+      <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục</p>
+      <button class="primary-button" (click)="continueShopping()">
+        Khám phá menu
+      </button>
+    </div>
+
+    <!-- Cart Content -->
+    <div *ngIf="cartItems.length > 0" class="cart-content">
+      <!-- Cart Items -->
+      <div class="cart-items-section">
+        <div class="cart-items-list">
+          <article *ngFor="let item of cartItems" class="cart-item">
+            <img [src]="item.productImage" [alt]="item.productName" />
+            
+            <div class="item-details">
+              <h3>{{ item.productName }}</h3>
+              <div class="item-options">
+                <span class="option-tag">Size {{ item.size }}</span>
+                <span class="option-tag">Đá {{ item.iceLevel }}%</span>
+                <span class="option-tag">Đường {{ item.sugarLevel }}%</span>
+              </div>
+              <div *ngIf="item.toppings.length > 0" class="item-toppings">
+                <span class="topping-label">Topping:</span>
+                <span *ngFor="let topping of item.toppings" class="topping-tag">
+                  {{ topping.name }} (+{{ formatPrice(topping.price) }})
+                </span>
+              </div>
+              <p *ngIf="item.note" class="item-note">
+                <span class="material-symbols-outlined">note</span>
+                {{ item.note }}
+              </p>
+            </div>
+
+            <div class="item-actions">
+              <div class="quantity-control">
+                <button 
+                  type="button" 
+                  (click)="updateQuantity(item, -1)"
+                  [disabled]="item.quantity <= 1"
+                >
+                  <span class="material-symbols-outlined">remove</span>
+                </button>
+                <span class="quantity">{{ item.quantity }}</span>
+                <button type="button" (click)="updateQuantity(item, 1)">
+                  <span class="material-symbols-outlined">add</span>
+                </button>
+              </div>
+              
+              <div class="item-price">
+                <strong>{{ formatPrice(item.price * item.quantity) }}</strong>
+              </div>
+
+              <button class="remove-button" (click)="removeItem(item)">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <!-- Voucher Section -->
+        <div class="voucher-section">
+          <h3>
+            <span class="material-symbols-outlined">local_offer</span>
+            Mã giảm giá
+          </h3>
+          
+          <div class="voucher-input">
+            <input 
+              type="text" 
+              placeholder="Nhập mã voucher" 
+              [(ngModel)]="voucherCode"
+              [disabled]="!!selectedVoucher"
+            />
+            <button 
+              *ngIf="!selectedVoucher" 
+              class="apply-button" 
+              (click)="applyVoucher()"
+            >
+              Áp dụng
+            </button>
+            <button 
+              *ngIf="selectedVoucher" 
+              class="remove-voucher-button" 
+              (click)="removeVoucher()"
+            >
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          <div *ngIf="selectedVoucher" class="applied-voucher">
+            <span class="material-symbols-outlined">check_circle</span>
+            <div>
+              <strong>{{ selectedVoucher.code }}</strong>
+              <p>{{ selectedVoucher.title }}</p>
+            </div>
+            <span class="discount-amount">-{{ formatPrice(discount) }}</span>
+          </div>
+
+          <div class="available-vouchers">
+            <h4>Voucher khả dụng</h4>
+            <div class="voucher-list">
+              <article 
+                *ngFor="let voucher of availableVouchers" 
+                class="voucher-card"
+                [class.disabled]="subtotal < voucher.minOrderAmount"
+              >
+                <div class="voucher-icon">
+                  <span class="material-symbols-outlined">confirmation_number</span>
+                </div>
+                <div class="voucher-info">
+                  <strong>{{ voucher.code }}</strong>
+                  <p>{{ voucher.title }}</p>
+                  <small *ngIf="subtotal < voucher.minOrderAmount">
+                    Đơn tối thiểu {{ formatPrice(voucher.minOrderAmount) }}
+                  </small>
+                </div>
+                <button 
+                  class="apply-voucher-button"
+                  [disabled]="subtotal < voucher.minOrderAmount || selectedVoucher?.id === voucher.id"
+                  (click)="applyVoucher(voucher)"
+                >
+                  {{ selectedVoucher?.id === voucher.id ? 'Đã áp dụng' : 'Áp dụng' }}
+                </button>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Summary -->
+      <aside class="order-summary">
+        <h3>Tóm tắt đơn hàng</h3>
+        
+        <div class="summary-details">
+          <div class="summary-row">
+            <span>Tạm tính</span>
+            <span>{{ formatPrice(subtotal) }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Phí giao hàng</span>
+            <span>{{ formatPrice(shippingFee) }}</span>
+          </div>
+          <div *ngIf="discount > 0" class="summary-row discount">
+            <span>Giảm giá</span>
+            <span>-{{ formatPrice(discount) }}</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-row total">
+            <strong>Tổng cộng</strong>
+            <strong>{{ formatPrice(total) }}</strong>
+          </div>
+        </div>
+
+        <button class="checkout-button" (click)="proceedToCheckout()">
+          Tiến hành thanh toán
+        </button>
+
+        <div class="payment-methods">
+          <p>Phương thức thanh toán</p>
+          <div class="payment-icons">
+            <span class="payment-icon">💳</span>
+            <span class="payment-icon">📱</span>
+            <span class="payment-icon">💵</span>
+          </div>
+        </div>
+
+        <div class="security-note">
+          <span class="material-symbols-outlined">lock</span>
+          <p>Thanh toán an toàn và bảo mật</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
