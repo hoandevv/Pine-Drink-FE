@@ -18,6 +18,7 @@ export class VerifyOtpPageComponent implements OnInit {
 
   submitting = false;
   resending = false;
+  emailLocked = false;
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -28,9 +29,16 @@ export class VerifyOtpPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const email = this.route.snapshot.queryParamMap.get('email');
+    const email = this.route.snapshot.queryParamMap.get('email') || sessionStorage.getItem('pendingRegisterEmail');
+
     if (email) {
       this.otpForm.patchValue({ email });
+      this.emailLocked = true;
+      this.otpForm.controls.email.disable();
+    }
+
+    if (this.route.snapshot.queryParamMap.get('resend') === 'true') {
+      this.resendOtp();
     }
   }
 
@@ -44,6 +52,7 @@ export class VerifyOtpPageComponent implements OnInit {
 
     this.authService.verifyRegistrationOtp(this.otpForm.getRawValue()).subscribe({
       next: () => {
+        sessionStorage.removeItem('pendingRegisterEmail');
         this.toastService.success('Kích hoạt tài khoản thành công. Bạn có thể đăng nhập ngay.');
         this.router.navigate(['/auth/login']);
       },
@@ -57,7 +66,7 @@ export class VerifyOtpPageComponent implements OnInit {
   }
 
   resendOtp(): void {
-    const email = this.otpForm.controls.email.value;
+    const email = this.otpForm.getRawValue().email.trim().toLowerCase();
     if (this.otpForm.controls.email.invalid) {
       this.otpForm.controls.email.markAsTouched();
       return;
@@ -65,7 +74,10 @@ export class VerifyOtpPageComponent implements OnInit {
 
     this.resending = true;
     this.authService.resendRegistrationOtp({ email }).subscribe({
-      next: () => this.toastService.success('OTP mới đã được gửi tới email của bạn.'),
+      next: () => {
+        sessionStorage.setItem('pendingRegisterEmail', email);
+        this.toastService.success('OTP mới đã được gửi tới email của bạn.');
+      },
       error: () => {
         this.resending = false;
       },

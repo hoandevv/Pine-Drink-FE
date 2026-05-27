@@ -1,295 +1,71 @@
-<!-- SideNavBar -->
-<aside class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 z-50 bg-surface-container-lowest border-r border-outline-variant/30 py-xl px-md space-y-base shadow-md">
-<div class="px-md mb-xl">
-<h1 class="font-headline-md text-headline-md font-extrabold text-primary">Pine Drink</h1>
-<p class="text-secondary font-label-sm">Admin Console</p>
+<div class="admin-shell" [class.sidebar-open]="sidebarOpen">
+  <aside class="admin-sidebar">
+    <div class="brand-card">
+      <a routerLink="/admin/dashboard" class="brand-logo" aria-label="Pine Drink Admin">
+        <span class="brand-logo__mark">🍍</span>
+        <span>
+          <strong>Pine Drink</strong>
+          <small>Admin Console</small>
+        </span>
+      </a>
+    </div>
+
+    <nav class="module-nav" aria-label="Admin modules">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.route"
+        class="module-link"
+        [class.is-active]="isActive(item.route)"
+      >
+        <span class="material-symbols-outlined module-link__icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+        <em *ngIf="item.badge">{{ item.badge }}</em>
+      </a>
+    </nav>
+
+    <div class="sidebar-card">
+      <span class="material-symbols-outlined">tips_and_updates</span>
+      <strong>Mock UI mode</strong>
+      <p>Dữ liệu đang mô phỏng để trực quan trước khi nối API backend.</p>
+    </div>
+
+    <button type="button" class="logout-button" (click)="logout()">
+      <span class="material-symbols-outlined">logout</span>
+      Đăng xuất
+    </button>
+  </aside>
+
+  <button type="button" class="sidebar-backdrop" aria-label="Đóng menu" (click)="toggleSidebar()"></button>
+
+  <main class="admin-main">
+    <header class="admin-topbar">
+      <div class="topbar-left">
+        <button type="button" class="menu-button" aria-label="Mở menu" (click)="toggleSidebar()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="search-box">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text" placeholder="Tìm đơn hàng, sản phẩm, khách hàng..." />
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <span class="live-chip"><i></i> Live</span>
+        <button type="button" class="icon-button" aria-label="Thông báo">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <div class="user-card">
+          <div>
+            <strong>{{ currentUser?.fullName || currentUser?.username || 'Admin Pine' }}</strong>
+            <small>{{ currentUser?.email || 'admin@pinedrink.vn' }}</small>
+          </div>
+          <span class="avatar">{{ (currentUser?.fullName || currentUser?.username || 'A').charAt(0) }}</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="admin-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
 </div>
-<nav class="flex-1 space-y-xs">
-<a class="flex items-center gap-md px-md py-sm bg-secondary-container text-on-secondary-container rounded-lg font-bold hover:scale-[1.02] active:scale-100 transition-transform" href="#">
-<span class="material-symbols-outlined">dashboard</span>
-<span class="font-label-lg text-label-lg">Dashboard</span>
-</a>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg hover:scale-[1.02] active:scale-100 transition-transform" href="#">
-<span class="material-symbols-outlined">receipt_long</span>
-<span class="font-label-lg text-label-lg">Orders</span>
-</a>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg hover:scale-[1.02] active:scale-100 transition-transform" href="#">
-<span class="material-symbols-outlined">inventory_2</span>
-<span class="font-label-lg text-label-lg">Inventory</span>
-</a>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg hover:scale-[1.02] active:scale-100 transition-transform" href="#">
-<span class="material-symbols-outlined">group</span>
-<span class="font-label-lg text-label-lg">Customers</span>
-</a>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg hover:scale-[1.02] active:scale-100 transition-transform" href="#">
-<span class="material-symbols-outlined">monitoring</span>
-<span class="font-label-lg text-label-lg">Analytics</span>
-</a>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg hover:scale-[1.02] active:scale-100 transition-transform" href="#">
-<span class="material-symbols-outlined">settings</span>
-<span class="font-label-lg text-label-lg">Settings</span>
-</a>
-</nav>
-<div class="pt-xl border-t border-outline-variant/20 space-y-xs">
-<button class="w-full flex items-center justify-center gap-sm bg-primary text-on-primary py-sm rounded-xl font-bold shadow-sm hover:opacity-90 transition-opacity">
-<span class="material-symbols-outlined">add</span>
-                New Delivery
-            </button>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg" href="#">
-<span class="material-symbols-outlined">contact_support</span>
-<span class="font-label-lg text-label-lg">Support</span>
-</a>
-<a class="flex items-center gap-md px-md py-sm text-secondary hover:bg-surface-container-high rounded-lg" href="#">
-<span class="material-symbols-outlined">logout</span>
-<span class="font-label-lg text-label-lg">Logout</span>
-</a>
-</div>
-</aside>
-<!-- Main Content Area -->
-<main class="md:ml-64 min-h-screen flex flex-col">
-<!-- TopNavBar -->
-<header class="flex justify-between items-center px-lg py-md w-full sticky top-0 z-40 shadow-sm bg-surface-container-lowest transition-transform">
-<div class="flex items-center gap-lg flex-1">
-<div class="relative w-full max-w-md">
-<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">search</span>
-<input class="w-full pl-xl pr-md py-sm bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary text-body-md font-body-md" placeholder="Search orders, customers..." type="text"/>
-</div>
-</div>
-<div class="flex items-center gap-md">
-<div class="flex items-center gap-sm bg-secondary-container px-sm py-xs rounded-full">
-<div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-<span class="text-label-sm font-label-sm text-primary uppercase tracking-widest">Live</span>
-</div>
-<button class="p-sm text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined">notifications</span></button>
-<button class="p-sm text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined">help</span></button>
-<div class="flex items-center gap-sm border-l border-outline-variant/30 pl-md ml-xs">
-<div class="text-right hidden sm:block">
-<p class="text-label-lg font-bold text-on-surface">Admin Profile</p>
-<p class="text-label-sm text-secondary">Super Admin</p>
-</div>
-<img alt="Admin Profile" class="w-10 h-10 rounded-full border-2 border-primary/20 object-cover" data-alt="A professional headshot of a modern creative professional with a friendly expression. The lighting is soft and natural, emphasizing a bright and clean corporate aesthetic. The background is a blurred, high-end minimalist office space with warm wooden tones and white surfaces, creating a premium and tech-forward atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCg_yuwDG7DLi5Gv1c_AEtlA83Km-Flc6jRfAcdfPR6-r54Y0477EhF7TPXpIqEMNVhlxw6uplcnUssoRzPSLqIKDyGQBnksCJBEf2OK3t96R_lJyX8Wavwzzrh0CF-11aKd8OV3oYap9fvek0Dlh8c7ufYW6BmR4Z2LUv27dwt9tL1iOiF6WUVfZXoPF1DccZQu6ejvtALpo9WfTixmsLyTpDPJIBOXMpmOXvAge-LYhIQtyNON_y0_0cec0I6rmTlRkc7RRQg-w"/>
-</div>
-</div>
-</header>
-<router-outlet></router-outlet>
-<!-- Dashboard Body -->
-<section class="p-lg md:p-xl space-y-lg flex-1">
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
-<div>
-<h2 class="font-headline-lg text-headline-lg text-on-surface">Executive Overview</h2>
-<p class="text-body-lg text-secondary">Real-time performance tracking for Pine Drink F&amp;B Network.</p>
-</div>
-<div class="flex gap-sm">
-<button class="px-md py-sm bg-surface-container-lowest border border-outline-variant rounded-lg font-label-lg text-secondary flex items-center gap-xs hover:bg-surface-container-high transition-colors">
-<span class="material-symbols-outlined">calendar_today</span>
-                        This Week
-                    </button>
-<button class="px-md py-sm bg-primary text-on-primary rounded-lg font-label-lg flex items-center gap-xs shadow-sm hover:opacity-90 transition-opacity">
-<span class="material-symbols-outlined">download</span>
-                        Export PDF
-                    </button>
-</div>
-</div>
-<!-- Stats Grid -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
-<!-- Card 1 -->
-<div class="glass-card p-lg rounded-xl shadow-sm hover:scale-[1.02] transition-transform cursor-default">
-<div class="flex justify-between items-start mb-md">
-<div class="p-sm bg-primary/10 text-primary rounded-lg">
-<span class="material-symbols-outlined">payments</span>
-</div>
-<span class="text-label-sm font-bold text-primary bg-primary-fixed px-sm py-xs rounded-full">+12.5%</span>
-</div>
-<p class="text-secondary font-label-lg">Today Revenue</p>
-<h3 class="text-headline-md font-extrabold text-on-surface">$12,450.80</h3>
-</div>
-<!-- Card 2 -->
-<div class="glass-card p-lg rounded-xl shadow-sm hover:scale-[1.02] transition-transform cursor-default">
-<div class="flex justify-between items-start mb-md">
-<div class="p-sm bg-secondary-container text-secondary rounded-lg">
-<span class="material-symbols-outlined">shopping_bag</span>
-</div>
-<span class="text-label-sm font-bold text-secondary bg-surface-container-highest px-sm py-xs rounded-full">+8%</span>
-</div>
-<p class="text-secondary font-label-lg">Orders</p>
-<h3 class="text-headline-md font-extrabold text-on-surface">342</h3>
-</div>
-<!-- Card 3 -->
-<div class="glass-card p-lg rounded-xl shadow-sm hover:scale-[1.02] transition-transform cursor-default">
-<div class="flex justify-between items-start mb-md">
-<div class="p-sm bg-error-container text-error rounded-lg">
-<span class="material-symbols-outlined">schedule</span>
-</div>
-<span class="text-label-sm font-bold text-error bg-error-container/50 px-sm py-xs rounded-full">High</span>
-</div>
-<p class="text-secondary font-label-lg">Pending</p>
-<h3 class="text-headline-md font-extrabold text-on-surface">18</h3>
-</div>
-<!-- Card 4 -->
-<div class="glass-card p-lg rounded-xl shadow-sm hover:scale-[1.02] transition-transform cursor-default">
-<div class="flex justify-between items-start mb-md">
-<div class="p-sm bg-surface-container-highest text-on-surface rounded-lg">
-<span class="material-symbols-outlined">task_alt</span>
-</div>
-<span class="text-label-sm font-bold text-on-surface bg-surface-container px-sm py-xs rounded-full">Steady</span>
-</div>
-<p class="text-secondary font-label-lg">Completed</p>
-<h3 class="text-headline-md font-extrabold text-on-surface">312</h3>
-</div>
-</div>
-<!-- Bento Layout Content -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-<!-- Revenue Chart Visual -->
-<div class="lg:col-span-2 glass-card p-lg rounded-xl shadow-sm space-y-md">
-<div class="flex justify-between items-center">
-<h4 class="text-title-lg font-bold text-on-surface">Revenue Forecast</h4>
-<select class="bg-transparent border-none text-label-lg font-bold text-secondary focus:ring-0 cursor-pointer">
-<option>Last 30 Days</option>
-<option>Last 6 Months</option>
-</select>
-</div>
-<!-- Placeholder for Chart -->
-<div class="h-[300px] w-full bg-surface-container-low rounded-lg relative overflow-hidden flex items-end px-md pb-md gap-sm">
-<!-- Simplified Visual Bars -->
-<div class="flex-1 bg-primary/20 h-[40%] rounded-t-sm transition-all hover:bg-primary/40"></div>
-<div class="flex-1 bg-primary/30 h-[60%] rounded-t-sm transition-all hover:bg-primary/40"></div>
-<div class="flex-1 bg-primary/20 h-[45%] rounded-t-sm transition-all hover:bg-primary/40"></div>
-<div class="flex-1 bg-primary/40 h-[80%] rounded-t-sm transition-all hover:bg-primary/60"></div>
-<div class="flex-1 bg-primary/25 h-[55%] rounded-t-sm transition-all hover:bg-primary/40"></div>
-<div class="flex-1 bg-primary/60 h-[95%] rounded-t-sm transition-all hover:bg-primary/80"></div>
-<div class="flex-1 bg-primary/35 h-[65%] rounded-t-sm transition-all hover:bg-primary/50"></div>
-<div class="flex-1 bg-primary/20 h-[30%] rounded-t-sm transition-all hover:bg-primary/40"></div>
-<div class="flex-1 bg-primary h-[100%] rounded-t-sm transition-all hover:opacity-80"></div>
-<!-- Grid lines -->
-<div class="absolute inset-0 flex flex-col justify-between p-md opacity-10 pointer-events-none">
-<div class="border-t border-on-surface w-full"></div>
-<div class="border-t border-on-surface w-full"></div>
-<div class="border-t border-on-surface w-full"></div>
-<div class="border-t border-on-surface w-full"></div>
-</div>
-</div>
-</div>
-<!-- Best Sellers / Mini List -->
-<div class="glass-card p-lg rounded-xl shadow-sm space-y-md">
-<h4 class="text-title-lg font-bold text-on-surface">Top Products</h4>
-<div class="space-y-md">
-<div class="flex items-center gap-md p-sm hover:bg-surface-container rounded-lg transition-colors group">
-<div class="w-12 h-12 bg-primary/10 rounded-lg overflow-hidden">
-<img alt="Classic Milk Tea" class="w-full h-full object-cover" data-alt="A close-up of a high-end artisanal milk tea in a sleek, minimalist cup with condensation. The lighting is bright and high-key, highlighting the creamy texture and rich color of the tea. The background is a clean white aesthetic with subtle red floral accents, matching the Pine Drink brand identity. The shot is crisp, modern, and appetizing." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRsWDxq5fz2rERD4a9ai-NFsmOGX8O7lvUqFs2vux2LO0HJQCl_2N5Z5SU0HFIHT-w7hzPjH5IZ_yL90dbAvYhjq1gGndtnOnVMVUZOINEyEd7Kwc8f8vWwXxiguUwzg7R6hU0i4J3Zyctdjb6FEXeueLnUjYUJi7fc-7PwXqkPxyLrGwcRlkZRt90aK-5pRvRV29M0FWi6rxdFg_Deh4PeLM0o8GphRGyWvq97fOAy4MR0VEgGUmimqNGzvY31pZUxAJ_Q1chDQ"/>
-</div>
-<div class="flex-1">
-<p class="text-label-lg font-bold text-on-surface">Classic Milk Tea</p>
-<p class="text-label-sm text-secondary">892 orders this week</p>
-</div>
-<span class="text-primary font-bold">$5.50</span>
-</div>
-<div class="flex items-center gap-md p-sm hover:bg-surface-container rounded-lg transition-colors">
-<div class="w-12 h-12 bg-primary/10 rounded-lg overflow-hidden">
-<img alt="Passion Fruit Tea" class="w-full h-full object-cover" data-alt="A vibrant passion fruit iced tea with fresh fruit slices and mint leaves. The drink is served in a tall premium glass with a minimal modern aesthetic. The lighting is bright and sunny, emphasizing the freshness and clarity of the tea. The overall mood is energetic and youthful, set against a pristine white background with bold red primary accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzaQIWjTxbojIvuPuIA_c-Q-q_QdEajfEQTw5Hq34vruUjWcVC4zRXpVKbFMFN1LArx_1jm2EThsIl347mV50VyGxciGj0dqrgZqTq1M-l940fYT8xooY6QcIm9Afl8uF5DbDACEzNH65YzBTAgOka9-QKFYLTjUH_8Sc9_Sh3yCtvxvh2XIGzC0roRIWZLxvqOVwlKORkKBUekp3HweNnu_hV50_btFkfu4Ir8uU2Q0htdvk8hU7-8UvRPay6vYq66Y2aW6rJkw"/>
-</div>
-<div class="flex-1">
-<p class="text-label-lg font-bold text-on-surface">Passion Fruit Punch</p>
-<p class="text-label-sm text-secondary">645 orders this week</p>
-</div>
-<span class="text-primary font-bold">$6.25</span>
-</div>
-<div class="flex items-center gap-md p-sm hover:bg-surface-container rounded-lg transition-colors">
-<div class="w-12 h-12 bg-primary/10 rounded-lg overflow-hidden">
-<img alt="Matcha Latte" class="w-full h-full object-cover" data-alt="A high-quality matcha latte with smooth, vibrant green foam and elegant latte art. The drink is in a modern ceramic cup with a minimalist design. The background is airy and bright, featuring soft morning light and a clean light-mode aesthetic. The composition is balanced and professional, focusing on artisanal quality and freshness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAexcayNXAJb__7IoyhVm7OGmiDqvyCNLRyuLUIs6sYWpR_qW-NkMT5-MHYut0y4Dn8riyWKmOkkvNo9XDRA3RErF0_voLyBKOFtE23Rv10_wz-6tqj40hI_-PCMBtcES-Vqn1rY3snRldQ8vm-nbfXuapTbqUiR8ZZAoTifgWZUY0ENe1n2ULMIiYUZnfaEB9pcNnEeU0kHp-rWVY3V4Vlv-OmIbXqYD04A86bAQCDwaKI5LO6-OOKYSQE4S0nySVSKaduozvvZA"/>
-</div>
-<div class="flex-1">
-<p class="text-label-lg font-bold text-on-surface">Ceremonial Matcha</p>
-<p class="text-label-sm text-secondary">432 orders this week</p>
-</div>
-<span class="text-primary font-bold">$7.00</span>
-</div>
-</div>
-<button class="w-full py-sm text-label-lg font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors mt-base">View All Menu Items</button>
-</div>
-</div>
-<!-- Recent Orders Table -->
-<div class="glass-card rounded-xl shadow-sm overflow-hidden border border-outline-variant/30">
-<div class="p-lg border-b border-outline-variant/20 flex justify-between items-center">
-<h4 class="text-title-lg font-bold text-on-surface">Recent Orders</h4>
-<button class="text-primary font-label-lg hover:underline">View All Orders</button>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left">
-<thead class="bg-surface-container-low text-secondary font-label-sm uppercase tracking-wider">
-<tr>
-<th class="px-lg py-md">Order ID</th>
-<th class="px-lg py-md">Customer</th>
-<th class="px-lg py-md">Branch</th>
-<th class="px-lg py-md">Total</th>
-<th class="px-lg py-md">Status</th>
-<th class="px-lg py-md">Action</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-outline-variant/10">
-<!-- Order 1 -->
-<tr class="hover:bg-surface-container-low transition-colors group">
-<td class="px-lg py-md font-bold text-on-surface">#PD-9482</td>
-<td class="px-lg py-md text-on-surface font-medium">Jonathan Wick</td>
-<td class="px-lg py-md text-secondary">Downtown Central</td>
-<td class="px-lg py-md font-bold text-on-surface">$42.50</td>
-<td class="px-lg py-md">
-<span class="bg-error text-on-error px-md py-xs rounded-full text-label-sm font-bold uppercase tracking-tighter">Ready</span>
-</td>
-<td class="px-lg py-md">
-<button class="p-xs text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
-</td>
-</tr>
-<!-- Order 2 -->
-<tr class="hover:bg-surface-container-low transition-colors">
-<td class="px-lg py-md font-bold text-on-surface">#PD-9481</td>
-<td class="px-lg py-md text-on-surface font-medium">Sarah Connor</td>
-<td class="px-lg py-md text-secondary">Westside Plaza</td>
-<td class="px-lg py-md font-bold text-on-surface">$18.20</td>
-<td class="px-lg py-md">
-<span class="bg-orange-100 text-orange-700 px-md py-xs rounded-full text-label-sm font-bold uppercase tracking-tighter">Preparing</span>
-</td>
-<td class="px-lg py-md">
-<button class="p-xs text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
-</td>
-</tr>
-<!-- Order 3 -->
-<tr class="hover:bg-surface-container-low transition-colors">
-<td class="px-lg py-md font-bold text-on-surface">#PD-9480</td>
-<td class="px-lg py-md text-on-surface font-medium">Michael Scott</td>
-<td class="px-lg py-md text-secondary">East Hub</td>
-<td class="px-lg py-md font-bold text-on-surface">$56.00</td>
-<td class="px-lg py-md">
-<span class="bg-surface-container-highest text-secondary px-md py-xs rounded-full text-label-sm font-bold uppercase tracking-tighter">Pending</span>
-</td>
-<td class="px-lg py-md">
-<button class="p-xs text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
-</td>
-</tr>
-<!-- Order 4 -->
-<tr class="hover:bg-surface-container-low transition-colors">
-<td class="px-lg py-md font-bold text-on-surface">#PD-9479</td>
-<td class="px-lg py-md text-on-surface font-medium">Ellie Williams</td>
-<td class="px-lg py-md text-secondary">Downtown Central</td>
-<td class="px-lg py-md font-bold text-on-surface">$12.50</td>
-<td class="px-lg py-md">
-<span class="bg-emerald-100 text-emerald-700 px-md py-xs rounded-full text-label-sm font-bold uppercase tracking-tighter">Completed</span>
-</td>
-<td class="px-lg py-md">
-<button class="p-xs text-secondary hover:text-primary transition-colors"><span class="material-symbols-outlined">more_horiz</span></button>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</section>
-<!-- Footer -->
-<footer class="flex justify-between items-center px-xl py-lg mt-auto bg-surface-container-low border-t border-outline-variant/20">
-<p class="text-label-sm font-label-sm text-secondary">© 2024 Pine Drink F&amp;B. Powered by Pine Tech.</p>
-<div class="flex gap-lg">
-<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
-<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
-<a class="text-label-sm font-label-sm text-on-surface-variant hover:text-primary transition-colors" href="#">API Status</a>
-</div>
-</footer>
-</main>

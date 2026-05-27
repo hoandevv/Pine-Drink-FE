@@ -1,1 +1,347 @@
-/* Admin Layout SCSS intentionally empty since we use Tailwind CSS inside the HTML now */
+:host {
+  display: block;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(255, 214, 79, 0.16), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(34, 197, 94, 0.12), transparent 30%),
+    linear-gradient(135deg, #f8f1d7 0%, #fffaf0 42%, #edf9ec 100%);
+}
+
+.admin-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 292px minmax(0, 1fr);
+}
+
+.admin-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 22px;
+  color: #fffdf4;
+  background:
+    radial-gradient(circle at 24% 8%, rgba(255, 214, 79, 0.24), transparent 28%),
+    linear-gradient(180deg, #082315 0%, #0f4a2a 62%, #103820 100%);
+  box-shadow: 24px 0 70px rgba(15, 47, 28, 0.16);
+  z-index: 30;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-logo__mark {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ffe66d, #f59e0b);
+  box-shadow: 0 20px 40px rgba(245, 158, 11, 0.25);
+  font-size: 26px;
+}
+
+.brand-logo strong,
+.brand-logo small {
+  display: block;
+}
+
+.brand-logo strong {
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.brand-logo small {
+  margin-top: 5px;
+  color: rgba(255, 253, 244, 0.62);
+  font-weight: 700;
+}
+
+.module-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.module-link {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: 17px;
+  color: rgba(255, 253, 244, 0.72);
+  text-decoration: none;
+  font-weight: 850;
+  transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.module-link:hover,
+.module-link.is-active {
+  color: #102018;
+  background: linear-gradient(135deg, #ffe66d 0%, #ffd64f 42%, #8ee6a8 100%);
+  transform: translateX(4px);
+  box-shadow: 0 16px 34px rgba(245, 158, 11, 0.2);
+}
+
+.module-link__icon {
+  font-size: 22px;
+}
+
+.module-link em {
+  min-width: 26px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  margin-left: auto;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.sidebar-card {
+  margin-top: auto;
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.sidebar-card .material-symbols-outlined {
+  color: #ffe66d;
+}
+
+.sidebar-card strong,
+.sidebar-card p {
+  display: block;
+  margin: 8px 0 0;
+}
+
+.sidebar-card p {
+  color: rgba(255, 253, 244, 0.62);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.logout-button {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 16px;
+  color: #fffdf4;
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.admin-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 28px;
+  background: rgba(255, 250, 240, 0.72);
+  border-bottom: 1px solid rgba(15, 74, 42, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.topbar-left,
+.topbar-actions,
+.search-box,
+.user-card,
+.live-chip {
+  display: flex;
+  align-items: center;
+}
+
+.topbar-left {
+  flex: 1;
+  gap: 14px;
+  min-width: 0;
+}
+
+.search-box {
+  width: min(100%, 560px);
+  gap: 10px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: rgba(255, 253, 244, 0.86);
+  border: 1px solid rgba(15, 74, 42, 0.11);
+  box-shadow: 0 14px 34px rgba(15, 47, 28, 0.06);
+}
+
+.search-box input {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #102018;
+}
+
+.topbar-actions {
+  gap: 12px;
+}
+
+.live-chip {
+  gap: 8px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  color: #0f7a3b;
+  background: rgba(34, 197, 94, 0.12);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.live-chip i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.12);
+}
+
+.icon-button,
+.menu-button {
+  width: 44px;
+  height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 15px;
+  color: #496b43;
+  background: rgba(255, 253, 244, 0.78);
+  cursor: pointer;
+}
+
+.menu-button {
+  display: none;
+}
+
+.user-card {
+  gap: 12px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(15, 74, 42, 0.1);
+}
+
+.user-card strong,
+.user-card small {
+  display: block;
+  text-align: right;
+}
+
+.user-card strong {
+  color: #102018;
+}
+
+.user-card small {
+  color: #66756a;
+  font-size: 12px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: #102018;
+  background: linear-gradient(145deg, #ffe66d, #8ee6a8);
+  font-weight: 950;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 28px;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 1040px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    left: 0;
+    transform: translateX(-104%);
+    width: min(86vw, 292px);
+    transition: transform 0.24s ease;
+  }
+
+  .admin-shell.sidebar-open .admin-sidebar {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: rgba(8, 35, 21, 0.34);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 25;
+    transition: opacity 0.2s ease;
+  }
+
+  .admin-shell.sidebar-open .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .menu-button {
+    display: inline-grid;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-topbar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 14px 16px;
+  }
+
+  .topbar-actions {
+    justify-content: space-between;
+  }
+
+  .user-card div,
+  .live-chip {
+    display: none;
+  }
+
+  .admin-content {
+    padding: 18px 14px;
+  }
+}

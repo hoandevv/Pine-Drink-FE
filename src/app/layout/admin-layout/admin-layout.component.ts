@@ -9,6 +9,7 @@ interface NavItem {
   label: string;
   icon: string;
   route: string;
+  badge?: string;
 }
 
 @Component({
@@ -18,15 +19,15 @@ interface NavItem {
 })
 export class AdminLayoutComponent {
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'DB', route: '/dashboard' },
-    { label: 'Products', icon: 'PR', route: '/products' },
-    { label: 'Categories', icon: 'CA', route: '/categories' },
-    { label: 'Toppings', icon: 'TP', route: '/toppings' },
-    { label: 'Orders', icon: 'OD', route: '/orders' },
-    { label: 'Customers', icon: 'CU', route: '/customers' },
-    { label: 'Accounts', icon: 'AC', route: '/accounts' },
-    { label: 'Vouchers', icon: 'VC', route: '/vouchers' },
-    { label: 'Reports', icon: 'RP', route: '/reports' }
+    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
+    { label: 'Products', icon: 'local_cafe', route: '/admin/products' },
+    { label: 'Categories', icon: 'category', route: '/admin/categories' },
+    { label: 'Toppings', icon: 'icecream', route: '/admin/toppings' },
+    { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', badge: '18' },
+    { label: 'Customers', icon: 'groups', route: '/admin/customers' },
+    { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts' },
+    { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers' },
+    { label: 'Reports', icon: 'monitoring', route: '/admin/reports' }
   ];
 
   sidebarOpen = false;
@@ -48,6 +49,10 @@ export class AdminLayoutComponent {
 
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  isActive(route: string): boolean {
+    return this.router.url === route || this.router.url.startsWith(`${route}/`);
   }
 
   logout(): void {

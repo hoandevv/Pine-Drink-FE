@@ -1,16 +1,45 @@
-.filters {
-  padding: 1rem;
-  margin-bottom: 1rem;
+.product-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 22px 0;
+  padding: 26px;
+  border-radius: 30px;
+  color: #fffdf4;
+  background:
+    radial-gradient(circle at 88% 20%, rgba(255, 214, 79, 0.34), transparent 28%),
+    linear-gradient(135deg, #0f4a2a, #102018);
+  box-shadow: 0 24px 64px rgba(15, 47, 28, 0.18);
 }
 
-.filters-form {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr auto;
-  gap: 0.75rem;
-}
+.eyebrow { color: #ffe66d; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+.product-hero h2 { margin: 8px 0; font-size: clamp(26px, 4vw, 42px); letter-spacing: -.04em; }
+.product-hero p { max-width: 620px; margin: 0; color: rgba(255,253,244,.68); }
+.hero-stats { display: flex; gap: 12px; align-items: end; }
+.hero-stats span { min-width: 120px; padding: 14px; border-radius: 20px; background: rgba(255,255,255,.1); }
+.hero-stats b { display: block; color: #ffe66d; font-size: 24px; }
 
-.filter-actions { display: flex; gap: 0.75rem; }
+.filters { margin-bottom: 20px; }
+.filters-form { display: grid; grid-template-columns: 1.5fr 1fr 1fr auto; gap: 12px; align-items: center; }
+.filters input, .filters select { min-height: 46px; border: 1px solid rgba(15,74,42,.12); border-radius: 16px; padding: 0 14px; background: rgba(255,253,244,.9); outline: none; }
+.filter-actions { display: flex; gap: 10px; }
 
-@media (max-width: 960px) {
-  .filters-form { grid-template-columns: 1fr; }
-}
+.product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+.product-card { overflow: hidden; border-radius: 30px; background: rgba(255,253,244,.92); border: 1px solid rgba(15,74,42,.1); box-shadow: 0 22px 54px rgba(15,47,28,.08); transition: transform .2s ease; }
+.product-card:hover { transform: translateY(-4px); }
+.drink-art { position: relative; height: 170px; display: grid; place-items: center; background: linear-gradient(145deg, rgba(255,214,79,.28), rgba(142,230,168,.3)); }
+.drink-art img { width: 100%; height: 100%; object-fit: cover; }
+.drink-art .material-symbols-outlined { font-size: 74px; color: #0f4a2a; }
+.drink-art em { position: absolute; top: 14px; right: 14px; padding: 8px 12px; border-radius: 999px; color: #0f4a2a; background: rgba(255,253,244,.86); font-size: 12px; font-style: normal; font-weight: 950; }
+.drink-art em.inactive { color: #991b1b; }
+.product-info { padding: 18px; }
+.product-info p { margin: 0 0 8px; color: #72806f; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+.product-info h3 { margin: 0 0 8px; color: #102018; font-size: 21px; }
+.product-info span { color: #66756a; line-height: 1.5; }
+.product-card footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 18px 18px; }
+.product-card strong { color: #0f4a2a; font-size: 18px; }
+.product-card footer div { display: flex; gap: 8px; }
+.product-card button { width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 14px; color: #102018; background: rgba(15,74,42,.07); cursor: pointer; }
+.product-card button:hover { background: linear-gradient(135deg,#ffe66d,#8ee6a8); }
+
+@media (max-width: 860px) { .product-hero { flex-direction: column; } .filters-form { grid-template-columns: 1fr; } .hero-stats { align-items: stretch; } }

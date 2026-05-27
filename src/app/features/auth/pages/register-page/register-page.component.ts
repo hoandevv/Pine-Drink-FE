@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 
 import { AuthService } from '../../../../core/services/auth.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { ApiError } from '../../../../shared/models/api-error.model';
 import { RegisterRequest } from '../../models/register.model';
 
 @Component({
@@ -54,17 +55,28 @@ export class RegisterPageComponent implements OnInit {
     }
 
     this.submitting = true;
-    const { confirmPassword: _confirmPassword, ...request } = this.registerForm.getRawValue();
+    const formValue = this.registerForm.getRawValue();
+    const request: RegisterRequest = {
+      username: formValue.username.trim(),
+      password: formValue.password,
+      fullName: formValue.fullName.trim(),
+      email: formValue.email.trim().toLowerCase(),
+      phone: formValue.phone?.trim() || null,
+      siteKey: formValue.siteKey
+    };
 
-    this.authService.register(request as RegisterRequest).subscribe({
+    this.authService.register(request).subscribe({
       next: (response) => {
         this.toastService.success('Tạo tài khoản thành công. Vui lòng nhập OTP để kích hoạt.');
-        this.router.navigate(['/auth/verify-otp'], {
-          queryParams: { email: response.email }
-        });
+        this.navigateToVerifyOtp(response.email);
       },
-      error: () => {
+      error: (error: ApiError) => {
         this.submitting = false;
+
+        if (error.errorCode === 'AUTH_014') {
+          this.toastService.warning('Email này đã đăng ký nhưng có thể chưa kích hoạt. Vui lòng xác thực OTP hoặc gửi lại mã.');
+          this.navigateToVerifyOtp(request.email, true);
+        }
       },
       complete: () => {
         this.submitting = false;
@@ -79,6 +91,13 @@ export class RegisterPageComponent implements OnInit {
     }
 
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  private navigateToVerifyOtp(email: string, resend = false): void {
+    sessionStorage.setItem('pendingRegisterEmail', email);
+    this.router.navigate(['/auth/verify-otp'], {
+      queryParams: { email, ...(resend ? { resend: true } : {}) }
+    });
   }
 
   private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {

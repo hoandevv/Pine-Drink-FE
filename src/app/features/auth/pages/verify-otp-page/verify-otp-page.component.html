@@ -9,8 +9,9 @@
       <label class="block font-label-lg text-on-surface" for="otp-email">Email</label>
       <div class="relative">
         <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">mail</span>
-        <input id="otp-email" type="email" formControlName="email" placeholder="hello@example.com" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+        <input id="otp-email" type="email" formControlName="email" placeholder="hello@example.com" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none disabled:opacity-75 disabled:cursor-not-allowed" />
       </div>
+      <p *ngIf="emailLocked" class="text-label-sm text-secondary mt-1">Email đã được lấy từ bước đăng ký. Quay lại đăng ký nếu bạn muốn dùng email khác.</p>
       <p *ngIf="otpForm.get('email')?.touched && otpForm.get('email')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập email hợp lệ.</p>
     </div>
 

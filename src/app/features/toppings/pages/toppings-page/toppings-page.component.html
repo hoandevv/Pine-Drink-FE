@@ -1,5 +1,20 @@
-<app-page-header title="Toppings" description="Quan ly topping va cau hinh gia tri gia tang cho mon."></app-page-header>
+<app-page-header title="Toppings" description="Quản lý topping, tồn kho, giá bán thêm và trạng thái phục vụ.">
+  <button type="button" class="btn btn-primary">+ Thêm topping</button>
+</app-page-header>
 
-<section class="card-surface placeholder-card">
-  <p>Module <strong>Toppings</strong> da san sang route, layout va khung UI de tiep tuc noi API that.</p>
+<section class="topping-board">
+  <article class="topping-card" *ngFor="let topping of toppings">
+    <div class="bubble"><span class="material-symbols-outlined">icecream</span></div>
+    <div>
+      <h3>{{ topping.name }}</h3>
+      <p>{{ topping.price }} / phần</p>
+    </div>
+    <div class="stock-meter">
+      <span [style.width.%]="topping.stock"></span>
+    </div>
+    <footer>
+      <strong>{{ topping.stock }} {{ topping.unit }}</strong>
+      <em [class.warning]="topping.status === 'Sắp hết'">{{ topping.status }}</em>
+    </footer>
+  </article>
 </section>
