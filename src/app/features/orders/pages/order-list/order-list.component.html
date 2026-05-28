@@ -1,48 +1,54 @@
-<app-page-header title="Orders" description="Skeleton base cho danh sach don hang, da noi san status filter va cap nhat trang thai."></app-page-header>
+<app-page-header title="Orders" description="Theo dõi đơn hàng realtime, payment status và chuyển trạng thái xử lý.">
+  <button type="button" class="btn btn-primary">+ Tạo đơn nhanh</button>
+</app-page-header>
+
+<section class="order-kanban">
+  <article *ngFor="let status of statusOptions" class="status-column">
+    <header>
+      <span>{{ status }}</span>
+      <b>{{ orders.length }}</b>
+    </header>
+    <div class="status-line"></div>
+  </article>
+</section>
 
 <section class="filters card-surface">
   <form [formGroup]="filterForm" (ngSubmit)="search()" class="filters-form">
     <select formControlName="status">
-      <option value="">Tat ca status</option>
+      <option value="">Tất cả status</option>
       <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
     </select>
     <button type="submit" class="btn btn-primary">Filter</button>
   </form>
 </section>
 
-<section class="card-surface order-table">
-  <div class="table-scroll" *ngIf="orders.length > 0; else ordersEmpty">
-    <table>
-      <thead>
-        <tr>
-          <th>Order Code</th>
-          <th>Customer</th>
-          <th>Total Amount</th>
-          <th>Status</th>
-          <th>Payment</th>
-          <th>Created At</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let order of orders">
-          <td>{{ order.orderCode }}</td>
-          <td><strong>{{ order.customerName || 'Walk-in' }}</strong><p>{{ order.customerPhone || '-' }}</p></td>
-          <td>{{ order.totalAmount | number }} VND</td>
-          <td>
-            <select [value]="order.status" (change)="onStatusChange(order, $event)">
-              <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-            </select>
-          </td>
-          <td>{{ order.paymentStatus || 'UNPAID' }}</td>
-          <td>{{ order.createdAt || '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+<section class="order-list" *ngIf="orders.length > 0; else ordersEmpty">
+  <article class="order-card" *ngFor="let order of orders">
+    <div class="order-code">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <div>
+        <h3>#{{ order.orderCode }}</h3>
+        <p>{{ order.createdAt || '-' }}</p>
+      </div>
+    </div>
 
-  <ng-template #ordersEmpty>
-    <app-empty-state title="Chua co orders" description="Khi backend tra danh sach don hang, man hinh nay se hien thi ngay."></app-empty-state>
-  </ng-template>
+    <div class="customer">
+      <strong>{{ order.customerName || 'Walk-in' }}</strong>
+      <span>{{ order.customerPhone || 'Không có số điện thoại' }}</span>
+    </div>
 
-  <app-pagination [page]="pageData.page" [size]="pageData.size" [totalPages]="pageData.totalPages" [totalElements]="pageData.totalElements" (pageChange)="onPageChange($event)"></app-pagination>
+    <strong class="amount">{{ order.totalAmount | number }} VND</strong>
+
+    <select [value]="order.status" (change)="onStatusChange(order, $event)" class="status-select">
+      <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
+    </select>
+
+    <em [class.paid]="order.paymentStatus === 'PAID'">{{ order.paymentStatus || 'UNPAID' }}</em>
+  </article>
 </section>
+
+<ng-template #ordersEmpty>
+  <app-empty-state title="Chưa có orders" description="Khi backend trả danh sách đơn hàng, màn hình này sẽ hiển thị ngay."></app-empty-state>
+</ng-template>
+
+<app-pagination [page]="pageData.page" [size]="pageData.size" [totalPages]="pageData.totalPages" [totalElements]="pageData.totalElements" (pageChange)="onPageChange($event)"></app-pagination>

@@ -1,0 +1,474 @@
+<div class="profile-page">
+  <!-- Error/Success Messages -->
+  <div *ngIf="errorMessage" class="fixed top-4 right-4 z-50 max-w-md p-4 bg-error/10 border border-error rounded-xl shadow-lg animate-slide-in">
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-error">error</span>
+      <p class="text-error text-body-sm font-medium flex-1">{{ errorMessage }}</p>
+      <button type="button" (click)="errorMessage = ''" class="text-error hover:text-error/80">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="fixed top-4 right-4 z-50 max-w-md p-4 bg-primary/10 border border-primary rounded-xl shadow-lg animate-slide-in">
+    <div class="flex items-start gap-3">
+      <span class="material-symbols-outlined text-primary">check_circle</span>
+      <p class="text-primary text-body-sm font-medium flex-1">{{ successMessage }}</p>
+      <button type="button" (click)="successMessage = ''" class="text-primary hover:text-primary/80">
+        <span class="material-symbols-outlined text-[20px]">close</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Profile Header -->
+  <div class="profile-header">
+    <div class="profile-header-content">
+      <div class="profile-avatar">
+        <div class="avatar-circle">
+          <img *ngIf="user.avatar" [src]="user.avatar" alt="Avatar" class="avatar-image" />
+          <span *ngIf="!user.avatar" class="material-symbols-outlined">account_circle</span>
+        </div>
+        <input 
+          type="file" 
+          id="avatarInput" 
+          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+          (change)="onAvatarFileSelected($event)" 
+          style="display: none;"
+        />
+        <button class="edit-avatar-btn" type="button" (click)="triggerAvatarUpload()" [disabled]="uploadingAvatar">
+          <span class="material-symbols-outlined">{{ uploadingAvatar ? 'hourglass_empty' : 'photo_camera' }}</span>
+        </button>
+      </div>
+      
+      <div class="profile-info">
+        <h1>{{ user.name }}</h1>
+        <p class="email">{{ user.email }}</p>
+        <div class="member-badge">
+          <span class="material-symbols-outlined">workspace_premium</span>
+          <span>{{ 'profile.memberSince' | translate }} {{ formatDate(user.memberSince) }}</span>
+        </div>
+      </div>
+
+      <div class="loyalty-card">
+        <div class="loyalty-icon">
+          <span class="material-symbols-outlined">stars</span>
+        </div>
+        <div class="loyalty-info">
+          <span class="points">{{ user.loyaltyPoints }}</span>
+          <span class="label">{{ 'profile.loyaltyPoints' | translate }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Navigation -->
+  <div class="profile-tabs">
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'info'"
+      (click)="setActiveTab('info')">
+      <span class="material-symbols-outlined">person</span>
+      <span>{{ 'profile.tabs.info' | translate }}</span>
+    </button>
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'orders'"
+      (click)="setActiveTab('orders')">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span>{{ 'profile.tabs.orders' | translate }}</span>
+    </button>
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'favorites'"
+      (click)="setActiveTab('favorites')">
+      <span class="material-symbols-outlined">favorite</span>
+      <span>{{ 'profile.tabs.favorites' | translate }}</span>
+    </button>
+    <button 
+      type="button"
+      class="tab-button" 
+      [class.active]="activeTab === 'settings'"
+      (click)="setActiveTab('settings')">
+      <span class="material-symbols-outlined">settings</span>
+      <span>{{ 'profile.tabs.settings' | translate }}</span>
+    </button>
+  </div>
+
+  <!-- Tab Content -->
+  <div class="profile-content">
+    <!-- Personal Info Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'info'">
+      <div class="info-section">
+        <div class="section-header">
+          <h2>{{ 'profile.personalInfo.title' | translate }}</h2>
+          <button type="button" class="edit-button" (click)="editProfile()">
+            <span class="material-symbols-outlined">edit</span>
+            <span>{{ 'profile.personalInfo.edit' | translate }}</span>
+          </button>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">person</span>
+            </div>
+            <div class="info-details">
+              <label>{{ 'profile.personalInfo.fullName' | translate }}</label>
+              <p>{{ user.name }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">mail</span>
+            </div>
+            <div class="info-details">
+              <label>{{ 'profile.personalInfo.email' | translate }}</label>
+              <p>{{ user.email }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">call</span>
+            </div>
+            <div class="info-details">
+              <label>{{ 'profile.personalInfo.phone' | translate }}</label>
+              <p>{{ user.phone }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">cake</span>
+            </div>
+            <div class="info-details">
+              <label>{{ 'profile.personalInfo.birthday' | translate }}</label>
+              <p>01/01/1990</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Section -->
+      <div class="info-section">
+        <div class="section-header">
+          <h2>{{ 'profile.address.title' | translate }}</h2>
+          <button type="button" class="add-button">
+            <span class="material-symbols-outlined">add</span>
+            <span>{{ 'profile.address.add' | translate }}</span>
+          </button>
+        </div>
+
+        <div class="address-list">
+          <div class="address-card">
+            <div class="address-badge">{{ 'profile.address.default' | translate }}</div>
+            <h3>{{ 'profile.address.home' | translate }}</h3>
+            <p>123 Xuân Thủy, Cầu Giấy, Hà Nội</p>
+            <div class="address-actions">
+              <button type="button">{{ 'profile.address.edit' | translate }}</button>
+              <button type="button">{{ 'profile.address.delete' | translate }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'orders'">
+      <div class="orders-section">
+        <div class="section-header">
+          <h2>{{ 'profile.orders.title' | translate }}</h2>
+          <div class="order-filter">
+            <button type="button" class="filter-btn active">{{ 'profile.orders.all' | translate }}</button>
+            <button type="button" class="filter-btn">{{ 'profile.orders.completed' | translate }}</button>
+            <button type="button" class="filter-btn">{{ 'profile.orders.processing' | translate }}</button>
+          </div>
+        </div>
+
+        <div class="orders-list">
+          <div class="order-card" *ngFor="let order of recentOrders">
+            <div class="order-header">
+              <div class="order-id">
+                <span class="material-symbols-outlined">receipt</span>
+                <strong>{{ order.id }}</strong>
+              </div>
+              <span class="order-status" [ngClass]="getStatusClass(order.status)">
+                {{ getStatusText(order.status) }}
+              </span>
+            </div>
+
+            <div class="order-body">
+              <div class="order-info">
+                <div class="order-detail">
+                  <span class="material-symbols-outlined">calendar_today</span>
+                  <span>{{ formatDate(order.date) }}</span>
+                </div>
+                <div class="order-detail">
+                  <span class="material-symbols-outlined">shopping_bag</span>
+                  <span>{{ order.items }} {{ 'profile.orders.items' | translate }}</span>
+                </div>
+              </div>
+              <div class="order-total">
+                <span class="label">{{ 'profile.orders.total' | translate }}:</span>
+                <strong>{{ formatPrice(order.total) }}</strong>
+              </div>
+            </div>
+
+            <div class="order-actions">
+              <button type="button" class="secondary-btn">{{ 'profile.orders.viewDetail' | translate }}</button>
+              <button type="button" class="primary-btn">{{ 'profile.orders.reorder' | translate }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favorites Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'favorites'">
+      <div class="favorites-section">
+        <div class="section-header">
+          <h2>{{ 'profile.favorites.title' | translate }}</h2>
+        </div>
+
+        <div class="empty-state">
+          <span class="material-symbols-outlined">favorite_border</span>
+          <h3>{{ 'profile.favorites.empty' | translate }}</h3>
+          <p>{{ 'profile.favorites.emptyDesc' | translate }}</p>
+          <button type="button" class="primary-button" routerLink="/menu">
+            {{ 'profile.favorites.exploreMenu' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" *ngIf="activeTab === 'settings'">
+      <div class="settings-section">
+        <div class="section-header">
+          <h2>{{ 'profile.settings.title' | translate }}</h2>
+        </div>
+
+        <div class="settings-list">
+          <div class="setting-item" (click)="changePassword()">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">lock</span>
+            </div>
+            <div class="setting-info">
+              <h3>{{ 'profile.settings.changePassword' | translate }}</h3>
+              <p>{{ 'profile.settings.changePasswordDesc' | translate }}</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">notifications</span>
+            </div>
+            <div class="setting-info">
+              <h3>{{ 'profile.settings.notifications' | translate }}</h3>
+              <p>{{ 'profile.settings.notificationsDesc' | translate }}</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item" (click)="openLanguageSelector()">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">language</span>
+            </div>
+            <div class="setting-info">
+              <h3>{{ 'profile.settings.language' | translate }}</h3>
+              <p>{{ getCurrentLanguageName() }}</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">help</span>
+            </div>
+            <div class="setting-info">
+              <h3>{{ 'profile.settings.help' | translate }}</h3>
+              <p>{{ 'profile.settings.helpDesc' | translate }}</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+
+          <div class="setting-item danger" (click)="logout()">
+            <div class="setting-icon">
+              <span class="material-symbols-outlined">logout</span>
+            </div>
+            <div class="setting-info">
+              <h3>{{ 'profile.settings.logout' | translate }}</h3>
+              <p>{{ 'profile.settings.logoutDesc' | translate }}</p>
+            </div>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language Selector Modal -->
+  <div class="language-modal" *ngIf="showLanguageSelector" (click)="closeLanguageSelector()">
+    <div class="language-modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ 'language.select' | translate }}</h3>
+        <button type="button" class="close-button" (click)="closeLanguageSelector()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="language-list">
+        <button
+          *ngFor="let lang of languageService.availableLanguages"
+          type="button"
+          class="language-option"
+          [class.active]="languageService.getCurrentLanguage() === lang.code"
+          (click)="selectLanguage(lang.code)"
+        >
+          <span class="language-flag">{{ lang.flag }}</span>
+          <span class="language-name">{{ lang.name }}</span>
+          <span class="check-icon material-symbols-outlined" *ngIf="languageService.getCurrentLanguage() === lang.code">
+            check_circle
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div *ngIf="showChangePasswordModal" class="language-modal" (click)="closeChangePasswordModal()">
+    <div class="language-modal-content" style="max-width: 500px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Đổi mật khẩu</h3>
+        <button type="button" class="close-button" (click)="closeChangePasswordModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div *ngIf="errorMessage" class="p-md bg-error/10 border border-error rounded-xl mb-md">
+        <p class="text-error text-body-sm font-medium">{{ errorMessage }}</p>
+      </div>
+
+      <div *ngIf="successMessage" class="p-md bg-primary/10 border border-primary rounded-xl mb-md">
+        <p class="text-primary text-body-sm font-medium">{{ successMessage }}</p>
+      </div>
+
+      <form [formGroup]="changePasswordForm" (ngSubmit)="submitPasswordChange()" class="space-y-md p-4">
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Mật khẩu hiện tại</label>
+          <input 
+            type="password" 
+            formControlName="currentPassword" 
+            placeholder="Nhập mật khẩu hiện tại" 
+            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+          <p *ngIf="changePasswordForm.get('currentPassword')?.touched && changePasswordForm.get('currentPassword')?.invalid" class="text-error text-label-sm">Vui lòng nhập mật khẩu hiện tại.</p>
+        </div>
+
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Mật khẩu mới</label>
+          <input 
+            type="password" 
+            formControlName="newPassword" 
+            placeholder="Tối thiểu 6 ký tự" 
+            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+          <p *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('minlength')" class="text-error text-label-sm">Mật khẩu phải có tối thiểu 6 ký tự.</p>
+        </div>
+
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Xác nhận mật khẩu mới</label>
+          <input 
+            type="password" 
+            formControlName="confirmPassword" 
+            placeholder="Nhập lại mật khẩu mới" 
+            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+          <p *ngIf="changePasswordForm.get('confirmPassword')?.touched && changePasswordForm.hasError('mismatch')" class="text-error text-label-sm">Mật khẩu xác nhận không khớp.</p>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button 
+            type="button" 
+            (click)="closeChangePasswordModal()" 
+            class="flex-1 py-sm border border-outline rounded-xl font-medium text-on-surface hover:bg-surface-container transition-all"
+          >
+            Hủy
+          </button>
+          <button 
+            type="submit" 
+            class="flex-1 py-sm bg-primary text-white rounded-xl font-medium hover:bg-primary-container hover:text-on-primary-container transition-all disabled:opacity-50"
+            [disabled]="changingPassword || changePasswordForm.invalid"
+          >
+            {{ changingPassword ? 'Đang xử lý...' : 'Đổi mật khẩu' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div *ngIf="showEditProfileModal" class="language-modal" (click)="closeEditProfileModal()">
+    <div class="language-modal-content" style="max-width: 500px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Chỉnh sửa thông tin</h3>
+        <button type="button" class="close-button" (click)="closeEditProfileModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div *ngIf="errorMessage" class="p-md bg-error/10 border border-error rounded-xl mb-md">
+        <p class="text-error text-body-sm font-medium">{{ errorMessage }}</p>
+      </div>
+
+      <div *ngIf="successMessage" class="p-md bg-primary/10 border border-primary rounded-xl mb-md">
+        <p class="text-primary text-body-sm font-medium">{{ successMessage }}</p>
+      </div>
+
+      <form [formGroup]="editProfileForm" (ngSubmit)="submitProfileUpdate()" class="space-y-md p-4">
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Họ và tên</label>
+          <input 
+            type="text" 
+            formControlName="fullName" 
+            placeholder="Nhập họ và tên" 
+            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+          <p *ngIf="editProfileForm.get('fullName')?.touched && editProfileForm.get('fullName')?.invalid" class="text-error text-label-sm">Vui lòng nhập họ và tên.</p>
+        </div>
+
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Số điện thoại</label>
+          <input 
+            type="tel" 
+            formControlName="phone" 
+            placeholder="Nhập số điện thoại (10 chữ số)" 
+            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+          <p *ngIf="editProfileForm.get('phone')?.touched && editProfileForm.get('phone')?.invalid" class="text-error text-label-sm">Vui lòng nhập số điện thoại hợp lệ (10 chữ số).</p>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button 
+            type="button" 
+            (click)="closeEditProfileModal()" 
+            class="flex-1 py-sm border border-outline rounded-xl font-medium text-on-surface hover:bg-surface-container transition-all"
+          >
+            Hủy
+          </button>
+          <button 
+            type="submit" 
+            class="flex-1 py-sm bg-primary text-white rounded-xl font-medium hover:bg-primary-container hover:text-on-primary-container transition-all disabled:opacity-50"
+            [disabled]="updatingProfile || editProfileForm.invalid"
+          >
+            {{ updatingProfile ? 'Đang lưu...' : 'Lưu thay đổi' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

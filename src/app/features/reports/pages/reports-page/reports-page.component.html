@@ -1,5 +1,21 @@
-<app-page-header title="Reports" description="Khung bao cao tong hop, san sang noi API doanh thu va ton kho."></app-page-header>
+<app-page-header title="Reports" description="Báo cáo doanh thu, hiệu suất đơn hàng và insight khách hàng.">
+  <button type="button" class="btn btn-primary">Tải báo cáo PDF</button>
+</app-page-header>
 
-<section class="card-surface placeholder-card">
-  <p>Module <strong>Reports</strong> da san sang route, layout va khung UI de tiep tuc noi API that.</p>
+<section class="report-kpis">
+  <article *ngFor="let kpi of kpis">
+    <p>{{ kpi.label }}</p>
+    <h3>{{ kpi.value }}</h3>
+    <strong>{{ kpi.trend }}</strong>
+  </article>
+</section>
+
+<section class="report-chart">
+  <header>
+    <h3>Doanh thu 12 tháng</h3>
+    <span>Mock analytics</span>
+  </header>
+  <div class="bars">
+    <i *ngFor="let bar of bars" [style.height.%]="bar"></i>
+  </div>
 </section>

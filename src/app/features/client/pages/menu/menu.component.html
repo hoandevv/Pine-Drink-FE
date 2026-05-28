@@ -1,0 +1,150 @@
+<div class="menu-page">
+  <!-- Info Bar -->
+  <div class="info-bar" *ngIf="selectedBranch">
+    <div class="branch-info">
+      <span class="material-symbols-outlined">location_on</span>
+      <strong>{{ selectedBranch.name }}</strong>
+      <small>{{ selectedBranch.distance }} - {{ selectedBranch.estimatedTime }}</small>
+    </div>
+    <button class="ghost-button" (click)="changeBranch()">{{ 'menu.changeBranch' | translate }}</button>
+  </div>
+
+  <!-- Search & Filter Bar -->
+  <div class="search-filter-bar">
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input 
+        type="text" 
+        [placeholder]="'menu.search' | translate" 
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+      />
+    </div>
+    <div class="sort-buttons">
+      <button 
+        type="button" 
+        [class.active]="sortBy === 'best-seller'"
+        (click)="selectSort('best-seller')"
+      >
+        {{ 'menu.bestSeller' | translate }}
+      </button>
+      <button 
+        type="button" 
+        [class.active]="sortBy === 'newest'"
+        (click)="selectSort('newest')"
+      >
+        {{ 'menu.newest' | translate }}
+      </button>
+      <button 
+        type="button" 
+        [class.active]="sortBy === 'price-low'"
+        (click)="selectSort('price-low')"
+      >
+        {{ 'menu.priceLow' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="category-tabs">
+    <button 
+      *ngFor="let category of categories" 
+      type="button"
+      [class.active]="selectedCategoryId === category.id"
+      (click)="selectCategory(category.id)"
+    >
+      <span class="material-symbols-outlined">{{ category.icon }}</span>
+      {{ category.name }}
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="menu-content">
+    <!-- Product Grid -->
+    <div class="product-grid-section">
+      <div class="product-grid">
+        <article *ngFor="let product of filteredProducts" class="product-card">
+          <div class="product-image" (click)="addToCart(product)" style="cursor: pointer;">
+            <img [src]="product.image" [alt]="product.name" />
+            <span *ngIf="product.badge" class="badge">{{ product.badge }}</span>
+          </div>
+          <div class="product-body">
+            <div class="product-meta">
+              <span>{{ product.categoryName }}</span>
+              <span class="rating">
+                <span class="material-symbols-outlined">star</span>
+                {{ product.rating }}
+              </span>
+            </div>
+            <h3 (click)="addToCart(product)" style="cursor: pointer;">{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <div class="product-footer">
+              <strong>{{ formatPrice(product.price) }}</strong>
+              <button type="button" class="add-button" (click)="addToCart(product)">
+                <span class="material-symbols-outlined">add</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredProducts.length === 0" class="empty-state">
+        <span class="material-symbols-outlined">search_off</span>
+        <h3>{{ 'menu.emptyTitle' | translate }}</h3>
+        <p>{{ 'menu.emptyDesc' | translate }}</p>
+      </div>
+    </div>
+
+    <!-- Sticky Cart Sidebar (Desktop) -->
+    <aside class="cart-sidebar" *ngIf="cartItems.length > 0">
+      <div class="cart-header">
+        <h3>{{ 'menu.cart.title' | translate }}</h3>
+        <span class="cart-count">{{ cartCount }} {{ 'menu.cart.items' | translate }}</span>
+      </div>
+      
+      <div class="cart-items">
+        <div *ngFor="let item of cartItems" class="cart-item">
+          <img [src]="item.productImage" [alt]="item.productName" />
+          <div class="cart-item-info">
+            <h4>{{ item.productName }}</h4>
+            <p>Size {{ item.size }} - Đá {{ item.iceLevel }}% - Đường {{ item.sugarLevel }}%</p>
+            <div class="cart-item-footer">
+              <span class="quantity">x{{ item.quantity }}</span>
+              <strong>{{ formatPrice(item.price * item.quantity) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>{{ 'menu.cart.subtotal' | translate }}</span>
+          <strong>{{ formatPrice(cartTotal) }}</strong>
+        </div>
+        <button class="primary-button full-width" (click)="viewCart()">
+          {{ 'menu.cart.viewCart' | translate }}
+        </button>
+      </div>
+
+      <div class="voucher-banner">
+        <span class="material-symbols-outlined">local_offer</span>
+        <div>
+          <strong>GIAM20K</strong>
+          <p>Giảm 20K cho đơn từ 100K</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Mobile Floating Cart -->
+  <button 
+    *ngIf="cartItems.length > 0" 
+    class="mobile-cart" 
+    type="button"
+    (click)="viewCart()"
+  >
+    <span class="material-symbols-outlined">shopping_basket</span>
+    {{ cartCount }} {{ 'menu.cart.items' | translate }} - {{ formatPrice(cartTotal) }}
+  </button>
+</div>

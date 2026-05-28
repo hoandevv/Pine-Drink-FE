@@ -24,18 +24,30 @@
       <div class="relative">
         <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">lock</span>
         <input 
-          type="password" 
+          [type]="showPassword ? 'text' : 'password'" 
           formControlName="password" 
           placeholder="Nhập mật khẩu" 
-          class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
+          class="w-full pl-12 pr-12 py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
         />
+        <button
+          type="button"
+          class="password-toggle absolute right-md top-1/2 -translate-y-1/2"
+          [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          [attr.title]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          (click)="togglePasswordVisibility()"
+        >
+          <span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+        </button>
       </div>
       <p *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="text-error text-label-sm mt-1">Trường này là bắt buộc.</p>
     </div>
 
     <div class="flex items-center justify-between pt-xs">
-      <label class="flex items-center gap-2 cursor-pointer group">
-        <input type="checkbox" class="w-4 h-4 text-primary bg-surface-container border-outline-variant rounded focus:ring-primary cursor-pointer">
+      <label class="remember-me flex items-center gap-3 cursor-pointer group">
+        <input id="login-remember-me" type="checkbox" class="remember-me__input peer" aria-label="Ghi nhớ tôi">
+        <span class="remember-me__box" aria-hidden="true">
+          <span class="material-symbols-outlined">check</span>
+        </span>
         <span class="text-label-lg text-secondary group-hover:text-on-surface transition-colors">Ghi nhớ tôi</span>
       </label>
       <a routerLink="/auth/forgot-password" class="text-label-lg text-primary font-bold hover:underline">Quên mật khẩu?</a>

@@ -49,53 +49,142 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   private handleError(error: ApiError): void {
+    const message = this.resolveMessage(error);
+
     switch (error.status) {
       case 0:
-        this.toastService.error('Khong the ket noi toi server. Vui long kiem tra backend.');
+        this.toastService.error(message);
         break;
       case 400:
-        this.toastService.warning(this.resolveValidationMessage(error));
+        this.toastService.warning(message);
         break;
       case 401:
-        this.tokenService.clearTokens();
-        this.loadingService.reset();
-        this.toastService.error('Phien dang nhap da het han. Vui long dang nhap lai.');
-        this.router.navigate(['/auth/login']);
+        this.handleUnauthorized(error, message);
         break;
       case 403:
-        this.toastService.error('Ban khong co quyen truy cap tai nguyen nay.');
+        this.toastService.error(message);
         break;
       case 404:
-        this.toastService.warning(error.message || 'Khong tim thay du lieu.');
+        this.toastService.warning(message);
         break;
       default:
-        this.toastService.error(error.message || 'He thong dang gap loi. Vui long thu lai sau.');
+        this.toastService.error(message);
         break;
     }
+  }
+
+  private handleUnauthorized(error: ApiError, message: string): void {
+    const isLoginError = error.errorCode === 'AUTH_001';
+
+    if (isLoginError) {
+      this.toastService.warning(message);
+      return;
+    }
+
+    this.tokenService.clearTokens();
+    this.loadingService.reset();
+    this.toastService.warning(message);
+    this.router.navigate(['/auth/login']);
+  }
+
+  private resolveMessage(error: ApiError): string {
+    if (error.status === 400 && error.fieldErrors && error.fieldErrors.length > 0) {
+      return this.resolveValidationMessage(error);
+    }
+
+    if (error.errorCode) {
+      return this.resolveErrorCodeMessage(error.errorCode, error.message);
+    }
+
+    return this.resolveFallbackMessage(error.status, error.message);
   }
 
   private resolveValidationMessage(error: ApiError): string {
     if (error.fieldErrors && error.fieldErrors.length > 0) {
-      return error.fieldErrors.map((fieldError) => `${fieldError.field}: ${fieldError.message}`).join(' | ');
+      return error.fieldErrors.map((fieldError) => `${this.resolveFieldName(fieldError.field)}: ${fieldError.message}`).join(' | ');
     }
 
-    return error.message || 'Du lieu gui len khong hop le.';
+    return error.message || 'Thông tin gửi lên chưa hợp lệ. Bạn kiểm tra lại nhé.';
   }
 
-  private resolveFallbackMessage(status: number): string {
+  private resolveErrorCodeMessage(errorCode: string, fallback?: string): string {
+    const messages: Record<string, string> = {
+      COM_001: 'Thông tin gửi lên chưa hợp lệ. Bạn kiểm tra lại các trường nhé.',
+      COM_002: 'Hệ thống đang bận một chút. Bạn thử lại sau nhé.',
+      COM_003: 'Dữ liệu gửi lên không đúng định dạng.',
+      COM_004: 'Tham số yêu cầu chưa hợp lệ.',
+      COM_005: 'Không tìm thấy dữ liệu phù hợp.',
+      AUTH_001: 'Tên đăng nhập/email hoặc mật khẩu chưa đúng.',
+      AUTH_002: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.',
+      AUTH_003: 'Thông tin xác thực không hợp lệ. Vui lòng đăng nhập lại.',
+      AUTH_004: 'Phiên đăng nhập không còn hiệu lực. Bạn đăng nhập lại nhé.',
+      AUTH_005: 'Tài khoản đang bị khóa. Vui lòng liên hệ quản trị viên.',
+      AUTH_006: 'Tài khoản chưa được kích hoạt. Vui lòng xác thực OTP trước khi đăng nhập.',
+      AUTH_007: 'Bạn chưa có quyền thực hiện thao tác này.',
+      AUTH_008: 'Bạn thao tác hơi nhanh. Vui lòng chờ một chút rồi thử lại.',
+      AUTH_009: 'Dịch vụ giới hạn truy cập đang tạm thời gián đoạn.',
+      AUTH_010: 'Mật khẩu chưa đủ mạnh.',
+      AUTH_011: 'Mã đặt lại mật khẩu đã hết hạn.',
+      AUTH_012: 'Không tìm thấy tài khoản tương ứng.',
+      AUTH_013: 'Tên đăng nhập này đã được sử dụng.',
+      AUTH_014: 'Email này đã được sử dụng.',
+      AUTH_015: 'Số điện thoại này đã được sử dụng.',
+      AUTH_016: 'Mã OTP chưa đúng. Bạn kiểm tra lại nhé.',
+      AUTH_017: 'Mã OTP đã hết hạn. Vui lòng gửi lại mã mới.',
+      AUTH_018: 'Tài khoản này đã được kích hoạt rồi.',
+      AUTH_019: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng gửi lại mã mới.',
+      AUTH_020: 'Vui lòng chờ 60 giây trước khi yêu cầu gửi lại OTP.',
+      AUTH_021: 'Tài khoản chưa được gán vào trung tâm hoạt động.',
+      AUTH_022: 'Kênh đăng ký không hợp lệ.',
+      AUTH_023: 'Kênh đăng ký này hiện chưa mở đăng ký công khai.',
+      AUTH_024: 'Tên miền trung tâm đã tồn tại.',
+      RATE_001: 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.',
+      ROLE_001: 'Không tìm thấy vai trò phù hợp.',
+      SCOPE_001: 'Không tìm thấy phạm vi quyền phù hợp.'
+    };
+
+    return messages[errorCode] || fallback || 'Có lỗi xảy ra. Bạn thử lại giúp mình nhé.';
+  }
+
+  private resolveFieldName(field: string): string {
+    const fields: Record<string, string> = {
+      username: 'Tên đăng nhập',
+      password: 'Mật khẩu',
+      confirmPassword: 'Xác nhận mật khẩu',
+      fullName: 'Họ và tên',
+      email: 'Email',
+      phone: 'Số điện thoại',
+      otp: 'OTP',
+      siteKey: 'Kênh đăng ký'
+    };
+
+    return fields[field] || field;
+  }
+
+  private resolveFallbackMessage(status: number, fallback?: string): string {
+    if (fallback) {
+      return fallback;
+    }
+
     switch (status) {
+      case 0:
+        return 'Không kết nối được tới server. Bạn kiểm tra backend hoặc mạng nhé.';
       case 400:
-        return 'Du lieu gui len khong hop le.';
+        return 'Thông tin gửi lên chưa hợp lệ. Bạn kiểm tra lại nhé.';
       case 401:
-        return 'Khong duoc phep truy cap.';
+        return 'Bạn cần đăng nhập để tiếp tục thao tác này.';
       case 403:
-        return 'Ban khong co quyen thuc hien thao tac nay.';
+        return 'Bạn chưa có quyền truy cập tài nguyên này.';
       case 404:
-        return 'Khong tim thay du lieu.';
+        return 'Không tìm thấy dữ liệu cần thao tác.';
+      case 409:
+        return 'Dữ liệu đang bị trùng hoặc xung đột.';
+      case 429:
+        return 'Bạn thao tác quá nhanh. Vui lòng thử lại sau ít phút.';
       case 500:
-        return 'He thong dang gap loi.';
+        return 'Hệ thống đang gặp sự cố. Bạn thử lại sau nhé.';
       default:
-        return 'Da xay ra loi khong xac dinh.';
+        return 'Có lỗi xảy ra. Bạn thử lại giúp mình nhé.';
     }
   }
 }

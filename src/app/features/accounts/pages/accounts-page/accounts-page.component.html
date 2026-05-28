@@ -1,5 +1,15 @@
-<app-page-header title="Accounts" description="Quan ly staff, tai khoan va phan quyen cho tung vai tro."></app-page-header>
+<app-page-header title="Accounts" description="Quản lý staff, tài khoản và phân quyền cho từng vai trò.">
+  <button type="button" class="btn btn-primary">+ Tạo tài khoản</button>
+</app-page-header>
 
-<section class="card-surface placeholder-card">
-  <p>Module <strong>Accounts</strong> da san sang route, layout va khung UI de tiep tuc noi API that.</p>
+<section class="account-panel">
+  <article *ngFor="let account of accounts" class="account-row">
+    <span class="material-symbols-outlined">admin_panel_settings</span>
+    <div>
+      <h3>{{ account.name }}</h3>
+      <p>{{ account.email }}</p>
+    </div>
+    <strong>{{ account.role }}</strong>
+    <em>{{ account.status }}</em>
+  </article>
 </section>

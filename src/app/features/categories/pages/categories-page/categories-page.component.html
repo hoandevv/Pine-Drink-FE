@@ -1,5 +1,19 @@
-<app-page-header title="Categories" description="Quan ly nhom do uong va map voi backend category APIs sau nay."></app-page-header>
+<app-page-header title="Categories" description="Nhóm menu đồ uống theo module backend dự kiến: danh mục, số sản phẩm, trạng thái và doanh thu.">
+  <button type="button" class="btn btn-primary">+ Thêm danh mục</button>
+</app-page-header>
 
-<section class="card-surface placeholder-card">
-  <p>Module <strong>Categories</strong> da san sang route, layout va khung UI de tiep tuc noi API that.</p>
+<section class="category-grid">
+  <article class="category-card" *ngFor="let category of categories" [style.--accent]="category.color">
+    <div class="category-card__top">
+      <span class="material-symbols-outlined">category</span>
+      <strong>{{ category.status }}</strong>
+    </div>
+    <h3>{{ category.name }}</h3>
+    <p>{{ category.code }}</p>
+    <div class="category-stats">
+      <span><b>{{ category.products }}</b> sản phẩm</span>
+      <span><b>{{ category.revenue }}</b> tháng này</span>
+    </div>
+    <button type="button">Quản lý danh mục</button>
+  </article>
 </section>

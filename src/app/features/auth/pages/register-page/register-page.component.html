@@ -1,78 +1,93 @@
 <div class="space-y-lg">
   <div>
     <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-xs">Đăng ký</h2>
-    <p class="font-body-md text-body-md text-secondary">Tạo tài khoản mới để trải nghiệm Pine Drink.</p>
+    <p class="font-body-md text-body-md text-secondary">Tạo tài khoản mới và xác thực OTP qua email.</p>
   </div>
 
   <form [formGroup]="registerForm" (ngSubmit)="submit()" class="space-y-md">
-    <div class="space-y-xs">
-      <label class="block font-label-lg text-on-surface">Họ và tên</label>
-      <div class="relative">
-        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">person</span>
-        <input 
-          type="text" 
-          formControlName="fullName" 
-          placeholder="VD: Nguyễn Văn A" 
-          class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
-        />
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+      <div class="space-y-xs">
+        <label class="block font-label-lg text-on-surface" for="register-username">Tên đăng nhập</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">badge</span>
+          <input id="register-username" type="text" formControlName="username" placeholder="hoan_dev" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+        </div>
+        <p *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.invalid" class="text-error text-label-sm mt-1">3-50 ký tự, chỉ gồm chữ, số và dấu gạch dưới.</p>
       </div>
-      <p *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập họ và tên.</p>
+
+      <div class="space-y-xs">
+        <label class="block font-label-lg text-on-surface" for="register-full-name">Họ và tên</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">person</span>
+          <input id="register-full-name" type="text" formControlName="fullName" placeholder="Nguyễn Văn A" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+        </div>
+        <p *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập họ và tên từ 2-150 ký tự.</p>
+      </div>
     </div>
 
     <div class="space-y-xs">
-      <label class="block font-label-lg text-on-surface">Email</label>
+      <label class="block font-label-lg text-on-surface" for="register-email">Email</label>
       <div class="relative">
         <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">mail</span>
-        <input 
-          type="email" 
-          formControlName="email" 
-          placeholder="VD: hello@example.com" 
-          class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
-        />
+        <input id="register-email" type="email" formControlName="email" placeholder="hello@example.com" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
       </div>
       <p *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" class="text-error text-label-sm mt-1">Vui lòng nhập email hợp lệ.</p>
     </div>
 
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface" for="register-phone">Số điện thoại</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">call</span>
+        <input id="register-phone" type="tel" formControlName="phone" placeholder="0901234567" class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+      </div>
+      <p *ngIf="registerForm.get('phone')?.touched && registerForm.get('phone')?.invalid" class="text-error text-label-sm mt-1">Số điện thoại phải gồm 10-20 chữ số.</p>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
       <div class="space-y-xs">
-        <label class="block font-label-lg text-on-surface">Mật khẩu</label>
+        <label class="block font-label-lg text-on-surface" for="register-password">Mật khẩu</label>
         <div class="relative">
           <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">lock</span>
-          <input 
-            type="password" 
-            formControlName="password" 
-            placeholder="Tối thiểu 6 ký tự" 
-            class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
-          />
+          <input id="register-password" [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="Aa@12345" class="w-full pl-12 pr-12 py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+          <button
+            type="button"
+            class="password-toggle absolute right-md top-1/2 -translate-y-1/2"
+            [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+            [attr.title]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+            (click)="togglePasswordVisibility('password')"
+          >
+            <span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+          </button>
         </div>
       </div>
 
       <div class="space-y-xs">
-        <label class="block font-label-lg text-on-surface">Xác nhận</label>
+        <label class="block font-label-lg text-on-surface" for="register-confirm-password">Xác nhận lại mật khẩu</label>
         <div class="relative">
           <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">lock_reset</span>
-          <input 
-            type="password" 
-            formControlName="confirmPassword" 
-            placeholder="Nhập lại mật khẩu" 
-            class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" 
-          />
+          <input id="register-confirm-password" [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Aa@12345" class="w-full pl-12 pr-12 py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+          <button
+            type="button"
+            class="password-toggle absolute right-md top-1/2 -translate-y-1/2"
+            [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'"
+            [attr.title]="showConfirmPassword ? 'Ẩn mật khẩu xác nhận' : 'Hiện mật khẩu xác nhận'"
+            (click)="togglePasswordVisibility('confirmPassword')"
+          >
+            <span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+          </button>
         </div>
       </div>
     </div>
-    <p *ngIf="(registerForm.get('password')?.touched || registerForm.get('confirmPassword')?.touched) && (registerForm.get('password')?.invalid || registerForm.get('confirmPassword')?.invalid)" class="text-error text-label-sm mt-1">Vui lòng kiểm tra lại mật khẩu (tối thiểu 6 ký tự).</p>
+    <p *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" class="text-error text-label-sm mt-1">Mật khẩu tối thiểu 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt.</p>
+    <p *ngIf="registerForm.touched && registerForm.hasError('passwordMismatch')" class="text-error text-label-sm mt-1">Mật khẩu xác nhận không khớp.</p>
 
-    <button 
-      type="submit" 
-      class="w-full py-sm mt-md bg-primary text-white rounded-xl font-headline-md text-label-lg shadow-md hover:bg-primary-container hover:text-on-primary-container hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:shadow-md"
-      [disabled]="submitting || registerForm.invalid"
-    >
+    <button type="submit" class="w-full py-sm mt-md bg-primary text-white rounded-xl font-headline-md text-label-lg shadow-md hover:bg-primary-container hover:text-on-primary-container hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:shadow-md" [disabled]="submitting || registerForm.invalid">
       {{ submitting ? 'Đang tạo tài khoản...' : 'Đăng ký ngay' }}
     </button>
   </form>
 
   <p class="text-center text-body-md text-secondary mt-lg">
-    Đã có tài khoản? 
+    Đã có tài khoản?
     <a routerLink="/auth/login" class="text-primary font-bold hover:underline">Đăng nhập</a>
   </p>
 </div>

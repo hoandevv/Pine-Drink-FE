@@ -1,0 +1,419 @@
+.store-locator-page {
+  display: grid;
+  grid-template-columns: 480px 1fr;
+  height: 100vh;
+  overflow: hidden;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.branch-list-panel {
+  background: white;
+  overflow-y: auto;
+  border-right: 1px solid #e8eff1;
+
+  .panel-header {
+    padding: 2rem;
+    border-bottom: 1px solid #e8eff1;
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1c1b1f;
+    }
+
+    p {
+      color: #635e53;
+      font-size: 0.875rem;
+    }
+  }
+
+  .search-box {
+    margin: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: #f4fafd;
+    border-radius: 8px;
+
+    .material-symbols-outlined {
+      color: #635e53;
+    }
+
+    input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 1rem;
+    }
+  }
+
+  .filter-chips {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.5rem 1.5rem;
+    flex-wrap: wrap;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid #e8eff1;
+      background: white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+
+      .material-symbols-outlined {
+        font-size: 1.125rem;
+      }
+
+      &:hover {
+        background: #f4fafd;
+      }
+
+      &.active {
+        background: linear-gradient(135deg, #164A2F 0%, #2F6B46 100%);
+        color: white;
+        border-color: #164A2F;
+      }
+    }
+  }
+
+  .branch-cards {
+    padding: 0 1.5rem 1.5rem;
+
+    .branch-card {
+      background: white;
+      border: 1px solid #e8eff1;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      &.selected {
+        border-color: #164A2F;
+        box-shadow: 0 0 0 2px rgba(22, 74, 47, 0.15);
+      }
+
+      .branch-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+
+        h3 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: #1c1b1f;
+        }
+
+        .distance-badge {
+          display: inline-block;
+          padding: 0.25rem 0.75rem;
+          background: #e9e2d3;
+          color: #635e53;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .status-badge {
+          padding: 0.25rem 0.75rem;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+
+          &.open {
+            background: #e8f5df;
+            color: #166534;
+          }
+
+          &.closed {
+            background: #ffdad7;
+            color: #ba1a1a;
+          }
+        }
+      }
+
+      .branch-info {
+        margin-bottom: 1rem;
+
+        .info-row {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+
+          .material-symbols-outlined {
+            color: #635e53;
+            font-size: 1.25rem;
+          }
+
+          p {
+            color: #635e53;
+            font-size: 0.875rem;
+            line-height: 1.5;
+          }
+        }
+      }
+
+      .branch-services {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+
+        .service-tag {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.25rem 0.75rem;
+          background: #f4fafd;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          color: #635e53;
+
+          .material-symbols-outlined {
+            font-size: 1rem;
+          }
+
+          &.time {
+            background: linear-gradient(135deg, #FFF0B8 0%, #FFEBA3 100%);
+            color: #4B3A05;
+            font-weight: 700;
+          }
+        }
+      }
+
+      .primary-button {
+        width: 100%;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, #164A2F 0%, #2F6B46 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(22, 74, 47, 0.2);
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(22, 74, 47, 0.3);
+        }
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+
+      .material-symbols-outlined {
+        font-size: 4rem;
+        color: #635e53;
+        opacity: 0.3;
+      }
+
+      h3 {
+        margin-top: 1rem;
+        font-size: 1.25rem;
+        color: #1c1b1f;
+      }
+
+      p {
+        margin-top: 0.5rem;
+        color: #635e53;
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
+.map-panel {
+  position: relative;
+  background: #e8eff1;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+
+  .map-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+
+    .map-placeholder {
+      width: 100%;
+      height: 100%;
+      position: relative;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .map-marker {
+        position: absolute;
+        cursor: pointer;
+        transition: transform 0.2s;
+
+        .material-symbols-outlined {
+          font-size: 2.5rem;
+          color: #164A2F;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .marker-tooltip {
+          position: absolute;
+          top: -60px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: white;
+          padding: 0.5rem 0.75rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          white-space: nowrap;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s;
+
+          strong {
+            display: block;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+          }
+
+          p {
+            font-size: 0.75rem;
+            color: #635e53;
+          }
+        }
+
+        &:hover {
+          transform: scale(1.2);
+          z-index: 10;
+
+          .marker-tooltip {
+            opacity: 1;
+          }
+        }
+
+        &.selected {
+          .material-symbols-outlined {
+            color: #db3237;
+            font-size: 3rem;
+          }
+        }
+      }
+    }
+
+    .map-controls {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .map-control-btn {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s;
+
+        .material-symbols-outlined {
+          color: #1c1b1f;
+        }
+
+        &:hover {
+          background: #f4fafd;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+      }
+    }
+
+    .selected-branch-card {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+      img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+      }
+
+      .card-content {
+        padding: 1.5rem;
+
+        h4 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: #1c1b1f;
+        }
+
+        p {
+          color: #635e53;
+          font-size: 0.875rem;
+          margin-bottom: 0.75rem;
+        }
+
+        .card-meta {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+          color: #635e53;
+          font-size: 0.875rem;
+          margin-bottom: 1rem;
+        }
+
+        .primary-button {
+          width: 100%;
+          padding: 0.75rem;
+          background: linear-gradient(135deg, #164A2F 0%, #2F6B46 100%);
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 2px 8px rgba(22, 74, 47, 0.2);
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(22, 74, 47, 0.3);
+          }
+        }
+      }
+    }
+  }
+}

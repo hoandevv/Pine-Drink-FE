@@ -1,5 +1,19 @@
-<app-page-header title="Customers" description="Theo doi thong tin khach hang, lich su mua va nhom thanh vien."></app-page-header>
+<app-page-header title="Customers" description="CRM khách hàng: hạng thành viên, lịch sử mua và tổng chi tiêu.">
+  <button type="button" class="btn btn-primary">Xuất danh sách</button>
+</app-page-header>
 
-<section class="card-surface placeholder-card">
-  <p>Module <strong>Customers</strong> da san sang route, layout va khung UI de tiep tuc noi API that.</p>
+<section class="crm-grid">
+  <article class="customer-card" *ngFor="let customer of customers">
+    <div class="avatar">{{ customer.name.charAt(0) }}</div>
+    <div class="customer-main">
+      <h3>{{ customer.name }}</h3>
+      <p>{{ customer.phone }}</p>
+    </div>
+    <span class="tier">{{ customer.tier }}</span>
+    <div class="customer-stats">
+      <span><b>{{ customer.orders }}</b> đơn</span>
+      <span><b>{{ customer.spent }}</b> chi tiêu</span>
+      <span><b>{{ customer.last }}</b> gần nhất</span>
+    </div>
+  </article>
 </section>

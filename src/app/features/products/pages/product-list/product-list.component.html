@@ -1,16 +1,28 @@
-<app-page-header title="Products" description="Quan ly danh muc do uong, tim kiem nhanh va thao tac CRUD san sang noi backend.">
-  <button type="button" class="btn btn-primary" (click)="createProduct()">Create Product</button>
+<app-page-header title="Products" description="Catalog đồ uống Pine Drink: mock data trực quan, bộ lọc sẵn sàng nối API thật.">
+  <button type="button" class="btn btn-primary" (click)="createProduct()">+ Create Product</button>
 </app-page-header>
+
+<section class="product-hero">
+  <div>
+    <span class="eyebrow">Menu Performance</span>
+    <h2>Signature drinks đang bán tốt</h2>
+    <p>Theo dõi sản phẩm, giá bán, category và trạng thái phục vụ trong một màn hình premium.</p>
+  </div>
+  <div class="hero-stats">
+    <span><b>{{ pageData.totalElements || products.length }}</b> products</span>
+    <span><b>4</b> categories</span>
+  </div>
+</section>
 
 <section class="filters card-surface">
   <form [formGroup]="filterForm" (ngSubmit)="search()" class="filters-form">
-    <input type="text" formControlName="keyword" placeholder="Tim theo ten hoac code" />
+    <input type="text" formControlName="keyword" placeholder="Tìm theo tên hoặc code" />
     <select formControlName="categoryId">
-      <option value="">Tat ca categories</option>
+      <option value="">Tất cả categories</option>
       <option *ngFor="let category of categoryOptions" [value]="category.value">{{ category.label }}</option>
     </select>
     <select formControlName="status">
-      <option value="">Tat ca status</option>
+      <option value="">Tất cả status</option>
       <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
     </select>
     <div class="filter-actions">
@@ -20,4 +32,30 @@
   </form>
 </section>
 
-<app-product-table [products]="products" [loading]="loading" [pageData]="pageData" (edit)="editProduct($event)" (delete)="deleteProduct($event)" (pageChange)="onPageChange($event)"></app-product-table>
+<section class="product-grid" *ngIf="products.length > 0; else productsEmpty">
+  <article class="product-card" *ngFor="let product of products">
+    <div class="drink-art">
+      <img *ngIf="product.imageUrl; else drinkIcon" [src]="product.imageUrl" [alt]="product.name" />
+      <ng-template #drinkIcon><span class="material-symbols-outlined">local_cafe</span></ng-template>
+      <em [class.inactive]="product.status === 'INACTIVE'">{{ product.status }}</em>
+    </div>
+    <div class="product-info">
+      <p>{{ product.code }} • {{ product.categoryName || product.categoryId }}</p>
+      <h3>{{ product.name }}</h3>
+      <span>{{ product.description || 'Đồ uống tropical signature của Pine Drink.' }}</span>
+    </div>
+    <footer>
+      <strong>{{ product.price | number }} VND</strong>
+      <div>
+        <button type="button" (click)="editProduct(product.id)"><span class="material-symbols-outlined">edit</span></button>
+        <button type="button" (click)="deleteProduct(product.id)"><span class="material-symbols-outlined">delete</span></button>
+      </div>
+    </footer>
+  </article>
+</section>
+
+<ng-template #productsEmpty>
+  <app-empty-state title="Chưa có products" description="Khi backend trả danh sách sản phẩm, màn hình này sẽ hiển thị ngay."></app-empty-state>
+</ng-template>
+
+<app-pagination [page]="pageData.page" [size]="pageData.size" [totalPages]="pageData.totalPages" [totalElements]="pageData.totalElements" (pageChange)="onPageChange($event)"></app-pagination>

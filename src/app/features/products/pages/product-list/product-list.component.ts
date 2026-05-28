@@ -2,11 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { ToastService } from '../../../../core/services/toast.service';
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { SelectOption } from '../../../../shared/models/select-option.model';
 import { Product } from '../../models/product.model';
-import { ProductService } from '../../services/product.service';
 
 @Component({
   selector: 'app-product-list',
@@ -46,9 +44,7 @@ export class ProductListComponent implements OnInit {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly productService: ProductService,
-    private readonly router: Router,
-    private readonly toastService: ToastService
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -65,45 +61,98 @@ export class ProductListComponent implements OnInit {
   }
 
   createProduct(): void {
-    this.router.navigate(['/products/create']);
+    this.router.navigate(['/admin/products/create']);
   }
 
   editProduct(id: string): void {
-    this.router.navigate(['/products', id]);
+    this.router.navigate(['/admin/products', id]);
   }
 
   deleteProduct(id: string): void {
-    if (!window.confirm('Ban co chac chan muon xoa product nay khong?')) {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa product này khỏi mock UI không?')) {
       return;
     }
 
-    this.productService.deleteProduct(id).subscribe({
-      next: () => {
-        this.toastService.success('Xoa product thanh cong.');
-        const fallbackPage = this.products.length === 1 && this.pageData.page > 0 ? this.pageData.page - 1 : this.pageData.page;
-        this.loadProducts(fallbackPage);
-      }
-    });
+    this.products = this.products.filter((product) => product.id !== id);
+    this.pageData = {
+      ...this.pageData,
+      content: this.products,
+      totalElements: this.products.length,
+      totalPages: this.products.length > 0 ? 1 : 0,
+      first: true,
+      last: true
+    };
   }
 
   onPageChange(page: number): void {
     this.loadProducts(page);
   }
 
-  private loadProducts(page = this.pageData.page): void {
+  private readonly mockProducts: Product[] = [
+    {
+      id: 'mock-1',
+      code: 'PD-PINE-001',
+      name: 'Pineapple Mint Tea',
+      description: 'Trà dứa bạc hà mát lạnh, best seller mùa hè.',
+      price: 49000,
+      categoryId: 'fruit-tea',
+      categoryName: 'Trà trái cây',
+      status: 'ACTIVE'
+    },
+    {
+      id: 'mock-2',
+      code: 'PD-MILK-002',
+      name: 'Brown Sugar Milk Tea',
+      description: 'Sữa tươi đường nâu cùng trân châu mềm dẻo.',
+      price: 59000,
+      categoryId: 'milk-tea',
+      categoryName: 'Milk Tea Signature',
+      status: 'ACTIVE'
+    },
+    {
+      id: 'mock-3',
+      code: 'PD-SMOOTH-003',
+      name: 'Tropical Pine Smoothie',
+      description: 'Smoothie dứa nhiệt đới, kem cheese và topping trái cây.',
+      price: 69000,
+      categoryId: 'smoothie',
+      categoryName: 'Smoothie Dứa',
+      status: 'ACTIVE'
+    },
+    {
+      id: 'mock-4',
+      code: 'PD-LATTE-004',
+      name: 'Matcha Pine Latte',
+      description: 'Matcha latte mix syrup dứa signature Pine Drink.',
+      price: 65000,
+      categoryId: 'coffee',
+      categoryName: 'Coffee & Latte',
+      status: 'INACTIVE'
+    }
+  ];
+
+  private loadProducts(page = 0): void {
     const filters = this.filterForm.getRawValue();
-    this.loading = true;
-    this.productService.getProducts(page, this.pageData.size, filters.keyword, filters.categoryId, filters.status).subscribe({
-      next: (response) => {
-        this.products = response.content;
-        this.pageData = response;
-      },
-      error: () => {
-        this.products = [];
-      },
-      complete: () => {
-        this.loading = false;
-      }
+    const keyword = filters.keyword.trim().toLowerCase();
+
+    const content = this.mockProducts.filter((product) => {
+      const matchesKeyword = !keyword || product.name.toLowerCase().includes(keyword) || product.code.toLowerCase().includes(keyword);
+      const matchesCategory = !filters.categoryId || product.categoryId === filters.categoryId;
+      const matchesStatus = !filters.status || product.status === filters.status;
+
+      return matchesKeyword && matchesCategory && matchesStatus;
     });
+
+    this.products = content;
+    this.pageData = {
+      content,
+      page,
+      size: content.length || 10,
+      totalElements: content.length,
+      totalPages: content.length > 0 ? 1 : 0,
+      first: true,
+      last: true
+    };
+    this.loading = false;
   }
 }

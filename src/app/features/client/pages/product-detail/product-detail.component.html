@@ -1,0 +1,178 @@
+<div class="product-detail-page" *ngIf="product">
+  <!-- Header with back button -->
+  <header class="detail-header">
+    <button type="button" class="back-button" (click)="goBack()" [attr.aria-label]="'product.backButton' | translate">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </button>
+    <h1 class="page-title">{{ 'product.detail' | translate }}</h1>
+    <div class="header-spacer"></div>
+  </header>
+
+  <div class="detail-container">
+    <!-- Product Image Section -->
+    <section class="product-image-section">
+      <div class="image-wrapper">
+        <img [src]="product.image" [alt]="product.name" class="product-image">
+        <span *ngIf="product.badge" class="product-badge">{{ product.badge }}</span>
+      </div>
+    </section>
+
+    <!-- Product Info & Customization -->
+    <section class="product-info-section">
+      <!-- Basic Info -->
+      <div class="product-header">
+        <div>
+          <h2 class="product-name">{{ product.name }}</h2>
+          <p class="product-category">{{ product.categoryName }}</p>
+        </div>
+        <div class="product-rating">
+          <span class="material-symbols-outlined">star</span>
+          <span class="rating-value">{{ product.rating }}</span>
+        </div>
+      </div>
+
+      <p class="product-description">{{ product.description }}</p>
+
+      <!-- Size Selection -->
+      <div class="customization-group">
+        <h3 class="group-title">
+          <span class="material-symbols-outlined">straighten</span>
+          {{ 'product.size' | translate }}
+        </h3>
+        <div class="size-options">
+          <button
+            *ngFor="let size of sizeOptions"
+            type="button"
+            class="size-option"
+            [class.selected]="selectedSize === size.id"
+            (click)="selectSize(size.id)"
+          >
+            <span class="size-label">{{ size.label }}</span>
+            <span class="size-price" *ngIf="size.priceModifier !== 0">
+              {{ size.priceModifier > 0 ? '+' : '' }}{{ formatPrice(size.priceModifier) }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ice Level -->
+      <div class="customization-group">
+        <h3 class="group-title">
+          <span class="material-symbols-outlined">ac_unit</span>
+          {{ 'product.ice' | translate }}
+        </h3>
+        <div class="level-options">
+          <button
+            *ngFor="let level of iceLevelOptions"
+            type="button"
+            class="level-option"
+            [class.selected]="selectedIceLevel === level.value"
+            (click)="selectIceLevel(level.value)"
+          >
+            {{ level.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Sugar Level -->
+      <div class="customization-group">
+        <h3 class="group-title">
+          <span class="material-symbols-outlined">water_drop</span>
+          {{ 'product.sugar' | translate }}
+        </h3>
+        <div class="level-options">
+          <button
+            *ngFor="let level of sugarLevelOptions"
+            type="button"
+            class="level-option"
+            [class.selected]="selectedSugarLevel === level.value"
+            (click)="selectSugarLevel(level.value)"
+          >
+            {{ level.label }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Toppings -->
+      <div class="customization-group">
+        <h3 class="group-title">
+          <span class="material-symbols-outlined">add_circle</span>
+          {{ 'product.toppings' | translate }}
+          <span class="optional-label">{{ 'product.optional' | translate }}</span>
+        </h3>
+        
+        <div *ngFor="let category of toppingCategories" class="topping-category">
+          <h4 class="category-name">{{ category }}</h4>
+          <div class="topping-grid">
+            <button
+              *ngFor="let topping of getToppingsByCategory(category)"
+              type="button"
+              class="topping-item"
+              [class.selected]="isToppingSelected(topping)"
+              (click)="toggleTopping(topping)"
+            >
+              <span class="topping-name">{{ topping.name }}</span>
+              <span class="topping-price">+{{ formatPrice(topping.price) }}</span>
+              <span class="check-icon material-symbols-outlined" *ngIf="isToppingSelected(topping)">
+                check_circle
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="customization-group">
+        <h3 class="group-title">
+          <span class="material-symbols-outlined">edit_note</span>
+          {{ 'product.note' | translate }}
+          <span class="optional-label">{{ 'product.optional' | translate }}</span>
+        </h3>
+        <textarea
+          class="note-input"
+          [(ngModel)]="note"
+          [placeholder]="'product.notePlaceholder' | translate"
+          rows="3"
+          maxlength="200"
+        ></textarea>
+      </div>
+    </section>
+  </div>
+
+  <!-- Bottom Action Bar -->
+  <div class="action-bar">
+    <div class="quantity-selector">
+      <button type="button" class="qty-button" (click)="decrementQuantity()" [disabled]="quantity <= 1">
+        <span class="material-symbols-outlined">remove</span>
+      </button>
+      <span class="qty-value">{{ quantity }}</span>
+      <button type="button" class="qty-button" (click)="incrementQuantity()" [disabled]="quantity >= 99">
+        <span class="material-symbols-outlined">add</span>
+      </button>
+    </div>
+
+    <div class="price-summary">
+      <div class="price-breakdown">
+        <span class="price-label">{{ 'product.total' | translate }}</span>
+        <span class="total-price">{{ formatPrice(totalPrice) }}</span>
+      </div>
+      <div class="price-details" *ngIf="selectedToppings.length > 0">
+        <span class="detail-text">
+          {{ 'product.basePrice' | translate }}: {{ formatPrice(basePrice * quantity) }}
+          <span *ngIf="toppingsPrice > 0"> + {{ 'product.toppingPrice' | translate }}: {{ formatPrice(toppingsPrice * quantity) }}</span>
+        </span>
+      </div>
+    </div>
+
+    <button type="button" class="add-to-cart-button" (click)="addToCart()">
+      <span class="material-symbols-outlined">shopping_cart</span>
+      {{ 'product.addToCart' | translate }}
+    </button>
+  </div>
+</div>
+
+<!-- Loading/Error State -->
+<div class="empty-state" *ngIf="!product">
+  <span class="material-symbols-outlined">error</span>
+  <p>{{ 'product.notFound' | translate }}</p>
+</div>

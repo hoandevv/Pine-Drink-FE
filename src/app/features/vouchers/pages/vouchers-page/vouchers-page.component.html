@@ -1,5 +1,13 @@
-<app-page-header title="Vouchers" description="Tao va quan ly voucher, promotion va campaign uu dai."></app-page-header>
+<app-page-header title="Vouchers" description="Chiến dịch khuyến mãi, mã giảm giá, giới hạn sử dụng và ngày hết hạn.">
+  <button type="button" class="btn btn-primary">+ Tạo voucher</button>
+</app-page-header>
 
-<section class="card-surface placeholder-card">
-  <p>Module <strong>Vouchers</strong> da san sang route, layout va khung UI de tiep tuc noi API that.</p>
+<section class="voucher-grid">
+  <article class="voucher-ticket" *ngFor="let voucher of vouchers">
+    <div class="ticket-code">{{ voucher.code }}</div>
+    <h3>{{ voucher.name }}</h3>
+    <p>Hết hạn: {{ voucher.expire }}</p>
+    <div class="usage"><span [style.width.%]="voucher.used / voucher.limit * 100"></span></div>
+    <strong>{{ voucher.used }}/{{ voucher.limit }} lượt dùng</strong>
+  </article>
 </section>
