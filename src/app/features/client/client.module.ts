@@ -9,12 +9,15 @@ import { HomeComponent } from './pages/home/home.component';
 import { MenuComponent } from './pages/menu/menu.component';
 import { StoreLocatorComponent } from './pages/store-locator/store-locator.component';
 import { ProfileComponent } from './pages/profile/profile.component';
-
-// Components
-import { CartComponent } from './components/cart/cart.component';
 import { ProductDetailComponent } from './pages/product-detail/product-detail.component';
 import { PromotionsComponent } from './pages/promotions/promotions.component';
 import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.component';
+import { AddressListComponent } from './pages/address-list/address-list.component';
+import { AddressFormComponent } from './pages/address-form/address-form.component';
+
+// Components
+import { CartComponent } from './components/cart/cart.component';
+import { MapPickerComponent } from './components/map-picker/map-picker.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +28,10 @@ import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.co
     CartComponent,
     ProductDetailComponent,
     PromotionsComponent,
-    OrderTrackingComponent
+    OrderTrackingComponent,
+    AddressListComponent,
+    AddressFormComponent,
+    MapPickerComponent
   ],
   imports: [
     CommonModule,
