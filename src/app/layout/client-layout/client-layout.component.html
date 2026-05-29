@@ -29,6 +29,12 @@
   <router-outlet></router-outlet>
 </main>
 
+<!-- Floating Admin Dashboard Button -->
+<a *ngIf="isAdmin" routerLink="/admin" class="admin-floating-btn" title="Quay lại Dashboard Admin">
+  <span class="material-symbols-outlined">dashboard</span>
+  <span class="btn-text">Quay lại Dashboard</span>
+</a>
+
 <footer class="client-footer">
   <div class="footer-content">
     <!-- Brand Section -->

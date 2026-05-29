@@ -25,8 +25,17 @@
     <div class="profile-header-content">
       <div class="profile-avatar">
         <div class="avatar-circle">
-          <img *ngIf="user.avatar" [src]="user.avatar" alt="Avatar" class="avatar-image" />
-          <span *ngIf="!user.avatar" class="material-symbols-outlined">account_circle</span>
+          <img 
+            *ngIf="user.avatar" 
+            [src]="user.avatar" 
+            alt="Avatar" 
+            class="avatar-image"
+            (error)="onAvatarLoadError()"
+            (load)="onAvatarLoadSuccess()" 
+          />
+          <div *ngIf="!user.avatar" class="avatar-initials">
+            {{ getUserInitials() }}
+          </div>
         </div>
         <input 
           type="file" 
@@ -157,22 +166,41 @@
       <div class="info-section">
         <div class="section-header">
           <h2>{{ 'profile.address.title' | translate }}</h2>
-          <button type="button" class="add-button">
-            <span class="material-symbols-outlined">add</span>
-            <span>{{ 'profile.address.add' | translate }}</span>
+          <button type="button" class="add-button" routerLink="/addresses">
+            <span class="material-symbols-outlined">location_on</span>
+            <span>Quản lý địa chỉ</span>
           </button>
         </div>
 
-        <div class="address-list">
-          <div class="address-card">
-            <div class="address-badge">{{ 'profile.address.default' | translate }}</div>
-            <h3>{{ 'profile.address.home' | translate }}</h3>
-            <p>123 Xuân Thủy, Cầu Giấy, Hà Nội</p>
-            <div class="address-actions">
-              <button type="button">{{ 'profile.address.edit' | translate }}</button>
-              <button type="button">{{ 'profile.address.delete' | translate }}</button>
+        <!-- Loading State -->
+        <div *ngIf="loadingAddresses" class="address-loading">
+          <span class="material-symbols-outlined spinning">progress_activity</span>
+          <p>Đang tải địa chỉ...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loadingAddresses && addresses.length === 0" class="address-empty">
+          <span class="material-symbols-outlined">location_off</span>
+          <p>Chưa có địa chỉ nào</p>
+          <button type="button" class="primary-button compact" routerLink="/addresses">
+            Thêm địa chỉ đầu tiên
+          </button>
+        </div>
+
+        <!-- Address List -->
+        <div *ngIf="!loadingAddresses && addresses.length > 0" class="address-list">
+          <div *ngFor="let address of addresses.slice(0, 2)" class="address-card">
+            <div *ngIf="address.isDefault" class="address-badge">{{ 'profile.address.default' | translate }}</div>
+            <h3>{{ address.receiverName }}</h3>
+            <p>{{ getFullAddress(address) }}</p>
+            <div class="address-phone">
+              <span class="material-symbols-outlined">phone</span>
+              <span>{{ address.receiverPhone }}</span>
             </div>
           </div>
+          <button *ngIf="addresses.length > 2" type="button" class="view-all-button" routerLink="/addresses">
+            Xem tất cả {{ addresses.length }} địa chỉ
+          </button>
         </div>
       </div>
     </div>

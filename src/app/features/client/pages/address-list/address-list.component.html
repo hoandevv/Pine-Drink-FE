@@ -1,0 +1,105 @@
+<div class="address-list-page">
+  <div class="page-header">
+    <h1>{{ 'address.title' | translate }}</h1>
+    <button class="primary-button" (click)="addAddress()">
+      <span class="material-symbols-outlined">add</span>
+      <span>{{ 'address.addNew' | translate }}</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <span class="material-symbols-outlined spinning">progress_activity</span>
+    <p>{{ 'common.loading' | translate }}</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && addresses.length === 0" class="empty-state">
+    <span class="material-symbols-outlined">location_off</span>
+    <h2>{{ 'address.emptyTitle' | translate }}</h2>
+    <p>{{ 'address.emptyDesc' | translate }}</p>
+    <button class="primary-button" (click)="addAddress()">
+      <span class="material-symbols-outlined">add</span>
+      <span>{{ 'address.addFirst' | translate }}</span>
+    </button>
+  </div>
+
+  <!-- Address List -->
+  <div *ngIf="!isLoading && addresses.length > 0" class="address-grid">
+    <div
+      *ngFor="let address of addresses"
+      class="address-card"
+      [class.default]="address.isDefault"
+    >
+      <!-- Default Badge -->
+      <div *ngIf="address.isDefault" class="default-badge">
+        <span class="material-symbols-outlined">check_circle</span>
+        <span>{{ 'address.default' | translate }}</span>
+      </div>
+
+      <!-- Address Info -->
+      <div class="address-info">
+        <div class="receiver-info">
+          <h3>{{ address.receiverName }}</h3>
+          <div class="phone">
+            <span class="material-symbols-outlined">phone</span>
+            <span>{{ address.receiverPhone }}</span>
+          </div>
+        </div>
+
+        <div class="address-details">
+          <div class="address-line">
+            <span class="material-symbols-outlined">location_on</span>
+            <span>{{ getFullAddress(address) }}</span>
+          </div>
+          <div *ngIf="hasCoordinates(address)" class="coordinates">
+            <span class="material-symbols-outlined">my_location</span>
+            <span>{{ address.latitude }}, {{ address.longitude }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="address-actions">
+        <button
+          *ngIf="!address.isDefault"
+          class="action-button set-default"
+          (click)="setDefault(address.id)"
+          title="{{ 'address.setAsDefault' | translate }}"
+        >
+          <span class="material-symbols-outlined">star</span>
+        </button>
+        <button
+          class="action-button edit"
+          (click)="editAddress(address.id)"
+          title="{{ 'common.edit' | translate }}"
+        >
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button
+          class="action-button delete"
+          (click)="confirmDelete(address.id)"
+          title="{{ 'common.delete' | translate }}"
+        >
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+
+      <!-- Delete Confirmation -->
+      <div *ngIf="deleteConfirmId === address.id" class="delete-confirm">
+        <div class="confirm-content">
+          <span class="material-symbols-outlined">warning</span>
+          <p>{{ 'address.deleteConfirm' | translate }}</p>
+          <div class="confirm-actions">
+            <button class="cancel-button" (click)="cancelDelete()">
+              {{ 'common.cancel' | translate }}
+            </button>
+            <button class="delete-button" (click)="deleteAddress(address.id)">
+              {{ 'common.delete' | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

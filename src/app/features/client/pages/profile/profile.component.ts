@@ -5,6 +5,10 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { TokenService } from '../../../../core/services/token.service';
 import { LanguageService, Language } from '../../../../core/services/language.service';
 import { TranslateService } from '@ngx-translate/core';
+import { CustomerAddressService } from '../../../../core/services/customer-address.service';
+import { CustomerAddress } from '../../../../shared/models/customer-address.model';
+import { catchError, of } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
 
 interface UserProfile {
   name: string;
@@ -75,6 +79,9 @@ export class ProfileComponent implements OnInit {
   updatingProfile = false;
   errorMessage = '';
   successMessage = '';
+  
+  addresses: CustomerAddress[] = [];
+  loadingAddresses = false;
 
   constructor(
     private readonly router: Router,
@@ -82,12 +89,14 @@ export class ProfileComponent implements OnInit {
     private readonly tokenService: TokenService,
     private readonly fb: FormBuilder,
     public languageService: LanguageService,
-    public translate: TranslateService
+    public translate: TranslateService,
+    private readonly addressService: CustomerAddressService
   ) {}
 
   ngOnInit(): void {
     this.initForms();
     this.loadUserProfile();
+    this.loadAddresses();
   }
 
   initForms(): void {
@@ -139,6 +148,33 @@ export class ProfileComponent implements OnInit {
     });
   }
 
+  loadAddresses(): void {
+    this.loadingAddresses = true;
+    this.addressService
+      .getAddresses()
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to load addresses:', error);
+          this.loadingAddresses = false;
+          return of([]);
+        })
+      )
+      .subscribe((addresses) => {
+        this.addresses = addresses;
+        this.loadingAddresses = false;
+      });
+  }
+
+  getFullAddress(address: CustomerAddress): string {
+    const parts = [
+      address.addressLine,
+      address.ward,
+      address.district,
+      address.city
+    ].filter(Boolean);
+    return parts.join(', ');
+  }
+
   setActiveTab(tab: 'info' | 'orders' | 'favorites' | 'settings'): void {
     this.activeTab = tab;
   }
@@ -159,6 +195,24 @@ export class ProfileComponent implements OnInit {
 
   getStatusClass(status: string): string {
     return `status-${status}`;
+  }
+
+  getUserInitials(): string {
+    if (!this.user.name) return 'U';
+    
+    const words = this.user.name.trim().split(/\s+/);
+    
+    if (words.length === 1) {
+      // Single word: take first 2 letters
+      return words[0].substring(0, 2).toUpperCase();
+    }
+    
+    // Multiple words: take first letter of each word (max 3)
+    return words
+      .slice(0, 3)
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase();
   }
 
   editProfile(): void {
@@ -268,16 +322,25 @@ export class ProfileComponent implements OnInit {
     this.errorMessage = '';
 
     this.authService.uploadAvatar(file).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         console.log('[Avatar Upload] Upload successful:', response);
         this.uploadingAvatar = false;
-        this.user.avatar = response.fileUrl;
+
+        const avatarUrl = response?.data?.fileUrl || response?.fileUrl;
+
+        if (!avatarUrl) {
+          console.error('[Avatar Upload] Missing fileUrl:', response);
+          this.errorMessage = 'Upload thành công nhưng không nhận được URL ảnh.';
+          return;
+        }
+
+        this.user.avatar = avatarUrl + '?t=' + Date.now();
+        console.log('[Avatar Upload] Avatar URL set to:', this.user.avatar);
+
         this.successMessage = 'Cập nhật ảnh đại diện thành công!';
         setTimeout(() => {
           this.successMessage = '';
         }, 3000);
-        // Reload profile to sync
-        this.loadUserProfile();
       },
       error: (error) => {
         console.error('[Avatar Upload] Upload failed:', error);
@@ -307,6 +370,16 @@ export class ProfileComponent implements OnInit {
     if (fileInput) {
       fileInput.click();
     }
+  }
+
+  onAvatarLoadError(): void {
+    console.error('[Avatar] Image failed to load:', this.user.avatar);
+    // Clear avatar to show initials fallback
+    this.user.avatar = '';
+  }
+
+  onAvatarLoadSuccess(): void {
+    console.log('[Avatar] Image loaded successfully:', this.user.avatar);
   }
 
   openLanguageSelector(): void {
