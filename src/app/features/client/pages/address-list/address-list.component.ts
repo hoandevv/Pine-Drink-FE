@@ -15,7 +15,7 @@ import { CustomerAddress } from '../../../../shared/models/customer-address.mode
 export class AddressListComponent implements OnInit {
   addresses: CustomerAddress[] = [];
   isLoading = false;
-  deleteConfirmId: number | null = null;
+  deleteConfirmId: string | null = null;
 
   constructor(
     private readonly addressService: CustomerAddressService,
@@ -49,11 +49,11 @@ export class AddressListComponent implements OnInit {
     this.router.navigate(['/addresses/new']);
   }
 
-  editAddress(id: number): void {
+  editAddress(id: string): void {
     this.router.navigate(['/addresses/edit', id]);
   }
 
-  confirmDelete(id: number): void {
+  confirmDelete(id: string): void {
     this.deleteConfirmId = id;
   }
 
@@ -61,7 +61,7 @@ export class AddressListComponent implements OnInit {
     this.deleteConfirmId = null;
   }
 
-  deleteAddress(id: number): void {
+  deleteAddress(id: string): void {
     this.loadingService.show();
     this.addressService
       .deleteAddress(id)
@@ -69,12 +69,12 @@ export class AddressListComponent implements OnInit {
         catchError((error) => {
           this.loadingService.hide();
           this.toastService.error('Không thể xóa địa chỉ');
-          return of(null);
+          return of(false);
         })
       )
       .subscribe((result) => {
         this.loadingService.hide();
-        if (result !== null) {
+        if (result !== false) {
           this.toastService.success('Đã xóa địa chỉ thành công');
           this.deleteConfirmId = null;
           this.loadAddresses();
@@ -82,7 +82,7 @@ export class AddressListComponent implements OnInit {
       });
   }
 
-  setDefault(id: number): void {
+  setDefault(id: string): void {
     this.loadingService.show();
     this.addressService
       .setDefaultAddress(id)

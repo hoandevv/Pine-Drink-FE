@@ -149,7 +149,14 @@
       "fullName": "Họ và tên",
       "email": "Email",
       "phone": "Số điện thoại",
-      "birthday": "Ngày sinh"
+      "birthday": "Ngày sinh",
+      "noBirthday": "Chưa cập nhật",
+      "gender": "Giới tính"
+    },
+    "gender": {
+      "MALE": "Nam",
+      "FEMALE": "Nữ",
+      "OTHER": "Khác"
     },
     "address": {
       "title": "Địa chỉ giao hàng",

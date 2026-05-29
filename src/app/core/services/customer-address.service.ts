@@ -19,7 +19,7 @@ export class CustomerAddressService {
       .pipe(map((response) => response.data));
   }
 
-  getAddressById(id: number): Observable<CustomerAddress> {
+  getAddressById(id: string): Observable<CustomerAddress> {
     return this.http
       .get<BaseResponse<CustomerAddress>>(`${environment.apiBaseUrl}${API_ENDPOINTS.customerAddress.detail(id)}`)
       .pipe(map((response) => response.data));
@@ -31,19 +31,19 @@ export class CustomerAddressService {
       .pipe(map((response) => response.data));
   }
 
-  updateAddress(id: number, request: UpdateAddressRequest): Observable<CustomerAddress> {
+  updateAddress(id: string, request: UpdateAddressRequest): Observable<CustomerAddress> {
     return this.http
       .put<BaseResponse<CustomerAddress>>(`${environment.apiBaseUrl}${API_ENDPOINTS.customerAddress.detail(id)}`, request)
       .pipe(map((response) => response.data));
   }
 
-  setDefaultAddress(id: number): Observable<void> {
+  setDefaultAddress(id: string): Observable<void> {
     return this.http
       .patch<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.customerAddress.setDefault(id)}`, {})
       .pipe(map((response) => response.data));
   }
 
-  deleteAddress(id: number): Observable<void> {
+  deleteAddress(id: string): Observable<void> {
     return this.http
       .delete<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.customerAddress.detail(id)}`)
       .pipe(map((response) => response.data));

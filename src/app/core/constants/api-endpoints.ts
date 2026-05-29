@@ -20,8 +20,8 @@ export const API_ENDPOINTS = {
   orders: '/orders',
   customerAddress: {
     base: '/customer/addresses',
-    detail: (id: number) => `/customer/addresses/${id}`,
-    setDefault: (id: number) => `/customer/addresses/${id}/set-default`
+    detail: (id: string) => `/customer/addresses/${id}`,
+    setDefault: (id: string) => `/customer/addresses/${id}/set-default`
   },
   geocoding: {
     search: '/geocoding/search',

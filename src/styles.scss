@@ -254,11 +254,28 @@ app-reset-password-page {
       }
 
       &.admin-entry {
-        color: #1DB954;
-        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.85rem;
+        color: #12351f;
+        font-weight: 800;
+        background: linear-gradient(135deg, #fff4bf 0%, #dff3d4 100%);
+        border: 1px solid rgba(22, 74, 47, 0.16);
+        border-radius: 999px;
+        box-shadow: 0 8px 22px rgba(22, 74, 47, 0.12);
+        transform: translateY(-0.1rem);
+
+        .material-symbols-outlined {
+          font-size: 1.15rem;
+          color: #164A2F;
+        }
         
         &:hover {
-          color: #148C3F;
+          color: #0f2f1d;
+          background: linear-gradient(135deg, #ffc928 0%, #b7d7a8 100%);
+          box-shadow: 0 12px 28px rgba(217, 154, 22, 0.22);
+          transform: translateY(-0.2rem);
         }
       }
     }

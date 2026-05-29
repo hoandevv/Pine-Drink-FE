@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { TokenService } from '../../core/services/token.service';
 import { AuthUser } from '../../shared/models/user.model';
@@ -19,7 +20,8 @@ export class ClientLayoutComponent implements OnInit {
 
   constructor(
     private readonly tokenService: TokenService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly router: Router
   ) {
     this.currentUser$ = this.authService.currentUser$;
   }
@@ -35,7 +37,7 @@ export class ClientLayoutComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    const roles = this.currentUser?.roles ?? [];
+    const roles = this.currentUser?.roles ?? this.tokenService.getCurrentUserFromToken()?.roles ?? [];
     return roles.some((role) => ['ADMIN', 'ROLE_ADMIN'].includes(role.toUpperCase()));
   }
 
@@ -49,6 +51,7 @@ export class ClientLayoutComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
+    this.router.navigate(['/auth/login']);
   }
 }
 

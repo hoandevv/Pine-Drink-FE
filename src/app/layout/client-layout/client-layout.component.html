@@ -6,7 +6,10 @@
     <a routerLink="/promotions" routerLinkActive="active">Khuyến mãi</a>
     <a routerLink="/track-order" routerLinkActive="active">Theo dõi đơn</a>
     <a routerLink="/stores" routerLinkActive="active">Cửa hàng</a>
-    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry">Admin</a>
+    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị">
+      <span class="material-symbols-outlined">admin_panel_settings</span>
+      <span>Quản trị</span>
+    </a>
   </nav>
   <div class="nav-actions">
     <button class="cart-button" type="button" aria-label="Giỏ hàng" routerLink="/cart">

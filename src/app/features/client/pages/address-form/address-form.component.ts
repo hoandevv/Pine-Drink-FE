@@ -20,7 +20,7 @@ export class AddressFormComponent implements OnInit {
   addressForm!: FormGroup;
   inputMode: InputMode = 'manual';
   isEditMode = false;
-  addressId: number | null = null;
+  addressId: string | null = null;
   isSubmitting = false;
 
   constructor(
@@ -55,12 +55,12 @@ export class AddressFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
-      this.addressId = parseInt(id, 10);
+      this.addressId = id;
       this.loadAddress(this.addressId);
     }
   }
 
-  private loadAddress(id: number): void {
+  private loadAddress(id: string): void {
     this.loadingService.show();
     this.addressService
       .getAddressById(id)
