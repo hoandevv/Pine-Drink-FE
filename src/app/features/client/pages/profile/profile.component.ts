@@ -14,6 +14,8 @@ interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  dateOfBirth: string;
+  gender: string;
   avatar: string;
   loyaltyPoints: number;
   memberSince: string;
@@ -37,6 +39,8 @@ export class ProfileComponent implements OnInit {
     name: 'Người dùng',
     email: 'user@example.com',
     phone: '0123456789',
+    dateOfBirth: '',
+    gender: 'OTHER',
     avatar: '',
     loyaltyPoints: 1250,
     memberSince: '2024-01-15'
@@ -98,6 +102,29 @@ export class ProfileComponent implements OnInit {
     this.initForms();
     this.loadUserProfile();
     this.loadAddresses();
+
+    // Clear data and redirect if user logs out while on this page
+    this.authService.currentUser$.subscribe(user => {
+      if (!user) {
+        this.resetComponentState();
+        this.router.navigate(['/auth/login']);
+      }
+    });
+  }
+
+  private resetComponentState(): void {
+    this.user = {
+      name: '',
+      email: '',
+      phone: '',
+      dateOfBirth: '',
+      gender: 'OTHER',
+      avatar: '',
+      loyaltyPoints: 0,
+      memberSince: ''
+    };
+    this.recentOrders = [];
+    this.addresses = [];
   }
 
   initForms(): void {
@@ -112,7 +139,9 @@ export class ProfileComponent implements OnInit {
 
     this.editProfileForm = this.fb.group({
       fullName: ['', Validators.required],
-      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]]
+      phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10,20}$/)]],
+      dateOfBirth: [''],
+      gender: ['OTHER']
     });
   }
 
@@ -133,6 +162,8 @@ export class ProfileComponent implements OnInit {
         this.user.name = profile.fullName || profile.username || 'Người dùng';
         this.user.email = profile.email;
         this.user.phone = profile.phone || '0123456789';
+        this.user.dateOfBirth = profile.dateOfBirth || '';
+        this.user.gender = profile.gender || 'OTHER';
 
         // Backend now returns full MinIO URLs for public files (avatars)
         // Example: http://localhost:9000/pine-drink-public/avatars/uuid.jpg
@@ -148,6 +179,8 @@ export class ProfileComponent implements OnInit {
           this.user.name = currentUser.fullName || currentUser.username || 'Người dùng';
           this.user.email = currentUser.email;
           this.user.phone = currentUser.phone || '0123456789';
+          this.user.dateOfBirth = currentUser.dateOfBirth || '';
+          this.user.gender = currentUser.gender || 'OTHER';
           this.user.avatar = currentUser.avatarUrl || '';
         }
       }
@@ -224,7 +257,9 @@ export class ProfileComponent implements OnInit {
   editProfile(): void {
     this.editProfileForm.patchValue({
       fullName: this.user.name,
-      phone: this.user.phone
+      phone: this.user.phone,
+      dateOfBirth: this.user.dateOfBirth,
+      gender: this.user.gender
     });
     this.showEditProfileModal = true;
     this.errorMessage = '';
@@ -245,6 +280,8 @@ export class ProfileComponent implements OnInit {
         this.updatingProfile = false;
         this.user.name = updatedProfile.fullName || updatedProfile.username || this.user.name;
         this.user.phone = updatedProfile.phone || this.user.phone;
+        this.user.dateOfBirth = updatedProfile.dateOfBirth || this.user.dateOfBirth;
+        this.user.gender = updatedProfile.gender || this.user.gender;
         this.successMessage = 'Cập nhật thông tin thành công!';
         setTimeout(() => {
           this.showEditProfileModal = false;

@@ -157,7 +157,17 @@
             </div>
             <div class="info-details">
               <label>{{ 'profile.personalInfo.birthday' | translate }}</label>
-              <p>01/01/1990</p>
+              <p>{{ user.dateOfBirth ? formatDate(user.dateOfBirth) : ('profile.personalInfo.noBirthday' | translate) }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <span class="material-symbols-outlined">wc</span>
+            </div>
+            <div class="info-details">
+              <label>{{ 'profile.personalInfo.gender' | translate }}</label>
+              <p>{{ 'profile.gender.' + (user.gender || 'OTHER') | translate }}</p>
             </div>
           </div>
         </div>
@@ -479,6 +489,33 @@
             class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
           />
           <p *ngIf="editProfileForm.get('phone')?.touched && editProfileForm.get('phone')?.invalid" class="text-error text-label-sm">Vui lòng nhập số điện thoại hợp lệ (10 chữ số).</p>
+        </div>
+        
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Ngày sinh</label>
+          <input 
+            type="date" 
+            formControlName="dateOfBirth" 
+            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+        </div>
+
+        <div class="space-y-xs">
+          <label class="block font-label-md text-on-surface">Giới tính</label>
+          <div class="flex gap-4 p-2 bg-surface-container-low border border-outline-variant rounded-xl">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" formControlName="gender" value="MALE" class="w-4 h-4 text-primary">
+              <span class="text-body-md">{{ 'profile.gender.MALE' | translate }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" formControlName="gender" value="FEMALE" class="w-4 h-4 text-primary">
+              <span class="text-body-md">{{ 'profile.gender.FEMALE' | translate }}</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" formControlName="gender" value="OTHER" class="w-4 h-4 text-primary">
+              <span class="text-body-md">{{ 'profile.gender.OTHER' | translate }}</span>
+            </label>
+          </div>
         </div>
 
         <div class="flex gap-3 pt-4">
