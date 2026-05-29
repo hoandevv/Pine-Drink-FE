@@ -57,7 +57,10 @@
             <strong>{{ currentUser?.fullName || currentUser?.username || 'Admin Pine' }}</strong>
             <small>{{ currentUser?.email || 'admin@pinedrink.vn' }}</small>
           </div>
-          <span class="avatar">{{ (currentUser?.fullName || currentUser?.username || 'A').charAt(0) }}</span>
+          <span class="avatar">
+            <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" alt="Avatar" class="avatar-image" />
+            <span *ngIf="!getAvatarUrl()">{{ getUserInitials() }}</span>
+          </span>
         </div>
       </div>
     </header>

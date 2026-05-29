@@ -29,7 +29,8 @@
             *ngIf="user.avatar" 
             [src]="user.avatar" 
             alt="Avatar" 
-            class="avatar-image"
+            class="avatar-image cursor-pointer"
+            (click)="showAvatarPreview = true"
             (error)="onAvatarLoadError()"
             (load)="onAvatarLoadSuccess()" 
           />
@@ -497,6 +498,16 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Avatar Preview Modal -->
+  <div *ngIf="showAvatarPreview" class="avatar-preview-modal" (click)="showAvatarPreview = false">
+    <div class="preview-content" (click)="$event.stopPropagation()">
+      <button type="button" class="close-preview" (click)="showAvatarPreview = false">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <img [src]="user.avatar" alt="Avatar Preview" class="full-avatar" />
     </div>
   </div>
 </div>

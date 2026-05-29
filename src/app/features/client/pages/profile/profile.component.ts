@@ -70,18 +70,19 @@ export class ProfileComponent implements OnInit {
   showLanguageSelector: boolean = false;
   showChangePasswordModal: boolean = false;
   showEditProfileModal: boolean = false;
-  
+
   changePasswordForm!: FormGroup;
   editProfileForm!: FormGroup;
-  
+
   uploadingAvatar = false;
   changingPassword = false;
   updatingProfile = false;
   errorMessage = '';
   successMessage = '';
-  
+
   addresses: CustomerAddress[] = [];
   loadingAddresses = false;
+  showAvatarPreview = false;
 
   constructor(
     private readonly router: Router,
@@ -91,7 +92,7 @@ export class ProfileComponent implements OnInit {
     public languageService: LanguageService,
     public translate: TranslateService,
     private readonly addressService: CustomerAddressService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initForms();
@@ -132,7 +133,12 @@ export class ProfileComponent implements OnInit {
         this.user.name = profile.fullName || profile.username || 'Người dùng';
         this.user.email = profile.email;
         this.user.phone = profile.phone || '0123456789';
+
+        // Backend now returns full MinIO URLs for public files (avatars)
+        // Example: http://localhost:9000/pine-drink-public/avatars/uuid.jpg
+        // Use the URL directly as provided by the backend
         this.user.avatar = profile.avatarUrl || '';
+        console.log('[Profile] Avatar URL:', this.user.avatar);
       },
       error: (error) => {
         console.error('Failed to load profile:', error);
@@ -199,14 +205,14 @@ export class ProfileComponent implements OnInit {
 
   getUserInitials(): string {
     if (!this.user.name) return 'U';
-    
+
     const words = this.user.name.trim().split(/\s+/);
-    
+
     if (words.length === 1) {
       // Single word: take first 2 letters
       return words[0].substring(0, 2).toUpperCase();
     }
-    
+
     // Multiple words: take first letter of each word (max 3)
     return words
       .slice(0, 3)
@@ -288,7 +294,7 @@ export class ProfileComponent implements OnInit {
   onAvatarFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     console.log('[Avatar Upload] File input triggered', input);
-    
+
     if (!input.files || input.files.length === 0) {
       console.log('[Avatar Upload] No file selected');
       return;
@@ -301,7 +307,7 @@ export class ProfileComponent implements OnInit {
       size: file.size,
       sizeInMB: (file.size / 1024 / 1024).toFixed(2) + 'MB'
     });
-    
+
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
@@ -326,6 +332,8 @@ export class ProfileComponent implements OnInit {
         console.log('[Avatar Upload] Upload successful:', response);
         this.uploadingAvatar = false;
 
+        // Backend returns full MinIO URL for public files (avatars)
+        // Example: http://localhost:9000/pine-drink-public/avatars/uuid.jpg
         const avatarUrl = response?.data?.fileUrl || response?.fileUrl;
 
         if (!avatarUrl) {
@@ -334,8 +342,16 @@ export class ProfileComponent implements OnInit {
           return;
         }
 
-        this.user.avatar = avatarUrl + '?t=' + Date.now();
+        // Add cache-busting timestamp to force browser to reload the image
+        this.user.avatar = avatarUrl + (avatarUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
         console.log('[Avatar Upload] Avatar URL set to:', this.user.avatar);
+
+        // Update stored user data
+        const storedUser = this.tokenService.getStoredUser();
+        if (storedUser) {
+          storedUser.avatarUrl = avatarUrl;
+          this.tokenService.setCurrentUser(storedUser);
+        }
 
         this.successMessage = 'Cập nhật ảnh đại diện thành công!';
         setTimeout(() => {
@@ -345,7 +361,7 @@ export class ProfileComponent implements OnInit {
       error: (error) => {
         console.error('[Avatar Upload] Upload failed:', error);
         this.uploadingAvatar = false;
-        
+
         // Enhanced error message
         let errorMsg = 'Không thể tải ảnh lên. ';
         if (error.status === 0) {
@@ -359,7 +375,7 @@ export class ProfileComponent implements OnInit {
         } else {
           errorMsg += 'Vui lòng thử lại.';
         }
-        
+
         this.errorMessage = errorMsg;
       }
     });
@@ -373,9 +389,11 @@ export class ProfileComponent implements OnInit {
   }
 
   onAvatarLoadError(): void {
-    console.error('[Avatar] Image failed to load:', this.user.avatar);
-    // Clear avatar to show initials fallback
-    this.user.avatar = '';
+    console.error('[Avatar] Image failed to load. Check if URL is correct and accessible:', this.user.avatar);
+    // Don't clear immediately to let user inspect the element in DevTools
+    // but we can set a flag or use a fallback after some delay if needed
+    // For now, let's keep it for debugging
+    // this.user.avatar = ''; 
   }
 
   onAvatarLoadSuccess(): void {
