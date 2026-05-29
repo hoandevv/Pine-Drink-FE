@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
 import { AuthUser } from '../../shared/models/user.model';
 
@@ -45,6 +46,18 @@ export class AdminLayoutComponent {
         this.currentUser = this.authService.getCurrentUser();
         this.sidebarOpen = false;
       });
+  }
+
+  getAvatarUrl(): string {
+    // Backend now returns full MinIO URLs for public files (avatars)
+    // Example: http://localhost:9000/pine-drink-public/avatars/uuid.jpg
+    // Use the URL directly as provided by the backend
+    return this.currentUser?.avatarUrl || '';
+  }
+
+  getUserInitials(): string {
+    const name = this.currentUser?.fullName || this.currentUser?.username || 'A';
+    return name.charAt(0).toUpperCase();
   }
 
   toggleSidebar(): void {

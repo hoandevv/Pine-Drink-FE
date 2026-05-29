@@ -17,5 +17,14 @@ export const API_ENDPOINTS = {
     avatar: '/profile/avatar'
   },
   products: '/products',
-  orders: '/orders'
+  orders: '/orders',
+  customerAddress: {
+    base: '/customer/addresses',
+    detail: (id: number) => `/customer/addresses/${id}`,
+    setDefault: (id: number) => `/customer/addresses/${id}/set-default`
+  },
+  geocoding: {
+    search: '/geocoding/search',
+    reverse: '/geocoding/reverse'
+  }
 } as const;

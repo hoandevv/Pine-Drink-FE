@@ -8,6 +8,8 @@ import { ProductDetailComponent } from './pages/product-detail/product-detail.co
 import { PromotionsComponent } from './pages/promotions/promotions.component';
 import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.component';
 import { CartComponent } from './components/cart/cart.component';
+import { AddressListComponent } from './pages/address-list/address-list.component';
+import { AddressFormComponent } from './pages/address-form/address-form.component';
 
 const routes: Routes = [
   {
@@ -45,6 +47,18 @@ const routes: Routes = [
   {
     path: 'profile',
     component: ProfileComponent
+  },
+  {
+    path: 'addresses/new',
+    component: AddressFormComponent
+  },
+  {
+    path: 'addresses/edit/:id',
+    component: AddressFormComponent
+  },
+  {
+    path: 'addresses',
+    component: AddressListComponent
   }
 ];
 
