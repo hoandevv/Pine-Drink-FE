@@ -7,7 +7,7 @@
 
 .search-container {
   position: relative;
-  z-index: 1000;
+  z-index: 20;
 }
 
 .search-input-wrapper {
@@ -87,7 +87,7 @@
   box-shadow: 0 8px 24px rgba(22, 74, 47, 0.15);
   max-height: 300px;
   overflow-y: auto;
-  z-index: 1001;
+  z-index: 30;
 }
 
 .search-result-item {
@@ -133,6 +133,9 @@
 }
 
 .map-container {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
   flex: 1;
   min-height: 400px;
   border-radius: 12px;
@@ -185,6 +188,22 @@
 
 /* Leaflet popup customization */
 :host ::ng-deep {
+  .leaflet-container,
+  .leaflet-pane,
+  .leaflet-top,
+  .leaflet-bottom {
+    z-index: 1;
+  }
+
+  .leaflet-control-container {
+    position: relative;
+    z-index: 2;
+  }
+
+  .leaflet-popup-pane {
+    z-index: 3;
+  }
+
   .leaflet-popup-content-wrapper {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(22, 74, 47, 0.2);

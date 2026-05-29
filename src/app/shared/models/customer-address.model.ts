@@ -1,5 +1,5 @@
 export interface CustomerAddress {
-  id: number;
+  id: string;
   receiverName: string;
   receiverPhone: string;
   addressLine: string;
