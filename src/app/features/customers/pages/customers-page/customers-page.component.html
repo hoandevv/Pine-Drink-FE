@@ -1,19 +1,85 @@
-<app-page-header title="Customers" description="CRM khách hàng: hạng thành viên, lịch sử mua và tổng chi tiêu.">
+<app-page-header title="Customers" description="CRM khách hàng: phân hạng, lịch sử mua, tổng chi tiêu và tín hiệu chăm sóc.">
+  <button type="button" class="btn btn-secondary">Nhập CSV</button>
   <button type="button" class="btn btn-primary">Xuất danh sách</button>
 </app-page-header>
 
-<section class="crm-grid">
-  <article class="customer-card" *ngFor="let customer of customers">
-    <div class="avatar">{{ customer.name.charAt(0) }}</div>
-    <div class="customer-main">
-      <h3>{{ customer.name }}</h3>
-      <p>{{ customer.phone }}</p>
-    </div>
-    <span class="tier">{{ customer.tier }}</span>
-    <div class="customer-stats">
-      <span><b>{{ customer.orders }}</b> đơn</span>
-      <span><b>{{ customer.spent }}</b> chi tiêu</span>
-      <span><b>{{ customer.last }}</b> gần nhất</span>
-    </div>
+<section class="customer-hero" aria-label="Customer overview">
+  <article class="metric-card featured">
+    <span class="material-symbols-outlined">groups</span>
+    <small>Tổng khách hàng</small>
+    <strong>{{ customers.length }}</strong>
+    <p>+18% so với tháng trước</p>
   </article>
+  <article class="metric-card">
+    <span class="material-symbols-outlined">payments</span>
+    <small>Doanh thu CRM</small>
+    <strong>{{ formatCurrency(totalRevenue) }}</strong>
+    <p>Từ nhóm khách đã đăng ký</p>
+  </article>
+  <article class="metric-card">
+    <span class="material-symbols-outlined">receipt_long</span>
+    <small>Tổng đơn</small>
+    <strong>{{ totalOrders }}</strong>
+    <p>Đơn đã hoàn tất</p>
+  </article>
+  <article class="metric-card">
+    <span class="material-symbols-outlined">workspace_premium</span>
+    <small>VIP</small>
+    <strong>{{ vipCount }}</strong>
+    <p>Khách giá trị cao</p>
+  </article>
+</section>
+
+<section class="customer-toolbar">
+  <label class="search-box" for="customer-search">
+    <span class="material-symbols-outlined">search</span>
+    <input id="customer-search" type="search" [(ngModel)]="searchTerm" placeholder="Tìm theo tên, email, SĐT hoặc mã khách...">
+  </label>
+
+  <div class="tier-filter" aria-label="Customer tier filter">
+    <button
+      *ngFor="let tier of tiers"
+      type="button"
+      [class.active]="selectedTier === tier"
+      (click)="selectedTier = tier">
+      {{ tier }}
+    </button>
+  </div>
+</section>
+
+<section class="customer-table-card">
+  <div class="table-head">
+    <div>Khách hàng</div>
+    <div>Hạng</div>
+    <div>Đơn hàng</div>
+    <div>Chi tiêu</div>
+    <div>Gần nhất</div>
+    <div>Trạng thái</div>
+    <div></div>
+  </div>
+
+  <article class="customer-row" *ngFor="let customer of filteredCustomers">
+    <div class="identity-cell">
+      <div class="avatar">{{ customer.name.charAt(0) }}</div>
+      <div>
+        <h3>{{ customer.name }}</h3>
+        <p>{{ customer.id }} · {{ customer.phone }}</p>
+        <small>{{ customer.email }}</small>
+      </div>
+    </div>
+    <span class="tier" [class]="customer.tier.toLowerCase()">{{ customer.tier }}</span>
+    <strong>{{ customer.orders }}</strong>
+    <strong>{{ formatCurrency(customer.spent) }}</strong>
+    <span>{{ customer.lastOrder }}</span>
+    <em [class]="customer.status.toLowerCase().replace(' ', '-')">{{ customer.status }}</em>
+    <button type="button" class="icon-action" aria-label="Xem khách hàng">
+      <span class="material-symbols-outlined">arrow_forward</span>
+    </button>
+  </article>
+
+  <div class="empty-state" *ngIf="filteredCustomers.length === 0">
+    <span class="material-symbols-outlined">person_search</span>
+    <strong>Không tìm thấy khách hàng</strong>
+    <p>Thử đổi từ khóa hoặc bộ lọc hạng thành viên.</p>
+  </div>
 </section>

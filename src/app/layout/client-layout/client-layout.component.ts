@@ -37,7 +37,7 @@ export class ClientLayoutComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    const roles = this.currentUser?.roles ?? [];
+    const roles = this.currentUser?.roles ?? this.tokenService.getCurrentUserFromToken()?.roles ?? [];
     return roles.some((role) => ['ADMIN', 'ROLE_ADMIN'].includes(role.toUpperCase()));
   }
 

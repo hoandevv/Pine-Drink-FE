@@ -6,26 +6,26 @@
 // ============================================
 .hero-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  padding: 4rem 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  min-height: 600px;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 0.88fr);
+  gap: 3.5rem;
+  padding: 4.5rem max(2rem, calc((100vw - 1280px) / 2));
+  min-height: 620px;
   align-items: center;
-  background: linear-gradient(135deg, #FFFDF5 0%, #FFF8E7 48%, #DFF3D4 100%);
+  background:
+    linear-gradient(135deg, rgba(255, 253, 245, 0.96) 0%, rgba(255, 248, 231, 0.96) 52%, rgba(223, 243, 212, 0.88) 100%);
   position: relative;
   overflow: hidden;
 
   &::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(255, 201, 40, 0.15) 0%, transparent 70%);
+    top: 4rem;
+    right: 8%;
+    width: 26rem;
+    height: 26rem;
     border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 201, 40, 0.2), transparent 68%);
+    pointer-events: none;
   }
 
   @media (max-width: 1024px) {
@@ -53,12 +53,13 @@
     }
 
     h1 {
-      font-size: 3.5rem;
-      font-weight: 800;
-      line-height: 1.1;
-      color: #142117;
+      font-size: clamp(2.8rem, 5vw, 4.7rem);
+      font-weight: 900;
+      line-height: 1.02;
+      color: #102018;
       margin-bottom: 1.5rem;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.045em;
+      text-wrap: balance;
 
       @media (max-width: 768px) {
         font-size: 2.5rem;
@@ -111,6 +112,7 @@
 
   .hero-visual {
     position: relative;
+    min-height: 480px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -118,51 +120,56 @@
 
     .main-drink {
       position: relative;
-      width: 100%;
-      max-width: 450px;
+      width: min(90%, 430px);
       aspect-ratio: 1;
-      background: white;
-      border-radius: 32px;
-      padding: 2rem;
-      box-shadow: 0 24px 70px rgba(11, 51, 32, 0.14);
+      background: #ffffff;
+      border-radius: 30px;
+      padding: 1rem;
+      box-shadow: 0 24px 60px rgba(11, 51, 32, 0.14);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+      &:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 30px 76px rgba(11, 51, 32, 0.18);
+      }
 
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        border-radius: 24px;
+        border-radius: 22px;
       }
 
       span {
         position: absolute;
-        top: 2rem;
-        right: 2rem;
+        top: 1.5rem;
+        right: 1.5rem;
         padding: 0.5rem 1rem;
         background: linear-gradient(135deg, #FFC928 0%, #D99A16 100%);
         color: #142117;
         border-radius: 20px;
         font-size: 0.875rem;
-        font-weight: 700;
-        box-shadow: 0 4px 12px rgba(217, 154, 22, 0.3);
+        font-weight: 800;
+        box-shadow: 0 8px 20px rgba(217, 154, 22, 0.3);
       }
     }
 
     .floating-note {
       position: absolute;
-      bottom: 2rem;
-      left: -2rem;
-      padding: 1rem 1.5rem;
+      bottom: 2.4rem;
+      left: 1.2rem;
+      padding: 0.95rem 1.3rem;
       background: white;
       border-radius: 16px;
-      box-shadow: 0 12px 32px rgba(11, 51, 32, 0.12);
+      box-shadow: 0 14px 34px rgba(11, 51, 32, 0.12);
       font-size: 0.875rem;
-      font-weight: 600;
+      font-weight: 800;
       color: #164A2F;
-      border: 2px solid #DFF3D4;
+      border: 1px solid #DFF3D4;
 
       @media (max-width: 1024px) {
         position: static;
@@ -819,5 +826,32 @@
         box-shadow: 0 6px 16px rgba(22, 74, 47, 0.3);
       }
     }
+  }
+}
+
+@keyframes drinkFloat {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(1deg);
+  }
+}
+
+@keyframes badgeFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes floatOrbit {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.04) rotate(8deg);
   }
 }
