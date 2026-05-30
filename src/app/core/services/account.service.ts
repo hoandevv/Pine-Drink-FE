@@ -7,13 +7,16 @@ import { PageResponse } from 'src/app/shared/models/page-response.model';
 
 export interface AccountListItemResponse {
   id: string;
+  brandId?: string | null;
   username: string;
-  email: string;
-  fullName: string;
+  email?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
+  avatarUrl?: string | null;
   status: string;
   roleCode?: string;
   roles?: string[];
-  lastLoginAt: string;
+  lastLoginAt?: string | null;
 }
 
 export interface AccountDetailResponse extends AccountListItemResponse {
@@ -35,6 +38,14 @@ export interface CreateAccountRequest {
   roleCode: string;
   status?: string;
   scopeType?: string;
+}
+
+export interface UpdateAccountRequest {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string;
+  brandId?: string;
 }
 
 @Injectable({
@@ -69,6 +80,10 @@ export class AccountService {
 
   createAccount(request: CreateAccountRequest): Observable<BaseResponse<AccountDetailResponse>> {
     return this.http.post<BaseResponse<AccountDetailResponse>>(this.apiUrl, request);
+  }
+
+  updateAccount(id: string, request: UpdateAccountRequest): Observable<BaseResponse<AccountDetailResponse>> {
+    return this.http.put<BaseResponse<AccountDetailResponse>>(`${this.apiUrl}/${id}`, request);
   }
 
   updateAccountStatus(id: string, status: string): Observable<BaseResponse<AccountDetailResponse>> {

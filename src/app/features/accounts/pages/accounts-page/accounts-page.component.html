@@ -89,6 +89,29 @@
     <strong>Không tìm thấy tài khoản nội bộ</strong>
     <p>Thử đổi từ khóa hoặc bộ lọc vai trò.</p>
   </div>
+
+  <div class="pagination-bar" *ngIf="totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+
+    <div class="page-status">
+      Trang {{ currentPage + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} bản ghi
+    </div>
+
+    <div class="page-actions">
+      <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0 || isLoading">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage + 1 >= totalPages || isLoading">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
 </section>
 
 <div class="drawer-backdrop" *ngIf="isDrawerOpen" (click)="closeCreateDrawer()"></div>
@@ -154,6 +177,62 @@
       <button type="submit" class="submit-btn" [disabled]="isCreating">
         <span class="material-symbols-outlined">person_add</span>
         {{ isCreating ? 'Đang tạo...' : 'Tạo tài khoản' }}
+      </button>
+    </div>
+  </form>
+</aside>
+
+<div class="drawer-backdrop" *ngIf="isEditDrawerOpen" (click)="closeEditDrawer()"></div>
+<aside class="account-drawer" [class.open]="isEditDrawerOpen" aria-label="Edit internal account">
+  <div class="drawer-head">
+    <div>
+      <small>Cập nhật tài khoản</small>
+      <h2>{{ editingAccount?.displayName }}</h2>
+      <p>Chỉnh thông tin liên hệ và hồ sơ nội bộ.</p>
+    </div>
+    <button type="button" class="drawer-close" (click)="closeEditDrawer()" aria-label="Đóng form">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <form class="create-form" (ngSubmit)="updateAccount()">
+    <label>
+      <span>Họ tên</span>
+      <input name="editFullName" type="text" [(ngModel)]="updateForm.fullName" placeholder="Nguyễn Văn A">
+    </label>
+
+    <label>
+      <span>Email</span>
+      <input name="editEmail" type="email" [(ngModel)]="updateForm.email" placeholder="staff@pinedrink.vn">
+    </label>
+
+    <label>
+      <span>Số điện thoại</span>
+      <input name="editPhone" type="tel" [(ngModel)]="updateForm.phone" placeholder="0900000000">
+    </label>
+
+    <label>
+      <span>Avatar</span>
+      <div class="avatar-upload-box">
+        <div class="avatar-preview" [class.empty]="!updateForm.avatarUrl">
+          <img *ngIf="updateForm.avatarUrl" [src]="updateForm.avatarUrl" alt="Avatar preview">
+          <span *ngIf="!updateForm.avatarUrl" class="material-symbols-outlined">person</span>
+        </div>
+        <div class="avatar-upload-meta">
+          <strong>{{ isUploadingAvatar ? 'Đang upload...' : 'Upload ảnh đại diện' }}</strong>
+          <small>JPG, PNG, WEBP · tối đa 5MB</small>
+          <input id="editAvatarInput" type="file" accept="image/*" (change)="onEditAvatarSelected($event)" [disabled]="isUploadingAvatar">
+        </div>
+      </div>
+    </label>
+
+    <!-- Brand ID reserved for future multi-brand assignment flow. -->
+
+    <div class="drawer-actions">
+      <button type="button" class="ghost-btn" (click)="closeEditDrawer()" [disabled]="isUpdating">Hủy</button>
+      <button type="submit" class="submit-btn" [disabled]="isUpdating">
+        <span class="material-symbols-outlined">save</span>
+        {{ isUpdating ? 'Đang lưu...' : 'Lưu thay đổi' }}
       </button>
     </div>
   </form>

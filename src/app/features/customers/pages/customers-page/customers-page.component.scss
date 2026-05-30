@@ -330,6 +330,63 @@ em {
   }
 }
 
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-top: 1px solid rgba(15, 74, 42, 0.08);
+  background: linear-gradient(135deg, rgba(255, 253, 244, 0.92), rgba(239, 255, 238, 0.82));
+}
+
+.page-size-control,
+.page-status,
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #53635a;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.page-size-control select {
+  height: 28px;
+  min-width: 54px;
+  padding: 0 8px;
+  border: 1px solid rgba(15, 74, 42, 0.12);
+  border-radius: 10px;
+  color: #102018;
+  background: #fffdf4;
+  font-size: 11px;
+  font-weight: 850;
+  outline: none;
+}
+
+.page-actions button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 13px;
+  color: #102018;
+  background: rgba(15, 74, 42, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #ffe66d;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
 @media (max-width: 1100px) {
   .customer-toolbar {
     grid-template-columns: 1fr;

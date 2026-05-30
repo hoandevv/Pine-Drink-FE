@@ -27,6 +27,11 @@ export class CustomersPageComponent implements OnInit {
   lockedCount = 0;
   pendingCount = 0;
   recentLoginCount = 0;
+  currentPage = 0;
+  pageSize = 10;
+  totalElements = 0;
+  totalPages = 0;
+  pageSizeOptions = [5, 10, 20, 50];
 
   readonly statuses = ['All', 'ACTIVE', 'PENDING', 'LOCKED', 'INACTIVE'];
 
@@ -42,35 +47,57 @@ export class CustomersPageComponent implements OnInit {
       keyword: this.searchTerm.trim() || undefined,
       status: this.selectedStatus === 'All' ? undefined : this.selectedStatus,
       roleCode: 'CUSTOMER',
-      page: 0,
-      size: 100
+      page: this.currentPage,
+      size: this.pageSize
     }).pipe(
       finalize(() => this.isLoading = false)
     ).subscribe({
       next: (res) => {
         const content = res.data?.content || [];
         this.customers = content.map(c => this.toCustomerRow(c));
+        this.totalElements = res.data?.totalElements || this.customers.length;
+        this.totalPages = res.data?.totalPages || 0;
         this.calculateStats();
       },
       error: () => {
         this.customers = [];
+        this.totalElements = 0;
+        this.totalPages = 0;
         this.calculateStats();
       }
     });
   }
 
   onSearch(): void {
+    this.currentPage = 0;
     this.loadCustomers();
   }
 
   refresh(): void {
     this.searchTerm = '';
     this.selectedStatus = 'All';
+    this.currentPage = 0;
     this.loadCustomers();
   }
 
   filterByStatus(status: string): void {
     this.selectedStatus = status;
+    this.currentPage = 0;
+    this.loadCustomers();
+  }
+
+  changePage(page: number): void {
+    if (page < 0 || page >= this.totalPages || page === this.currentPage) {
+      return;
+    }
+
+    this.currentPage = page;
+    this.loadCustomers();
+  }
+
+  changePageSize(size: string): void {
+    this.pageSize = Number(size);
+    this.currentPage = 0;
     this.loadCustomers();
   }
 

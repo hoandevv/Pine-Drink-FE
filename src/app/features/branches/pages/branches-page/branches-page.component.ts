@@ -38,6 +38,7 @@ export class BranchesPageComponent implements OnInit {
   saving = false;
   formOpen = false;
   editingBranch: Branch | null = null;
+  pageSizeOptions = [5, 10, 20, 50];
   pageData: PageResponse<Branch> = {
     content: [],
     page: 0,
@@ -76,6 +77,23 @@ export class BranchesPageComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.loadBranches(page);
+  }
+
+  changePage(page: number): void {
+    if (page < 0 || page >= this.pageData.totalPages || page === this.pageData.page) {
+      return;
+    }
+
+    this.loadBranches(page);
+  }
+
+  changePageSize(size: string | number): void {
+    this.pageData = {
+      ...this.pageData,
+      size: Number(size),
+      page: 0
+    };
+    this.loadBranches(0);
   }
 
   openCreateForm(): void {

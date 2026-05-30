@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountService, AccountListItemResponse, CreateAccountRequest } from 'src/app/core/services/account.service';
+import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest } from 'src/app/core/services/account.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { finalize } from 'rxjs';
 
 interface AccountRow extends AccountListItemResponse {
@@ -22,18 +23,31 @@ export class AccountsPageComponent implements OnInit {
   selectedRole = 'All';
   isLoading = false;
   isDrawerOpen = false;
+  isEditDrawerOpen = false;
   isCreating = false;
+  isUpdating = false;
+  isUploadingAvatar = false;
   showCreatePassword = false;
+  editingAccount: AccountRow | null = null;
   accounts: AccountRow[] = [];
   adminCount = 0;
   lockedCount = 0;
   pendingCount = 0;
+  currentPage = 0;
+  pageSize = 10;
+  totalElements = 0;
+  totalPages = 0;
+  pageSizeOptions = [5, 10, 20, 50];
 
   createForm: CreateAccountRequest = this.getEmptyForm();
+  updateForm: UpdateAccountRequest = this.getEmptyUpdateForm();
   readonly internalRoles = ['ADMIN', 'MANAGER', 'STAFF'];
   readonly roles = ['All', ...this.internalRoles];
 
-  constructor(private accountService: AccountService) {}
+  constructor(
+    private accountService: AccountService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadAccounts();
@@ -44,8 +58,8 @@ export class AccountsPageComponent implements OnInit {
     this.accountService.searchAccounts({
       keyword: this.searchTerm.trim() || undefined,
       roleCode: this.selectedRole === 'All' ? undefined : this.selectedRole,
-      page: 0,
-      size: 50
+      page: this.currentPage,
+      size: this.pageSize
     }).pipe(
       finalize(() => {
         this.isLoading = false;
@@ -59,22 +73,43 @@ export class AccountsPageComponent implements OnInit {
         this.adminCount = this.accounts.filter((a) => ['ADMIN', 'MANAGER'].includes(a.displayRole)).length;
         this.lockedCount = this.accounts.filter((a) => a.statusClass === 'locked').length;
         this.pendingCount = this.accounts.filter((a) => a.statusClass === 'pending').length;
+        this.totalElements = res.data?.totalElements || this.accounts.length;
+        this.totalPages = res.data?.totalPages || 0;
       },
       error: () => {
         this.accounts = [];
         this.adminCount = 0;
         this.lockedCount = 0;
         this.pendingCount = 0;
+        this.totalElements = 0;
+        this.totalPages = 0;
       }
     });
   }
 
   onSearch(): void {
+    this.currentPage = 0;
     this.loadAccounts();
   }
 
   filterByRole(role: string): void {
     this.selectedRole = role;
+    this.currentPage = 0;
+    this.loadAccounts();
+  }
+
+  changePage(page: number): void {
+    if (page < 0 || page >= this.totalPages || page === this.currentPage) {
+      return;
+    }
+
+    this.currentPage = page;
+    this.loadAccounts();
+  }
+
+  changePageSize(size: string): void {
+    this.pageSize = Number(size);
+    this.currentPage = 0;
     this.loadAccounts();
   }
 
@@ -97,7 +132,90 @@ export class AccountsPageComponent implements OnInit {
   }
 
   editAccount(account: AccountRow): void {
-    window.alert(`Chức năng sửa tài khoản "${account.displayName}" sẽ được bổ sung sau.`);
+    this.editingAccount = account;
+    this.updateForm = {
+      fullName: account.fullName || account.displayName,
+      email: account.email || '',
+      phone: account.phone || '',
+      avatarUrl: account.avatarUrl || ''
+      // brandId reserved for future multi-brand assignment flow.
+    };
+    this.isEditDrawerOpen = true;
+  }
+
+  closeEditDrawer(): void {
+    if (this.isUpdating) {
+      return;
+    }
+
+    this.isEditDrawerOpen = false;
+    this.editingAccount = null;
+  }
+
+  updateAccount(): void {
+    if (!this.editingAccount) {
+      return;
+    }
+
+    const payload: UpdateAccountRequest = {
+      fullName: this.updateForm.fullName?.trim() || undefined,
+      email: this.updateForm.email?.trim() || undefined,
+      phone: this.updateForm.phone?.trim() || undefined,
+      avatarUrl: this.updateForm.avatarUrl?.trim() || undefined
+      // brandId reserved for future multi-brand assignment flow.
+    };
+
+    this.isUpdating = true;
+    this.accountService.updateAccount(this.editingAccount.id, payload).pipe(
+      finalize(() => {
+        this.isUpdating = false;
+      })
+    ).subscribe({
+      next: () => {
+        window.alert('Đã cập nhật tài khoản.');
+        this.closeEditDrawer();
+        this.loadAccounts();
+      },
+      error: () => {
+        window.alert('Không thể cập nhật tài khoản. Vui lòng kiểm tra dữ liệu.');
+      }
+    });
+  }
+
+  onEditAvatarSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      window.alert('Vui lòng chọn file ảnh.');
+      input.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      window.alert('Ảnh không được vượt quá 5MB.');
+      input.value = '';
+      return;
+    }
+
+    this.isUploadingAvatar = true;
+    this.authService.uploadAvatar(file).pipe(
+      finalize(() => {
+        this.isUploadingAvatar = false;
+        input.value = '';
+      })
+    ).subscribe({
+      next: (response) => {
+        this.updateForm.avatarUrl = response.fileUrl;
+      },
+      error: () => {
+        window.alert('Không thể upload avatar. Vui lòng thử lại.');
+      }
+    });
   }
 
   toggleAccountLock(account: AccountRow): void {
@@ -166,6 +284,16 @@ export class AccountsPageComponent implements OnInit {
       roleCode: 'STAFF',
       status: 'ACTIVE',
       scopeType: 'SYSTEM'
+    };
+  }
+
+  private getEmptyUpdateForm(): UpdateAccountRequest {
+    return {
+      fullName: '',
+      email: '',
+      phone: '',
+      avatarUrl: ''
+      // brandId reserved for future multi-brand assignment flow.
     };
   }
 

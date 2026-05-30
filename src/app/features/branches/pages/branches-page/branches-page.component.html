@@ -12,29 +12,31 @@
 </app-page-header>
 
 <section class="branch-hero" aria-label="Branch overview">
-  <article class="metric-card featured">
-    <div class="card-header">
-      <small>Tổng chi nhánh</small>
+  <article class="overview-card featured">
+    <div class="overview-copy">
+      <span class="overview-kicker">Branch network</span>
+      <h2>{{ pageData.totalElements }} chi nhánh</h2>
+      <p>Quản lý cửa hàng, bản đồ và trạng thái vận hành trong một bảng điều khiển.</p>
+    </div>
+    <div class="overview-orb">
       <span class="material-symbols-outlined">storefront</span>
     </div>
-    <strong>{{ pageData.totalElements }}</strong>
-    <p>Đồng bộ trực tiếp từ backend</p>
   </article>
-  <article class="metric-card">
-    <div class="card-header">
+
+  <article class="overview-card mini active">
+    <span class="material-symbols-outlined">verified</span>
+    <div>
       <small>Đang hoạt động</small>
-      <span class="material-symbols-outlined">verified</span>
+      <strong>{{ activeCount }}</strong>
     </div>
-    <strong>{{ activeCount }}</strong>
-    <p>Sẵn sàng nhận đơn</p>
   </article>
-  <article class="metric-card">
-    <div class="card-header">
+
+  <article class="overview-card mini maintenance">
+    <span class="material-symbols-outlined">engineering</span>
+    <div>
       <small>Bảo trì</small>
-      <span class="material-symbols-outlined">engineering</span>
+      <strong>{{ maintenanceCount }}</strong>
     </div>
-    <strong>{{ maintenanceCount }}</strong>
-    <p>Cần theo dõi vận hành</p>
   </article>
 </section>
 
@@ -201,12 +203,27 @@
     <strong>Chưa có chi nhánh</strong>
     <p>Thêm chi nhánh đầu tiên để map backend hiển thị lên admin.</p>
   </div>
-</section>
 
-<app-pagination
-  [page]="pageData.page"
-  [size]="pageData.size"
-  [totalPages]="pageData.totalPages"
-  [totalElements]="pageData.totalElements"
-  (pageChange)="onPageChange($event)">
-</app-pagination>
+  <div class="pagination-bar" *ngIf="pageData.totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+
+    <div class="page-status">
+      Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} chi nhánh
+    </div>
+
+    <div class="page-actions">
+      <button type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <button type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
+</section>

@@ -71,4 +71,27 @@
     <strong>Không tìm thấy khách hàng</strong>
     <p>Thử đổi từ khóa tìm kiếm.</p>
   </div>
+
+  <div class="pagination-bar" *ngIf="totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+
+    <div class="page-status">
+      Trang {{ currentPage + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} khách hàng
+    </div>
+
+    <div class="page-actions">
+      <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0 || isLoading">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage + 1 >= totalPages || isLoading">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
 </section>
