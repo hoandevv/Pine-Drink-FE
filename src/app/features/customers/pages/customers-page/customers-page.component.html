@@ -1,85 +1,74 @@
-<app-page-header title="Customers" description="CRM khách hàng: phân hạng, lịch sử mua, tổng chi tiêu và tín hiệu chăm sóc.">
-  <button type="button" class="btn btn-secondary">Nhập CSV</button>
-  <button type="button" class="btn btn-primary">Xuất danh sách</button>
+<app-page-header title="Customers" description="Quản lý khách hàng và trạng thái tài khoản.">
 </app-page-header>
 
-<section class="customer-hero" aria-label="Customer overview">
-  <article class="metric-card featured">
-    <span class="material-symbols-outlined">groups</span>
-    <small>Tổng khách hàng</small>
-    <strong>{{ customers.length }}</strong>
-    <p>+18% so với tháng trước</p>
-  </article>
-  <article class="metric-card">
-    <span class="material-symbols-outlined">payments</span>
-    <small>Doanh thu CRM</small>
-    <strong>{{ formatCurrency(totalRevenue) }}</strong>
-    <p>Từ nhóm khách đã đăng ký</p>
-  </article>
-  <article class="metric-card">
-    <span class="material-symbols-outlined">receipt_long</span>
-    <small>Tổng đơn</small>
-    <strong>{{ totalOrders }}</strong>
-    <p>Đơn đã hoàn tất</p>
-  </article>
-  <article class="metric-card">
-    <span class="material-symbols-outlined">workspace_premium</span>
-    <small>VIP</small>
-    <strong>{{ vipCount }}</strong>
-    <p>Khách giá trị cao</p>
-  </article>
-</section>
-
-<section class="customer-toolbar">
+<section class="customer-toolbar" aria-label="Customer tools">
   <label class="search-box" for="customer-search">
     <span class="material-symbols-outlined">search</span>
-    <input id="customer-search" type="search" [(ngModel)]="searchTerm" placeholder="Tìm theo tên, email, SĐT hoặc mã khách...">
+    <input id="customer-search" type="search" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Tìm theo tên, username, email hoặc mã khách...">
   </label>
-
-  <div class="tier-filter" aria-label="Customer tier filter">
+  <button type="button" class="toolbar-action" (click)="onSearch()">
+    <span class="material-symbols-outlined">manage_search</span>
+    Tìm kiếm
+  </button>
+  <button type="button" class="toolbar-ghost" (click)="refresh()">
+    <span class="material-symbols-outlined">refresh</span>
+    Làm mới
+  </button>
+  <div class="status-filter" aria-label="Customer status filter">
     <button
-      *ngFor="let tier of tiers"
+      *ngFor="let status of statuses"
       type="button"
-      [class.active]="selectedTier === tier"
-      (click)="selectedTier = tier">
-      {{ tier }}
+      [class.active]="selectedStatus === status"
+      (click)="filterByStatus(status)">
+      {{ status }}
     </button>
+  </div>
+  <div class="toolbar-summary" aria-label="Customer overview">
+    <span class="material-symbols-outlined">insights</span>
+    <strong>{{ customers.length }}</strong> khách hàng
+    <span class="dot"></span>
+    {{ activeCount }} hoạt động
+    <span class="dot"></span>
+    {{ pendingCount }} chờ
+    <span class="dot"></span>
+    {{ lockedCount }} khóa
   </div>
 </section>
 
 <section class="customer-table-card">
   <div class="table-head">
     <div>Khách hàng</div>
-    <div>Hạng</div>
-    <div>Đơn hàng</div>
-    <div>Chi tiêu</div>
-    <div>Gần nhất</div>
+    <div>Username</div>
+    <div>Email</div>
+    <div>Mã khách</div>
+    <div>Lần đăng nhập</div>
     <div>Trạng thái</div>
-    <div></div>
+    <div>Thao tác</div>
   </div>
 
-  <article class="customer-row" *ngFor="let customer of filteredCustomers">
+  <article class="customer-row" *ngFor="let customer of customers">
     <div class="identity-cell">
-      <div class="avatar">{{ customer.name.charAt(0) }}</div>
+      <div class="avatar">{{ customer.initials }}</div>
       <div>
-        <h3>{{ customer.name }}</h3>
-        <p>{{ customer.id }} · {{ customer.phone }}</p>
-        <small>{{ customer.email }}</small>
+        <h3>{{ customer.displayName }}</h3>
+        <p>{{ customer.roleCode || 'CUSTOMER' }}</p>
       </div>
     </div>
-    <span class="tier" [class]="customer.tier.toLowerCase()">{{ customer.tier }}</span>
-    <strong>{{ customer.orders }}</strong>
-    <strong>{{ formatCurrency(customer.spent) }}</strong>
-    <span>{{ customer.lastOrder }}</span>
-    <em [class]="customer.status.toLowerCase().replace(' ', '-')">{{ customer.status }}</em>
-    <button type="button" class="icon-action" aria-label="Xem khách hàng">
-      <span class="material-symbols-outlined">arrow_forward</span>
+
+    <div class="data-cell strong">{{ customer.username || '—' }}</div>
+    <div class="data-cell email">{{ customer.displayEmail }}</div>
+    <div class="data-cell code">{{ customer.customerCode }}</div>
+    <div class="data-cell muted">{{ customer.formattedLastLogin }}</div>
+    <em [class]="customer.statusClass">{{ customer.statusLabel }}</em>
+
+    <button type="button" class="icon-action" (click)="toggleCustomerLock(customer)" [attr.aria-label]="customer.status === 'LOCKED' ? 'Mở khóa khách hàng' : 'Khóa khách hàng'">
+      <span class="material-symbols-outlined">{{ customer.status === 'LOCKED' ? 'lock_open' : 'lock' }}</span>
     </button>
   </article>
 
-  <div class="empty-state" *ngIf="filteredCustomers.length === 0">
+  <div class="empty-state" *ngIf="customers.length === 0 && !isLoading">
     <span class="material-symbols-outlined">person_search</span>
     <strong>Không tìm thấy khách hàng</strong>
-    <p>Thử đổi từ khóa hoặc bộ lọc hạng thành viên.</p>
+    <p>Thử đổi từ khóa tìm kiếm.</p>
   </div>
 </section>

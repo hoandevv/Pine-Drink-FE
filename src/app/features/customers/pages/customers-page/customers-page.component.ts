@@ -1,15 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { AccountService, AccountListItemResponse } from 'src/app/core/services/account.service';
+import { finalize } from 'rxjs';
 
-interface CustomerSummary {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  tier: 'Diamond' | 'Gold' | 'Silver' | 'New';
-  orders: number;
-  spent: number;
-  lastOrder: string;
-  status: 'Active' | 'VIP' | 'At risk';
+interface CustomerRow extends AccountListItemResponse {
+  displayName: string;
+  initials: string;
+  displayEmail: string;
+  customerCode: string;
+  formattedLastLogin: string;
+  statusLabel: string;
+  statusClass: string;
 }
 
 @Component({
@@ -17,42 +17,138 @@ interface CustomerSummary {
   templateUrl: './customers-page.component.html',
   styleUrls: ['./customers-page.component.scss']
 })
-export class CustomersPageComponent {
+export class CustomersPageComponent implements OnInit {
   searchTerm = '';
-  selectedTier = 'All';
+  selectedStatus = 'All';
+  isLoading = false;
+  customers: CustomerRow[] = [];
 
-  readonly tiers = ['All', 'Diamond', 'Gold', 'Silver', 'New'];
+  activeCount = 0;
+  lockedCount = 0;
+  pendingCount = 0;
+  recentLoginCount = 0;
 
-  readonly customers: CustomerSummary[] = [
-    { id: 'CUS-2401', name: 'Nguyễn Hoàng An', email: 'an.nguyen@email.vn', phone: '0901 222 345', tier: 'Diamond', orders: 42, spent: 12800000, lastOrder: 'Hôm nay', status: 'VIP' },
-    { id: 'CUS-2402', name: 'Trần Minh Tú', email: 'tu.tran@email.vn', phone: '0918 445 102', tier: 'Gold', orders: 25, spent: 7400000, lastOrder: '2 giờ trước', status: 'Active' },
-    { id: 'CUS-2403', name: 'Lê Khánh Vy', email: 'vy.le@email.vn', phone: '0933 120 777', tier: 'Silver', orders: 13, spent: 3100000, lastOrder: 'Hôm qua', status: 'Active' },
-    { id: 'CUS-2404', name: 'Phạm Gia Hân', email: 'han.pham@email.vn', phone: '0977 880 119', tier: 'New', orders: 2, spent: 420000, lastOrder: '5 ngày trước', status: 'At risk' }
-  ];
+  readonly statuses = ['All', 'ACTIVE', 'PENDING', 'LOCKED', 'INACTIVE'];
 
-  get filteredCustomers(): CustomerSummary[] {
-    const keyword = this.searchTerm.trim().toLowerCase();
-    return this.customers.filter((customer) => {
-      const matchesTier = this.selectedTier === 'All' || customer.tier === this.selectedTier;
-      const matchesKeyword = !keyword || [customer.name, customer.email, customer.phone, customer.id]
-        .some((value) => value.toLowerCase().includes(keyword));
-      return matchesTier && matchesKeyword;
+  constructor(private accountService: AccountService) {}
+
+  ngOnInit(): void {
+    this.loadCustomers();
+  }
+
+  loadCustomers(): void {
+    this.isLoading = true;
+    this.accountService.searchAccounts({
+      keyword: this.searchTerm.trim() || undefined,
+      status: this.selectedStatus === 'All' ? undefined : this.selectedStatus,
+      roleCode: 'CUSTOMER',
+      page: 0,
+      size: 100
+    }).pipe(
+      finalize(() => this.isLoading = false)
+    ).subscribe({
+      next: (res) => {
+        const content = res.data?.content || [];
+        this.customers = content.map(c => this.toCustomerRow(c));
+        this.calculateStats();
+      },
+      error: () => {
+        this.customers = [];
+        this.calculateStats();
+      }
     });
   }
 
-  get totalRevenue(): number {
-    return this.customers.reduce((sum, customer) => sum + customer.spent, 0);
+  onSearch(): void {
+    this.loadCustomers();
   }
 
-  get totalOrders(): number {
-    return this.customers.reduce((sum, customer) => sum + customer.orders, 0);
+  refresh(): void {
+    this.searchTerm = '';
+    this.selectedStatus = 'All';
+    this.loadCustomers();
   }
 
-  get vipCount(): number {
-    return this.customers.filter((customer) => customer.status === 'VIP').length;
+  filterByStatus(status: string): void {
+    this.selectedStatus = status;
+    this.loadCustomers();
   }
 
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(value) + 'đ';
+  toggleCustomerLock(customer: CustomerRow): void {
+    const isUnlocking = customer.status === 'LOCKED';
+    const nextStatus = isUnlocking ? 'ACTIVE' : 'LOCKED';
+    const actionLabel = isUnlocking ? 'mở khóa' : 'khóa';
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn ${actionLabel} tài khoản "${customer.displayName}" không?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.accountService.updateAccountStatus(customer.id, nextStatus).subscribe({
+      next: () => {
+        window.alert(`Đã ${actionLabel} tài khoản "${customer.displayName}".`);
+        this.loadCustomers();
+      },
+      error: () => {
+        window.alert(`Không thể ${actionLabel} tài khoản. Vui lòng thử lại.`);
+      }
+    });
+  }
+
+  calculateStats(): void {
+    this.activeCount = this.customers.filter((c) => c.status === 'ACTIVE').length;
+    this.lockedCount = this.customers.filter((c) => c.status === 'LOCKED').length;
+    this.pendingCount = this.customers.filter((c) => c.status === 'PENDING').length;
+    this.recentLoginCount = this.customers.filter((c) => !!c.lastLoginAt).length;
+  }
+
+  private toCustomerRow(customer: AccountListItemResponse): CustomerRow {
+    const displayName = customer.fullName || customer.username || 'Khách hàng chưa đặt tên';
+    const status = customer.status || 'UNKNOWN';
+    
+    let initials = 'KH';
+    if (displayName) {
+      initials = displayName
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part.charAt(0).toUpperCase())
+        .join('');
+    }
+    
+    let formattedLastLogin = 'Chưa đăng nhập';
+    if (customer.lastLoginAt) {
+      try {
+        formattedLastLogin = new Intl.DateTimeFormat('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }).format(new Date(customer.lastLoginAt));
+      } catch (e) {
+        formattedLastLogin = 'Ngày không hợp lệ';
+      }
+    }
+
+    const labels: Record<string, string> = {
+      ACTIVE: 'Đang hoạt động',
+      LOCKED: 'Bị khóa',
+      PENDING: 'Chờ xác minh',
+      INACTIVE: 'Ngưng hoạt động'
+    };
+
+    return {
+      ...customer,
+      displayName,
+      initials: initials || 'KH',
+      displayEmail: customer.email || 'Chưa có email',
+      customerCode: customer.id ? `#${customer.id.slice(0, 8).toUpperCase()}` : '#N/A',
+      formattedLastLogin,
+      statusLabel: labels[status] || status || 'Chưa rõ',
+      statusClass: status.toLowerCase()
+    };
   }
 }

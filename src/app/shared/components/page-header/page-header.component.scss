@@ -2,8 +2,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .eyebrow {
@@ -15,14 +15,26 @@
   text-transform: uppercase;
 }
 
-h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.4rem); }
+h1 {
+  margin: 0;
+  color: #102018;
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
 
 p:last-child {
-  margin: 0.35rem 0 0;
-  color: var(--color-text-muted);
-  max-width: 640px;
+  margin: 5px 0 0;
+  color: #6d7c71;
+  max-width: 520px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 @media (max-width: 768px) {
-  .page-header { flex-direction: column; }
+  .page-header {
+    flex-direction: column;
+  }
 }

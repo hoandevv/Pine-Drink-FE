@@ -1,13 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { AccountService, AccountListItemResponse, CreateAccountRequest } from 'src/app/core/services/account.service';
+import { finalize } from 'rxjs';
 
-interface AccountSummary {
-  id: string;
-  name: string;
-  email: string;
-  role: 'SUPER_ADMIN' | 'MANAGER' | 'STAFF' | 'CUSTOMER';
-  status: 'Online' | 'Active' | 'Locked' | 'Pending';
-  lastLogin: string;
-  permissions: number;
+interface AccountRow extends AccountListItemResponse {
+  displayName: string;
+  displayEmail: string;
+  displayRole: string;
+  roleClass: string;
+  statusLabel: string;
+  statusClass: string;
+  icon: string;
 }
 
 @Component({
@@ -15,38 +17,175 @@ interface AccountSummary {
   templateUrl: './accounts-page.component.html',
   styleUrls: ['./accounts-page.component.scss']
 })
-export class AccountsPageComponent {
+export class AccountsPageComponent implements OnInit {
   searchTerm = '';
   selectedRole = 'All';
+  isLoading = false;
+  isDrawerOpen = false;
+  isCreating = false;
+  showCreatePassword = false;
+  accounts: AccountRow[] = [];
+  adminCount = 0;
+  lockedCount = 0;
+  pendingCount = 0;
 
-  readonly roles = ['All', 'SUPER_ADMIN', 'MANAGER', 'STAFF', 'CUSTOMER'];
+  createForm: CreateAccountRequest = this.getEmptyForm();
+  readonly internalRoles = ['ADMIN', 'MANAGER', 'STAFF'];
+  readonly roles = ['All', ...this.internalRoles];
 
-  readonly accounts: AccountSummary[] = [
-    { id: 'ACC-001', name: 'Hoan Admin', role: 'SUPER_ADMIN', email: 'hoan@pinedrink.vn', status: 'Online', lastLogin: 'Đang hoạt động', permissions: 18 },
-    { id: 'ACC-002', name: 'Mai Store', role: 'MANAGER', email: 'mai.manager@pinedrink.vn', status: 'Active', lastLogin: '15 phút trước', permissions: 12 },
-    { id: 'ACC-003', name: 'Khoa Staff', role: 'STAFF', email: 'khoa.staff@pinedrink.vn', status: 'Active', lastLogin: '1 giờ trước', permissions: 7 },
-    { id: 'ACC-004', name: 'Vy Customer', role: 'CUSTOMER', email: 'vy.customer@email.vn', status: 'Pending', lastLogin: 'Chưa xác minh', permissions: 3 }
-  ];
+  constructor(private accountService: AccountService) {}
 
-  get filteredAccounts(): AccountSummary[] {
-    const keyword = this.searchTerm.trim().toLowerCase();
-    return this.accounts.filter((account) => {
-      const matchesRole = this.selectedRole === 'All' || account.role === this.selectedRole;
-      const matchesKeyword = !keyword || [account.name, account.email, account.id, account.role]
-        .some((value) => value.toLowerCase().includes(keyword));
-      return matchesRole && matchesKeyword;
+  ngOnInit(): void {
+    this.loadAccounts();
+  }
+
+  loadAccounts(): void {
+    this.isLoading = true;
+    this.accountService.searchAccounts({
+      keyword: this.searchTerm.trim() || undefined,
+      roleCode: this.selectedRole === 'All' ? undefined : this.selectedRole,
+      page: 0,
+      size: 50
+    }).pipe(
+      finalize(() => {
+        this.isLoading = false;
+      })
+    ).subscribe({
+      next: (res) => {
+        const content = res.data?.content || [];
+        this.accounts = content
+          .filter((account) => this.internalRoles.includes(this.getPrimaryRole(account)))
+          .map((account) => this.toAccountRow(account));
+        this.adminCount = this.accounts.filter((a) => ['ADMIN', 'MANAGER'].includes(a.displayRole)).length;
+        this.lockedCount = this.accounts.filter((a) => a.statusClass === 'locked').length;
+        this.pendingCount = this.accounts.filter((a) => a.statusClass === 'pending').length;
+      },
+      error: () => {
+        this.accounts = [];
+        this.adminCount = 0;
+        this.lockedCount = 0;
+        this.pendingCount = 0;
+      }
     });
   }
 
-  get adminCount(): number {
-    return this.accounts.filter((account) => ['SUPER_ADMIN', 'MANAGER'].includes(account.role)).length;
+  onSearch(): void {
+    this.loadAccounts();
   }
 
-  get lockedCount(): number {
-    return this.accounts.filter((account) => account.status === 'Locked').length;
+  filterByRole(role: string): void {
+    this.selectedRole = role;
+    this.loadAccounts();
   }
 
-  get pendingCount(): number {
-    return this.accounts.filter((account) => account.status === 'Pending').length;
+  openCreateDrawer(): void {
+    this.createForm = this.getEmptyForm();
+    this.showCreatePassword = false;
+    this.isDrawerOpen = true;
+  }
+
+  closeCreateDrawer(): void {
+    if (this.isCreating) {
+      return;
+    }
+
+    this.isDrawerOpen = false;
+  }
+
+  toggleCreatePassword(): void {
+    this.showCreatePassword = !this.showCreatePassword;
+  }
+
+  editAccount(account: AccountRow): void {
+    window.alert(`Chức năng sửa tài khoản "${account.displayName}" sẽ được bổ sung sau.`);
+  }
+
+  toggleAccountLock(account: AccountRow): void {
+    const isUnlocking = account.statusClass === 'locked';
+    const nextStatus = isUnlocking ? 'ACTIVE' : 'LOCKED';
+    const actionLabel = isUnlocking ? 'mở khóa' : 'khóa';
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn ${actionLabel} tài khoản "${account.displayName}" không?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.accountService.updateAccountStatus(account.id, nextStatus).subscribe({
+      next: () => {
+        window.alert(`Đã ${actionLabel} tài khoản "${account.displayName}".`);
+        this.loadAccounts();
+      },
+      error: () => {
+        window.alert(`Không thể ${actionLabel} tài khoản. Vui lòng thử lại.`);
+      }
+    });
+  }
+
+  createAccount(): void {
+    const payload: CreateAccountRequest = {
+      ...this.createForm,
+      username: this.createForm.username.trim(),
+      fullName: this.createForm.fullName.trim(),
+      email: this.createForm.email?.trim() || undefined,
+      phone: this.createForm.phone?.trim() || undefined,
+      status: 'ACTIVE',
+      scopeType: 'SYSTEM'
+    };
+
+    if (!payload.username || !payload.password || !payload.fullName || !payload.roleCode) {
+      window.alert('Vui lòng nhập đủ username, mật khẩu, họ tên và vai trò.');
+      return;
+    }
+
+    this.isCreating = true;
+    this.accountService.createAccount(payload).pipe(
+      finalize(() => {
+        this.isCreating = false;
+      })
+    ).subscribe({
+      next: () => {
+        window.alert('Đã tạo tài khoản nội bộ.');
+        this.isDrawerOpen = false;
+        this.loadAccounts();
+      },
+      error: () => {
+        window.alert('Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.');
+      }
+    });
+  }
+
+  private getEmptyForm(): CreateAccountRequest {
+    return {
+      username: '',
+      password: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      roleCode: 'STAFF',
+      status: 'ACTIVE',
+      scopeType: 'SYSTEM'
+    };
+  }
+
+  private getPrimaryRole(account: AccountListItemResponse): string {
+    return account.roleCode || account.roles?.[0] || 'UNKNOWN';
+  }
+
+  private toAccountRow(account: AccountListItemResponse): AccountRow {
+    const role = this.getPrimaryRole(account);
+    const status = account.status || 'UNKNOWN';
+
+    return {
+      ...account,
+      displayName: account.fullName || account.username || 'Tài khoản chưa đặt tên',
+      displayEmail: account.email || 'Chưa có email',
+      displayRole: role,
+      roleClass: role.toLowerCase(),
+      statusLabel: status,
+      statusClass: status.toLowerCase(),
+      icon: role === 'STAFF' ? 'support_agent' : 'admin_panel_settings'
+    };
   }
 }
