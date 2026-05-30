@@ -199,8 +199,10 @@ export class ProfileComponent implements OnInit {
         })
       )
       .subscribe((addresses) => {
-        this.addresses = addresses;
+        console.log('[Profile] Response from addressService:', addresses);
+        this.addresses = addresses || [];
         this.loadingAddresses = false;
+        console.log('[Profile] Current addresses count:', this.addresses.length);
       });
   }
 

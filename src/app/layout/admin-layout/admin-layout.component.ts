@@ -22,6 +22,7 @@ export class AdminLayoutComponent {
   readonly navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
     { label: 'Products', icon: 'local_cafe', route: '/admin/products' },
+    { label: 'Branches', icon: 'storefront', route: '/admin/branches' },
     { label: 'Categories', icon: 'category', route: '/admin/categories' },
     { label: 'Toppings', icon: 'icecream', route: '/admin/toppings' },
     { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', badge: '18' },

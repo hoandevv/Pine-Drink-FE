@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 import { ClientRoutingModule } from './client-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 // Pages
 import { HomeComponent } from './pages/home/home.component';
@@ -17,7 +18,7 @@ import { AddressFormComponent } from './pages/address-form/address-form.componen
 
 // Components
 import { CartComponent } from './components/cart/cart.component';
-import { MapPickerComponent } from './components/map-picker/map-picker.component';
+import { BranchService } from '../branches/services/branch.service';
 
 @NgModule({
   declarations: [
@@ -30,15 +31,19 @@ import { MapPickerComponent } from './components/map-picker/map-picker.component
     PromotionsComponent,
     OrderTrackingComponent,
     AddressListComponent,
-    AddressFormComponent,
-    MapPickerComponent
+    AddressFormComponent
   ],
   imports: [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
     TranslateModule,
-    ClientRoutingModule
+    ClientRoutingModule,
+    SharedModule
+  ],
+  providers: [
+    BranchService
   ]
 })
 export class ClientModule {}
+

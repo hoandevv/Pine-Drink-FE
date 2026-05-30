@@ -14,6 +14,7 @@ import { AddressFormComponent } from './pages/address-form/address-form.componen
 const routes: Routes = [
   {
     path: '',
+    pathMatch: 'full',
     component: HomeComponent
   },
   {

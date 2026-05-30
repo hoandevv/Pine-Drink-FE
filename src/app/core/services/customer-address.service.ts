@@ -15,8 +15,16 @@ export class CustomerAddressService {
 
   getAddresses(): Observable<CustomerAddress[]> {
     return this.http
-      .get<BaseResponse<CustomerAddress[]>>(`${environment.apiBaseUrl}${API_ENDPOINTS.customerAddress.base}`)
-      .pipe(map((response) => response.data));
+      .get<BaseResponse<any>>(`${environment.apiBaseUrl}${API_ENDPOINTS.customerAddress.base}`)
+      .pipe(
+        map((response) => {
+          // Handle both paginated and non-paginated responses
+          if (response.data && response.data.content) {
+            return response.data.content;
+          }
+          return response.data || [];
+        })
+      );
   }
 
   getAddressById(id: string): Observable<CustomerAddress> {

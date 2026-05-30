@@ -23,6 +23,8 @@
         type="button" 
         [class.active]="filterNearby"
         (click)="toggleFilter('nearby')"
+        disabled
+        title="Sắp hỗ trợ khi có định vị người dùng"
       >
         <span class="material-symbols-outlined">near_me</span>
         Gần tôi
@@ -64,7 +66,7 @@
         <div class="branch-header">
           <div>
             <h3>{{ branch.name }}</h3>
-            <span class="distance-badge">{{ branch.distance }}</span>
+            <span class="distance-badge">{{ branch.brandName || 'Pine Drink' }}</span>
           </div>
           <span class="status-badge" [class]="getStatusClass(branch)">
             {{ getStatusText(branch) }}
@@ -74,30 +76,30 @@
         <div class="branch-info">
           <div class="info-row">
             <span class="material-symbols-outlined">location_on</span>
-            <p>{{ branch.address }}</p>
+            <p>{{ branch.address || 'Chưa cập nhật địa chỉ' }}</p>
           </div>
           <div class="info-row">
-            <span class="material-symbols-outlined">schedule</span>
-            <p>{{ branch.openTime }} - {{ branch.closeTime }}</p>
+            <span class="material-symbols-outlined">timer</span>
+            <p>Chuẩn bị khoảng {{ getPreparationText(branch) }}</p>
           </div>
           <div class="info-row">
             <span class="material-symbols-outlined">phone</span>
-            <p>{{ branch.phone }}</p>
+            <p>{{ branch.phone || branch.email || 'Chưa cập nhật liên hệ' }}</p>
           </div>
         </div>
 
         <div class="branch-services">
-          <span *ngIf="branch.hasPickup" class="service-tag">
+          <span *ngIf="branch.supportsPickup" class="service-tag">
             <span class="material-symbols-outlined">shopping_bag</span>
             Pickup
           </span>
-          <span *ngIf="branch.hasDelivery" class="service-tag">
+          <span *ngIf="branch.supportsDelivery" class="service-tag">
             <span class="material-symbols-outlined">local_shipping</span>
             Delivery
           </span>
           <span class="service-tag time">
             <span class="material-symbols-outlined">timer</span>
-            {{ branch.estimatedTime }}
+            {{ getPreparationText(branch) }}
           </span>
         </div>
 
@@ -110,7 +112,13 @@
       </article>
 
       <!-- Empty State -->
-      <div *ngIf="filteredBranches.length === 0" class="empty-state">
+      <div *ngIf="loading" class="empty-state">
+        <span class="material-symbols-outlined">progress_activity</span>
+        <h3>Đang tải chi nhánh</h3>
+        <p>Dữ liệu đang được đồng bộ từ hệ thống.</p>
+      </div>
+
+      <div *ngIf="!loading && filteredBranches.length === 0" class="empty-state">
         <span class="material-symbols-outlined">location_off</span>
         <h3>Không tìm thấy chi nhánh</h3>
         <p>Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác</p>
@@ -121,53 +129,20 @@
   <!-- Right Panel: Map -->
   <div class="map-panel">
     <div class="map-container">
-      <!-- Map Placeholder -->
-      <div class="map-placeholder">
-        <img 
-          [src]="mapImageUrl" 
-          alt="Map of Hanoi"
-        />
-        
-        <!-- Location Markers -->
-        <div 
-          *ngFor="let branch of filteredBranches; let i = index" 
-          class="map-marker"
-          [style.top.%]="30 + (i * 15)"
-          [style.left.%]="40 + (i * 10)"
-          [class.selected]="selectedBranch?.id === branch.id"
-          (click)="selectBranch(branch)"
-        >
-          <span class="material-symbols-outlined">location_on</span>
-          <div class="marker-tooltip">
-            <strong>{{ branch.name }}</strong>
-            <p>{{ branch.distance }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Map Controls -->
-      <div class="map-controls">
-        <button type="button" class="map-control-btn" title="My Location">
-          <span class="material-symbols-outlined">my_location</span>
-        </button>
-        <button type="button" class="map-control-btn" title="Zoom In">
-          <span class="material-symbols-outlined">add</span>
-        </button>
-        <button type="button" class="map-control-btn" title="Zoom Out">
-          <span class="material-symbols-outlined">remove</span>
-        </button>
-      </div>
+      <div id="store-locator-map" class="interactive-map"></div>
 
       <!-- Selected Branch Info Card -->
       <div *ngIf="selectedBranch" class="selected-branch-card">
-        <img [src]="selectedBranch.image" [alt]="selectedBranch.name" />
+        <div class="branch-image-fallback">
+          <span class="material-symbols-outlined">storefront</span>
+        </div>
         <div class="card-content">
           <h4>{{ selectedBranch.name }}</h4>
-          <p>{{ selectedBranch.address }}</p>
+          <p>{{ selectedBranch.address || 'Chưa cập nhật địa chỉ' }}</p>
           <div class="card-meta">
-            <span>{{ selectedBranch.distance }}</span>
+            <span>{{ selectedBranch.brandName || 'Pine Drink' }}</span>
             <span>•</span>
-            <span>{{ selectedBranch.estimatedTime }}</span>
+            <span>{{ getPreparationText(selectedBranch) }}</span>
           </div>
           <button class="primary-button" (click)="confirmBranch(selectedBranch)">
             Chọn chi nhánh

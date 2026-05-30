@@ -1,7 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { MOCK_BRANCHES, MockBranch } from '../../../../shared/mock-data';
-import { environment } from '../../../../../environments/environment';
+import { finalize } from 'rxjs';
+
+import * as L from 'leaflet';
+import { Branch } from '../../../branches/models/branch.model';
+import { BranchService } from '../../../branches/services/branch.service';
 
 @Component({
   selector: 'app-store-locator',
@@ -9,72 +12,137 @@ import { environment } from '../../../../../environments/environment';
   styleUrls: ['./store-locator.component.scss']
 })
 export class StoreLocatorComponent implements OnInit {
-  allBranches: MockBranch[] = [];
-  filteredBranches: MockBranch[] = [];
-  selectedBranch: MockBranch | null = null;
+  allBranches: Branch[] = [];
+  filteredBranches: Branch[] = [];
+  selectedBranch: Branch | null = null;
 
-  mapImageUrl: string;
+  loading = false;
   
-  searchQuery: string = '';
-  filterNearby: boolean = true;
-  filterOpen: boolean = false;
-  filterPickup: boolean = false;
-  filterDelivery: boolean = false;
+  map!: L.Map;
+  markers: L.Marker[] = [];
 
-  constructor(private router: Router) {
-    this.mapImageUrl = `https://api.mapbox.com/styles/v1/mapbox/light-v10/static/105.8342,21.0278,11,0/800x1000@2x?access_token=${environment.mapboxAccessToken}`;
-  }
+  searchQuery = '';
+  filterNearby = false;
+  filterOpen = false;
+  filterPickup = false;
+  filterDelivery = false;
+
+  constructor(
+    private readonly router: Router,
+    private readonly branchService: BranchService
+  ) {}
 
   ngOnInit(): void {
+    this.initMap();
     this.loadBranches();
   }
 
+  private initMap(): void {
+    this.map = L.map('store-locator-map', {
+      center: [21.028511, 105.804817], // Hanoi
+      zoom: 12
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(this.map);
+
+    const iconRetinaUrl = 'assets/marker-icon-2x.png';
+    const iconUrl = 'assets/marker-icon.png';
+    const shadowUrl = 'assets/marker-shadow.png';
+    const iconDefault = L.icon({
+      iconRetinaUrl,
+      iconUrl,
+      shadowUrl,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      tooltipAnchor: [16, -28],
+      shadowSize: [41, 41]
+    });
+    L.Marker.prototype.options.icon = iconDefault;
+  }
+
   loadBranches(): void {
-    this.allBranches = MOCK_BRANCHES.sort((a, b) => a.distanceKm - b.distanceKm);
-    this.filteredBranches = [...this.allBranches];
-    
-    // Select nearest branch by default
-    if (this.allBranches.length > 0) {
-      this.selectedBranch = this.allBranches[0];
-    }
-    
-    this.applyFilters();
+    this.loading = true;
+    this.branchService
+      .getActiveBranches(0, 100)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (pageData) => {
+          this.allBranches = pageData.content;
+          this.applyFilters();
+          this.selectedBranch = this.filteredBranches[0] || null;
+        },
+        error: () => {
+          this.allBranches = [];
+          this.filteredBranches = [];
+          this.selectedBranch = null;
+        }
+      });
   }
 
   applyFilters(): void {
     let filtered = [...this.allBranches];
 
-    // Filter by search query
     if (this.searchQuery.trim()) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(branch => 
+      const query = this.searchQuery.trim().toLowerCase();
+      filtered = filtered.filter((branch) =>
         branch.name.toLowerCase().includes(query) ||
-        branch.address.toLowerCase().includes(query) ||
-        branch.district.toLowerCase().includes(query)
+        (branch.address || '').toLowerCase().includes(query) ||
+        (branch.phone || '').toLowerCase().includes(query) ||
+        (branch.email || '').toLowerCase().includes(query)
       );
     }
 
-    // Filter by nearby (within 5km)
-    if (this.filterNearby) {
-      filtered = filtered.filter(branch => branch.distanceKm <= 5);
-    }
-
-    // Filter by open status
     if (this.filterOpen) {
-      filtered = filtered.filter(branch => branch.isOpen);
+      filtered = filtered.filter((branch) => branch.status === 'ACTIVE');
     }
 
-    // Filter by pickup availability
     if (this.filterPickup) {
-      filtered = filtered.filter(branch => branch.hasPickup);
+      filtered = filtered.filter((branch) => branch.supportsPickup);
     }
 
-    // Filter by delivery availability
     if (this.filterDelivery) {
-      filtered = filtered.filter(branch => branch.hasDelivery);
+      filtered = filtered.filter((branch) => branch.supportsDelivery);
     }
 
     this.filteredBranches = filtered;
+    this.updateMapMarkers();
+
+    if (this.selectedBranch && !filtered.some((branch) => branch.id === this.selectedBranch?.id)) {
+      this.selectedBranch = filtered[0] || null;
+      if (this.selectedBranch) {
+        this.selectBranch(this.selectedBranch);
+      }
+    }
+  }
+
+  private updateMapMarkers(): void {
+    if (!this.map) return;
+
+    this.markers.forEach(m => this.map.removeLayer(m));
+    this.markers = [];
+
+    const bounds = L.latLngBounds([]);
+
+    this.filteredBranches.forEach(branch => {
+      if (branch.latitude && branch.longitude) {
+        const marker = L.marker([branch.latitude, branch.longitude])
+          .addTo(this.map)
+          .bindPopup(`<b>${branch.name}</b><br>${branch.address || ''}`)
+          .on('click', () => {
+            this.selectBranch(branch);
+          });
+        this.markers.push(marker);
+        bounds.extend([branch.latitude, branch.longitude]);
+      }
+    });
+
+    if (this.markers.length > 0) {
+      this.map.fitBounds(bounds, { padding: [50, 50] });
+    }
   }
 
   onSearchChange(): void {
@@ -99,21 +167,29 @@ export class StoreLocatorComponent implements OnInit {
     this.applyFilters();
   }
 
-  selectBranch(branch: MockBranch): void {
+  selectBranch(branch: Branch): void {
     this.selectedBranch = branch;
+    if (branch.latitude && branch.longitude && this.map) {
+      this.map.setView([branch.latitude, branch.longitude], 15, { animate: true });
+    }
   }
 
-  confirmBranch(branch: MockBranch): void {
-    // TODO: Save selected branch to service/state
-    console.log('Selected branch:', branch);
-    this.router.navigate(['/client/menu']);
+  confirmBranch(branch: Branch): void {
+    sessionStorage.setItem('selectedBranchId', branch.id);
+    sessionStorage.setItem('selectedBranchName', branch.name);
+    this.router.navigate(['/menu']);
   }
 
-  getStatusClass(branch: MockBranch): string {
-    return branch.isOpen ? 'open' : 'closed';
+  getStatusClass(branch: Branch): string {
+    return branch.status === 'ACTIVE' ? 'open' : 'closed';
   }
 
-  getStatusText(branch: MockBranch): string {
-    return branch.isOpen ? 'Đang mở cửa' : 'Đã đóng cửa';
+  getStatusText(branch: Branch): string {
+    return branch.status === 'ACTIVE' ? 'Đang hoạt động' : 'Tạm ngưng';
+  }
+
+  getPreparationText(branch: Branch): string {
+    const minutes = branch.averagePreparationMinutes || 15;
+    return `${minutes} phút`;
   }
 }
