@@ -7,6 +7,7 @@ import { BranchCreateRequest } from '../../models/branch-request.model';
 import { Branch } from '../../models/branch.model';
 import { BranchService } from '../../services/branch.service';
 import { MapPickerResult } from '../../../../features/client/components/map-picker/map-picker.component';
+import { AccessControlService } from '../../../../core/services/access-control.service';
 
 @Component({
   selector: 'app-branches-page',
@@ -51,7 +52,8 @@ export class BranchesPageComponent implements OnInit {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly branchService: BranchService
+    private readonly branchService: BranchService,
+    public readonly accessControl: AccessControlService
   ) {}
 
   ngOnInit(): void {
@@ -97,6 +99,10 @@ export class BranchesPageComponent implements OnInit {
   }
 
   openCreateForm(): void {
+    if (!this.accessControl.can('BRANCH_CREATE')) {
+      return;
+    }
+
     this.editingBranch = null;
     this.formOpen = true;
     this.branchForm.reset({
@@ -113,6 +119,10 @@ export class BranchesPageComponent implements OnInit {
   }
 
   openEditForm(branch: Branch): void {
+    if (!this.accessControl.can('BRANCH_UPDATE')) {
+      return;
+    }
+
     this.editingBranch = branch;
     this.formOpen = true;
     this.branchForm.patchValue({

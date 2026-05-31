@@ -36,6 +36,7 @@ const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
+        data: { permission: 'BRANCH_VIEW' },
         loadChildren: () => import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule)
       },
       {
@@ -44,6 +45,7 @@ const routes: Routes = [
       },
       {
         path: 'branches',
+        data: { permission: 'BRANCH_VIEW' },
         loadChildren: () => import('./features/branches/branches.module').then((m) => m.BranchesModule)
       },
       {
@@ -64,6 +66,7 @@ const routes: Routes = [
       },
       {
         path: 'accounts',
+        data: { permission: 'ACCOUNT_VIEW' },
         loadChildren: () => import('./features/accounts/accounts.module').then((m) => m.AccountsModule)
       },
       {

@@ -12,7 +12,7 @@
 
     <nav class="module-nav" aria-label="Admin modules">
       <a
-        *ngFor="let item of navItems"
+        *ngFor="let item of visibleNavItems"
         [routerLink]="item.route"
         class="module-link"
         [class.is-active]="isActive(item.route)"

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest } from 'src/app/core/services/account.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { finalize } from 'rxjs';
+import { AccessControlService } from 'src/app/core/services/access-control.service';
 
 interface AccountRow extends AccountListItemResponse {
   displayName: string;
@@ -41,12 +42,13 @@ export class AccountsPageComponent implements OnInit {
 
   createForm: CreateAccountRequest = this.getEmptyForm();
   updateForm: UpdateAccountRequest = this.getEmptyUpdateForm();
-  readonly internalRoles = ['ADMIN', 'MANAGER', 'STAFF'];
+  readonly internalRoles = ['ADMIN', 'MANAGER', 'DELIVERY'];
   readonly roles = ['All', ...this.internalRoles];
 
   constructor(
     private accountService: AccountService,
-    private authService: AuthService
+    private authService: AuthService,
+    public readonly accessControl: AccessControlService
   ) {}
 
   ngOnInit(): void {
@@ -114,6 +116,10 @@ export class AccountsPageComponent implements OnInit {
   }
 
   openCreateDrawer(): void {
+    if (!this.accessControl.can('ACCOUNT_CREATE')) {
+      return;
+    }
+
     this.createForm = this.getEmptyForm();
     this.showCreatePassword = false;
     this.isDrawerOpen = true;
@@ -281,7 +287,7 @@ export class AccountsPageComponent implements OnInit {
       fullName: '',
       email: '',
       phone: '',
-      roleCode: 'STAFF',
+      roleCode: 'DELIVERY',
       status: 'ACTIVE',
       scopeType: 'SYSTEM'
     };
@@ -313,7 +319,7 @@ export class AccountsPageComponent implements OnInit {
       roleClass: role.toLowerCase(),
       statusLabel: status,
       statusClass: status.toLowerCase(),
-      icon: role === 'STAFF' ? 'support_agent' : 'admin_panel_settings'
+      icon: role === 'DELIVERY' ? 'local_shipping' : 'admin_panel_settings'
     };
   }
 }

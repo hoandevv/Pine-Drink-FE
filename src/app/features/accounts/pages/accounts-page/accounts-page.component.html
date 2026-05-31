@@ -7,7 +7,7 @@
     <input id="account-search" type="search" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Tìm nhân sự theo tên, email, mã tài khoản hoặc role...">
   </label>
 
-  <button type="button" class="create-account-btn" (click)="openCreateDrawer()">
+  <button *ngIf="accessControl.can('ACCOUNT_CREATE')" type="button" class="create-account-btn" (click)="openCreateDrawer()">
     <span class="material-symbols-outlined">person_add</span>
     Thêm tài khoản
   </button>
@@ -75,10 +75,10 @@
     <span class="login-cell">{{ account.lastLoginAt || 'Chưa có' }}</span>
     <em [class]="account.statusClass">{{ account.statusLabel }}</em>
     <div class="row-actions">
-      <button type="button" (click)="editAccount(account)" [attr.aria-label]="'Sửa tài khoản ' + account.displayName">
+      <button *ngIf="accessControl.can('ACCOUNT_UPDATE')" type="button" (click)="editAccount(account)" [attr.aria-label]="'Sửa tài khoản ' + account.displayName">
          <span class="material-symbols-outlined">edit</span>
       </button>
-      <button type="button" (click)="toggleAccountLock(account)" [attr.aria-label]="account.statusClass === 'locked' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'">
+      <button *ngIf="accessControl.can('ACCOUNT_CHANGE_STATUS')" type="button" (click)="toggleAccountLock(account)" [attr.aria-label]="account.statusClass === 'locked' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'">
         <span class="material-symbols-outlined">{{ account.statusClass === 'locked' ? 'lock_open' : 'lock' }}</span>
       </button>
     </div>
@@ -158,7 +158,7 @@
       <select name="roleCode" [(ngModel)]="createForm.roleCode" required>
         <option value="ADMIN">ADMIN</option>
         <option value="MANAGER">MANAGER</option>
-        <option value="STAFF">STAFF</option>
+        <option value="DELIVERY">DELIVERY</option>
       </select>
     </label>
 

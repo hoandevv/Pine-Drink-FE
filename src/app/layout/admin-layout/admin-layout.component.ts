@@ -4,12 +4,14 @@ import { filter } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
+import { AccessControlService } from '../../core/services/access-control.service';
 import { AuthUser } from '../../shared/models/user.model';
 
 interface NavItem {
   label: string;
   icon: string;
   route: string;
+  permission?: string;
   badge?: string;
 }
 
@@ -20,24 +22,29 @@ interface NavItem {
 })
 export class AdminLayoutComponent {
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard' },
+    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard', permission: 'BRANCH_VIEW' },
     { label: 'Products', icon: 'local_cafe', route: '/admin/products' },
-    { label: 'Branches', icon: 'storefront', route: '/admin/branches' },
+    { label: 'Branches', icon: 'storefront', route: '/admin/branches', permission: 'BRANCH_VIEW' },
     { label: 'Categories', icon: 'category', route: '/admin/categories' },
     { label: 'Toppings', icon: 'icecream', route: '/admin/toppings' },
     { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', badge: '18' },
     { label: 'Customers', icon: 'groups', route: '/admin/customers' },
-    { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts' },
+    { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts', permission: 'ACCOUNT_VIEW' },
     { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers' },
     { label: 'Reports', icon: 'monitoring', route: '/admin/reports' }
   ];
+
+  get visibleNavItems(): NavItem[] {
+    return this.navItems.filter((item) => !item.permission || this.accessControl.can(item.permission));
+  }
 
   sidebarOpen = false;
   currentUser: AuthUser | null = null;
 
   constructor(
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly accessControl: AccessControlService
   ) {
     this.currentUser = this.authService.getCurrentUser();
 

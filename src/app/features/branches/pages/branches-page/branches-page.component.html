@@ -4,7 +4,7 @@
       <span class="material-symbols-outlined">refresh</span>
       Làm mới
     </button>
-    <button id="branch-create-btn" type="button" class="primary-action-btn" (click)="openCreateForm()">
+    <button id="branch-create-btn" *ngIf="accessControl.can('BRANCH_CREATE')" type="button" class="primary-action-btn" (click)="openCreateForm()">
       <span class="material-symbols-outlined">add</span>
       Thêm chi nhánh
     </button>
@@ -189,10 +189,10 @@
     </div>
     <em [class]="branch.status.toLowerCase()">{{ statusLabel(branch.status) }}</em>
     <div class="row-actions">
-      <button type="button" class="icon-action" (click)="openEditForm(branch)" aria-label="Sửa chi nhánh">
+      <button *ngIf="accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action" (click)="openEditForm(branch)" aria-label="Sửa chi nhánh">
         <span class="material-symbols-outlined">edit</span>
       </button>
-      <button type="button" class="icon-action danger" (click)="deleteBranch(branch)" aria-label="Xóa chi nhánh">
+      <button *ngIf="accessControl.can('BRANCH_DELETE')" type="button" class="icon-action danger" (click)="deleteBranch(branch)" aria-label="Xóa chi nhánh">
         <span class="material-symbols-outlined">delete</span>
       </button>
     </div>

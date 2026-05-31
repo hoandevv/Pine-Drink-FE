@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, of, switchMap, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -47,6 +47,7 @@ export interface FileUploadResponseData {
 })
 export class AuthService {
   private readonly authBaseUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly permissionCacheTtlMs = 15 * 60 * 1000;
   private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.tokenService.getCurrentUserFromToken());
   public readonly currentUser$ = this.currentUserSubject.asObservable();
 
@@ -77,10 +78,11 @@ export class AuthService {
     return this.http.post<BaseResponse<LoginResponseData>>(`${this.authBaseUrl}/login`, request).pipe(
       tap((response) => {
         this.tokenService.setTokens(response.data.accessToken, response.data.refreshToken);
-        this.tokenService.setCurrentUser(response.data.account);
-        this.currentUserSubject.next(response.data.account);
+        this.setAuthenticatedUser(response.data.account);
       }),
-      map((response) => response.data)
+      switchMap((response) => this.loadCurrentPermissions(true).pipe(
+        map(() => response.data)
+      ))
     );
   }
 
@@ -113,7 +115,27 @@ export class AuthService {
       .get<BaseResponse<AuthUser>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.base}`)
       .pipe(
         tap((response) => this.setAuthenticatedUser(response.data)),
-        map((response) => response.data)
+        switchMap((response) => this.loadCurrentPermissions().pipe(
+          map(() => this.getCurrentUser() ?? response.data)
+        ))
+      );
+  }
+
+  loadCurrentPermissions(forceRefresh = false): Observable<string[]> {
+    if (!this.tokenService.getAccessToken()) {
+      return of([]);
+    }
+
+    const cachedPermissions = this.getCachedPermissions();
+    if (!forceRefresh && cachedPermissions) {
+      return of(cachedPermissions);
+    }
+
+    return this.http
+      .get<BaseResponse<string[]>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.permissions}`)
+      .pipe(
+        map((response) => response.data ?? []),
+        tap((permissions) => this.mergePermissions(permissions))
       );
   }
 
@@ -165,8 +187,40 @@ export class AuthService {
   }
 
   private setAuthenticatedUser(user: AuthUser): void {
-    this.tokenService.setCurrentUser(user);
-    this.currentUserSubject.next(user);
+    const currentPermissions = this.tokenService.getStoredUser()?.permissions ?? [];
+    const nextUser: AuthUser = {
+      ...user,
+      permissions: user.permissions?.length ? user.permissions : currentPermissions
+    };
+
+    this.tokenService.setCurrentUser(nextUser);
+    this.currentUserSubject.next(nextUser);
+  }
+
+  private mergePermissions(permissions: string[]): void {
+    const user = this.tokenService.getCurrentUserFromToken();
+    if (!user) {
+      return;
+    }
+
+    const nextUser: AuthUser = {
+      ...user,
+      permissions,
+      permissionsLoadedAt: Date.now()
+    };
+
+    this.tokenService.setCurrentUser(nextUser);
+    this.currentUserSubject.next(nextUser);
+  }
+
+  private getCachedPermissions(): string[] | null {
+    const user = this.tokenService.getStoredUser();
+    if (!user?.permissions?.length || !user.permissionsLoadedAt) {
+      return null;
+    }
+
+    const isFresh = Date.now() - user.permissionsLoadedAt < this.permissionCacheTtlMs;
+    return isFresh ? user.permissions : null;
   }
 
   getCurrentUser(): AuthUser | null {
