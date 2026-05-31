@@ -132,11 +132,11 @@ export class MenuComponent implements OnInit {
   }
 
   viewCart(): void {
-    this.router.navigate(['/client/cart']);
+    this.router.navigate(['/cart']);
   }
 
   changeBranch(): void {
-    this.router.navigate(['/client/stores']);
+    this.router.navigate(['/stores']);
   }
 
   formatPrice(price: number): string {

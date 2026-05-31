@@ -122,7 +122,7 @@ export class CartComponent implements OnInit {
   }
 
   continueShopping(): void {
-    this.router.navigate(['/client/menu']);
+    this.router.navigate(['/menu']);
   }
 
   formatPrice(price: number): string {

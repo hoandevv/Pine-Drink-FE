@@ -51,15 +51,15 @@ export class HomeComponent implements OnInit {
   }
 
   navigateToMenu(): void {
-    this.router.navigate(['/client/menu']);
+    this.router.navigate(['/menu']);
   }
 
   navigateToStores(): void {
-    this.router.navigate(['/client/stores']);
+    this.router.navigate(['/stores']);
   }
 
   navigateToCategory(categoryId: string): void {
-    this.router.navigate(['/client/menu'], { queryParams: { category: categoryId } });
+    this.router.navigate(['/menu'], { queryParams: { category: categoryId } });
   }
 
   selectBranch(branch: MockBranch): void {

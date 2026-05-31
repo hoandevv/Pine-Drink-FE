@@ -76,7 +76,8 @@ export class TokenService {
       avatarUrl: storedUser?.avatarUrl,
       status: storedUser?.status,
       lastLoginAt: storedUser?.lastLoginAt,
-      roles: payload.roles ?? storedUser?.roles ?? []
+      roles: payload.roles ?? storedUser?.roles ?? [],
+      permissions: payload.permissions ?? storedUser?.permissions ?? []
     };
   }
 
@@ -89,7 +90,7 @@ export class TokenService {
     return payload.exp * 1000 <= Date.now();
   }
 
-  private decodeTokenPayload(token: string): { sub?: string; username?: string; email?: string; roles?: string[]; exp?: number } | null {
+  private decodeTokenPayload(token: string): { sub?: string; username?: string; email?: string; roles?: string[]; permissions?: string[]; exp?: number } | null {
     const parts = token.split('.');
     if (parts.length !== 3) {
       return null;

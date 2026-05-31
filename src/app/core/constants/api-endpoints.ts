@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
     refreshToken: '/auth/refresh-token',
     logout: '/auth/logout',
     me: '/auth/me',
+    permissions: '/auth/me/permissions',
     forgotPassword: '/auth/forgot-password',
     verifyForgotPasswordOtp: '/auth/forgot-password/verify-otp',
     resetPassword: '/auth/reset-password'
@@ -17,6 +18,7 @@ export const API_ENDPOINTS = {
     avatar: '/profile/avatar'
   },
   products: '/products',
+  branches: '/branches',
   orders: '/orders',
   customerAddress: {
     base: '/customer/addresses',

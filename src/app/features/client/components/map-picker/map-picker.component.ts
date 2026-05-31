@@ -85,7 +85,9 @@ export class MapPickerComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(500),
         distinctUntilChanged(),
-        switchMap((query) => {
+        switchMap((rawQuery) => {
+          const query = rawQuery.trim();
+
           if (!query || query.length < 3) {
             this.searchResults = [];
             this.showResults = false;

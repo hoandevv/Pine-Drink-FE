@@ -1,49 +1,56 @@
-<app-page-header title="Accounts" description="Quản lý staff, khách hàng, trạng thái tài khoản và phân quyền cho từng vai trò.">
-  <button type="button" class="btn btn-secondary">Mẫu quyền</button>
-  <button type="button" class="btn btn-primary">+ Tạo tài khoản</button>
+<app-page-header title="Internal Accounts" description="Quản lý Admin, Manager và Staff.">
 </app-page-header>
 
-<section class="account-hero" aria-label="Account overview">
-  <article class="metric-card featured">
-    <span class="material-symbols-outlined">admin_panel_settings</span>
-    <small>Tổng tài khoản</small>
-    <strong>{{ accounts.length }}</strong>
-    <p>Hệ thống định danh nội bộ</p>
-  </article>
-  <article class="metric-card">
-    <span class="material-symbols-outlined">verified_user</span>
-    <small>Admin/Manager</small>
-    <strong>{{ adminCount }}</strong>
-    <p>Có quyền vận hành dashboard</p>
-  </article>
-  <article class="metric-card">
-    <span class="material-symbols-outlined">lock</span>
-    <small>Bị khóa</small>
-    <strong>{{ lockedCount }}</strong>
-    <p>Tài khoản cần kiểm tra</p>
-  </article>
-  <article class="metric-card">
-    <span class="material-symbols-outlined">pending_actions</span>
-    <small>Chờ xác minh</small>
-    <strong>{{ pendingCount }}</strong>
-    <p>Cần kích hoạt email/OTP</p>
-  </article>
-</section>
-
-<section class="account-toolbar">
+<section class="account-toolbar" aria-label="Account tools">
   <label class="search-box" for="account-search">
     <span class="material-symbols-outlined">manage_search</span>
-    <input id="account-search" type="search" [(ngModel)]="searchTerm" placeholder="Tìm theo tên, email, mã tài khoản hoặc role...">
+    <input id="account-search" type="search" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Tìm nhân sự theo tên, email, mã tài khoản hoặc role...">
   </label>
+
+  <button *ngIf="accessControl.can('ACCOUNT_CREATE')" type="button" class="create-account-btn" (click)="openCreateDrawer()">
+    <span class="material-symbols-outlined">person_add</span>
+    Thêm tài khoản
+  </button>
 
   <div class="role-filter" aria-label="Account role filter">
     <button
       *ngFor="let role of roles"
       type="button"
       [class.active]="selectedRole === role"
-      (click)="selectedRole = role">
+      (click)="filterByRole(role)">
       {{ role }}
     </button>
+  </div>
+
+  <div class="account-summary" aria-label="Account overview">
+    <article class="summary-card featured">
+      <span class="material-symbols-outlined">manage_accounts</span>
+      <div>
+        <small>Nội bộ</small>
+        <strong>{{ accounts.length }}</strong>
+      </div>
+    </article>
+    <article class="summary-card">
+      <span class="material-symbols-outlined">verified_user</span>
+      <div>
+        <small>Điều hành</small>
+        <strong>{{ adminCount }}</strong>
+      </div>
+    </article>
+    <article class="summary-card">
+      <span class="material-symbols-outlined">pending_actions</span>
+      <div>
+        <small>Chờ xác minh</small>
+        <strong>{{ pendingCount }}</strong>
+      </div>
+    </article>
+    <article class="summary-card">
+      <span class="material-symbols-outlined">lock</span>
+      <div>
+        <small>Bị khóa</small>
+        <strong>{{ lockedCount }}</strong>
+      </div>
+    </article>
   </div>
 </section>
 
@@ -51,37 +58,182 @@
   <div class="panel-head">
     <div>Tài khoản</div>
     <div>Vai trò</div>
-    <div>Quyền</div>
     <div>Lần đăng nhập</div>
     <div>Trạng thái</div>
-    <div></div>
+    <div>Thao tác</div>
   </div>
 
-  <article *ngFor="let account of filteredAccounts" class="account-row">
+  <article *ngFor="let account of accounts" class="account-row">
     <div class="account-identity">
-      <span class="material-symbols-outlined">{{ account.role === 'CUSTOMER' ? 'person' : 'admin_panel_settings' }}</span>
+      <span class="material-symbols-outlined">{{ account.icon }}</span>
       <div>
-        <h3>{{ account.name }}</h3>
-        <p>{{ account.id }} · {{ account.email }}</p>
+        <h3>{{ account.displayName }}</h3>
+        <p>{{ account.id }} · {{ account.displayEmail }}</p>
       </div>
     </div>
-    <strong [class]="account.role.toLowerCase()">{{ account.role }}</strong>
-    <span>{{ account.permissions }} quyền</span>
-    <span>{{ account.lastLogin }}</span>
-    <em [class]="account.status.toLowerCase()">{{ account.status }}</em>
+    <strong [class]="account.roleClass">{{ account.displayRole }}</strong>
+    <span class="login-cell">{{ account.lastLoginAt || 'Chưa có' }}</span>
+    <em [class]="account.statusClass">{{ account.statusLabel }}</em>
     <div class="row-actions">
-      <button type="button" aria-label="Sửa tài khoản">
-        <span class="material-symbols-outlined">edit</span>
+      <button *ngIf="accessControl.can('ACCOUNT_UPDATE')" type="button" (click)="editAccount(account)" [attr.aria-label]="'Sửa tài khoản ' + account.displayName">
+         <span class="material-symbols-outlined">edit</span>
       </button>
-      <button type="button" aria-label="Khóa tài khoản">
-        <span class="material-symbols-outlined">lock</span>
+      <button *ngIf="accessControl.can('ACCOUNT_CHANGE_STATUS')" type="button" (click)="toggleAccountLock(account)" [attr.aria-label]="account.statusClass === 'locked' ? 'Mở khóa tài khoản' : 'Khóa tài khoản'">
+        <span class="material-symbols-outlined">{{ account.statusClass === 'locked' ? 'lock_open' : 'lock' }}</span>
       </button>
     </div>
   </article>
 
-  <div class="empty-state" *ngIf="filteredAccounts.length === 0">
+  <div class="empty-state" *ngIf="accounts.length === 0 && !isLoading">
     <span class="material-symbols-outlined">manage_accounts</span>
-    <strong>Không tìm thấy tài khoản</strong>
+    <strong>Không tìm thấy tài khoản nội bộ</strong>
     <p>Thử đổi từ khóa hoặc bộ lọc vai trò.</p>
   </div>
+
+  <div class="pagination-bar" *ngIf="totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+
+    <div class="page-status">
+      Trang {{ currentPage + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} bản ghi
+    </div>
+
+    <div class="page-actions">
+      <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0 || isLoading">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage + 1 >= totalPages || isLoading">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
 </section>
+
+<div class="drawer-backdrop" *ngIf="isDrawerOpen" (click)="closeCreateDrawer()"></div>
+<aside class="account-drawer" [class.open]="isDrawerOpen" aria-label="Create internal account">
+  <div class="drawer-head">
+    <div>
+      <small>Tài khoản nội bộ</small>
+      <h2>Thêm nhân sự</h2>
+      <p>Tạo tài khoản Admin, Manager hoặc Staff.</p>
+    </div>
+    <button type="button" class="drawer-close" (click)="closeCreateDrawer()" aria-label="Đóng form">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <form class="create-form" (ngSubmit)="createAccount()">
+    <label>
+      <span>Họ tên</span>
+      <input name="fullName" type="text" [(ngModel)]="createForm.fullName" placeholder="Nguyễn Văn A" required>
+    </label>
+
+    <label>
+      <span>Username</span>
+      <input name="username" type="text" [(ngModel)]="createForm.username" placeholder="staff_01" required>
+    </label>
+
+    <label>
+      <span>Mật khẩu tạm</span>
+      <div class="password-field">
+        <input
+          name="password"
+          [type]="showCreatePassword ? 'text' : 'password'"
+          [(ngModel)]="createForm.password"
+          placeholder="Aa@123456"
+          required>
+        <button type="button" (click)="toggleCreatePassword()" [attr.aria-label]="showCreatePassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'">
+          <span class="material-symbols-outlined">{{ showCreatePassword ? 'visibility_off' : 'visibility' }}</span>
+        </button>
+      </div>
+    </label>
+
+    <label>
+      <span>Vai trò</span>
+      <select name="roleCode" [(ngModel)]="createForm.roleCode" required>
+        <option value="ADMIN">ADMIN</option>
+        <option value="MANAGER">MANAGER</option>
+        <option value="DELIVERY">DELIVERY</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Email</span>
+      <input name="email" type="email" [(ngModel)]="createForm.email" placeholder="staff@pinedrink.vn">
+    </label>
+
+    <label>
+      <span>Số điện thoại</span>
+      <input name="phone" type="tel" [(ngModel)]="createForm.phone" placeholder="0900000000">
+    </label>
+
+    <div class="drawer-actions">
+      <button type="button" class="ghost-btn" (click)="closeCreateDrawer()" [disabled]="isCreating">Hủy</button>
+      <button type="submit" class="submit-btn" [disabled]="isCreating">
+        <span class="material-symbols-outlined">person_add</span>
+        {{ isCreating ? 'Đang tạo...' : 'Tạo tài khoản' }}
+      </button>
+    </div>
+  </form>
+</aside>
+
+<div class="drawer-backdrop" *ngIf="isEditDrawerOpen" (click)="closeEditDrawer()"></div>
+<aside class="account-drawer" [class.open]="isEditDrawerOpen" aria-label="Edit internal account">
+  <div class="drawer-head">
+    <div>
+      <small>Cập nhật tài khoản</small>
+      <h2>{{ editingAccount?.displayName }}</h2>
+      <p>Chỉnh thông tin liên hệ và hồ sơ nội bộ.</p>
+    </div>
+    <button type="button" class="drawer-close" (click)="closeEditDrawer()" aria-label="Đóng form">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <form class="create-form" (ngSubmit)="updateAccount()">
+    <label>
+      <span>Họ tên</span>
+      <input name="editFullName" type="text" [(ngModel)]="updateForm.fullName" placeholder="Nguyễn Văn A">
+    </label>
+
+    <label>
+      <span>Email</span>
+      <input name="editEmail" type="email" [(ngModel)]="updateForm.email" placeholder="staff@pinedrink.vn">
+    </label>
+
+    <label>
+      <span>Số điện thoại</span>
+      <input name="editPhone" type="tel" [(ngModel)]="updateForm.phone" placeholder="0900000000">
+    </label>
+
+    <label>
+      <span>Avatar</span>
+      <div class="avatar-upload-box">
+        <div class="avatar-preview" [class.empty]="!updateForm.avatarUrl">
+          <img *ngIf="updateForm.avatarUrl" [src]="updateForm.avatarUrl" alt="Avatar preview">
+          <span *ngIf="!updateForm.avatarUrl" class="material-symbols-outlined">person</span>
+        </div>
+        <div class="avatar-upload-meta">
+          <strong>{{ isUploadingAvatar ? 'Đang upload...' : 'Upload ảnh đại diện' }}</strong>
+          <small>JPG, PNG, WEBP · tối đa 5MB</small>
+          <input id="editAvatarInput" type="file" accept="image/*" (change)="onEditAvatarSelected($event)" [disabled]="isUploadingAvatar">
+        </div>
+      </div>
+    </label>
+
+    <!-- Brand ID reserved for future multi-brand assignment flow. -->
+
+    <div class="drawer-actions">
+      <button type="button" class="ghost-btn" (click)="closeEditDrawer()" [disabled]="isUpdating">Hủy</button>
+      <button type="submit" class="submit-btn" [disabled]="isUpdating">
+        <span class="material-symbols-outlined">save</span>
+        {{ isUpdating ? 'Đang lưu...' : 'Lưu thay đổi' }}
+      </button>
+    </div>
+  </form>
+</aside>

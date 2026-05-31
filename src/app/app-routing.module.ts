@@ -36,11 +36,17 @@ const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
+        data: { permission: 'BRANCH_VIEW' },
         loadChildren: () => import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule)
       },
       {
         path: 'products',
         loadChildren: () => import('./features/products/products.module').then((m) => m.ProductsModule)
+      },
+      {
+        path: 'branches',
+        data: { permission: 'BRANCH_VIEW' },
+        loadChildren: () => import('./features/branches/branches.module').then((m) => m.BranchesModule)
       },
       {
         path: 'categories',
@@ -60,7 +66,13 @@ const routes: Routes = [
       },
       {
         path: 'accounts',
+        data: { permission: 'ACCOUNT_VIEW' },
         loadChildren: () => import('./features/accounts/accounts.module').then((m) => m.AccountsModule)
+      },
+      {
+        path: 'permissions',
+        data: { permission: 'ACCOUNT_ROLE_VIEW' },
+        loadChildren: () => import('./features/permissions/permissions.module').then((m) => m.PermissionsModule)
       },
       {
         path: 'vouchers',
