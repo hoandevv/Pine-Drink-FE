@@ -71,7 +71,7 @@ const routes: Routes = [
       },
       {
         path: 'permissions',
-        data: { permission: 'ACCOUNT_ROLE_VIEW' },
+        data: { permission: 'ROLE_PERMISSION_VIEW' },
         loadChildren: () => import('./features/permissions/permissions.module').then((m) => m.PermissionsModule)
       },
       {

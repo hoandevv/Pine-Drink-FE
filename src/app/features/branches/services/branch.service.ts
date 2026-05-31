@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { TokenService } from '../../../core/services/token.service';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
-import { BranchCreateRequest, BranchUpdateRequest } from '../models/branch-request.model';
+import { BranchCreateRequest, BranchUpdateRequest, BranchStatusUpdateRequest } from '../models/branch-request.model';
 import { Branch } from '../models/branch.model';
 
 @Injectable()
@@ -71,8 +71,16 @@ export class BranchService {
     return this.http.put<BaseResponse<Branch>>(`${this.apiUrl}/${id}`, request).pipe(map((response) => response.data));
   }
 
-  deleteBranch(id: string): Observable<void> {
-    return this.http.delete<BaseResponse<null>>(`${this.apiUrl}/${id}`).pipe(map(() => void 0));
+  updateBranchStatus(id: string, request: BranchStatusUpdateRequest): Observable<Branch> {
+    return this.http.patch<BaseResponse<Branch>>(`${this.apiUrl}/${id}/status`, request).pipe(map((response) => response.data));
+  }
+
+  closeBranch(id: string): Observable<Branch> {
+    return this.updateBranchStatus(id, { status: 'INACTIVE' });
+  }
+
+  restoreBranch(id: string): Observable<Branch> {
+    return this.updateBranchStatus(id, { status: 'ACTIVE' });
   }
 
   private getBrandBranchesUrl(): string {

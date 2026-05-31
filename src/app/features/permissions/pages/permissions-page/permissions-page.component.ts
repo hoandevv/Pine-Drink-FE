@@ -26,8 +26,7 @@ export class PermissionsPageComponent implements OnInit {
   readonly dangerousPermissions = new Set([
     'ACCOUNT_CHANGE_STATUS',
     'ACCOUNT_RESET_PASSWORD',
-    'ACCOUNT_ROLE_ASSIGN',
-    'ACCOUNT_ROLE_REVOKE',
+    'ROLE_PERMISSION_UPDATE',
     'BRANCH_DELETE'
   ]);
 
@@ -76,7 +75,7 @@ export class PermissionsPageComponent implements OnInit {
   }
 
   canEditRole(role: RolePermissionMatrix): boolean {
-    return !role.locked && this.accessControl.canAny(['ACCOUNT_ROLE_ASSIGN', 'ACCOUNT_ROLE_REVOKE']);
+    return !role.locked && this.accessControl.can('ROLE_PERMISSION_UPDATE');
   }
 
   togglePermission(role: RolePermissionMatrix, permissionCode: string): void {

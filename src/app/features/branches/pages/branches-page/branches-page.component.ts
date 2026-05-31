@@ -165,12 +165,22 @@ export class BranchesPageComponent implements OnInit {
       });
   }
 
-  deleteBranch(branch: Branch): void {
-    if (!window.confirm(`Xóa chi nhánh ${branch.name}?`)) {
+  closeBranch(branch: Branch): void {
+    if (!window.confirm(`Đóng chi nhánh ${branch.name}?`)) {
       return;
     }
 
-    this.branchService.deleteBranch(branch.id).subscribe({
+    this.branchService.closeBranch(branch.id).subscribe({
+      next: () => this.loadBranches(this.pageData.page)
+    });
+  }
+
+  restoreBranch(branch: Branch): void {
+    if (!window.confirm(`Mở lại chi nhánh ${branch.name}?`)) {
+      return;
+    }
+
+    this.branchService.restoreBranch(branch.id).subscribe({
       next: () => this.loadBranches(this.pageData.page)
     });
   }

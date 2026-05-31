@@ -30,7 +30,7 @@ export class AdminLayoutComponent {
     { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', badge: '18' },
     { label: 'Customers', icon: 'groups', route: '/admin/customers' },
     { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts', permission: 'ACCOUNT_VIEW' },
-    { label: 'Permissions', icon: 'verified_user', route: '/admin/permissions', permission: 'ACCOUNT_ROLE_VIEW' },
+    { label: 'Permissions', icon: 'verified_user', route: '/admin/permissions', permission: 'ROLE_PERMISSION_VIEW' },
     { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers' },
     { label: 'Reports', icon: 'monitoring', route: '/admin/reports' }
   ];
