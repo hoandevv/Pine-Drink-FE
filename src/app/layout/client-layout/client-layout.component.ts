@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
-import { TokenService } from '../../core/services/token.service';
+import { AccessControlService } from '../../core/services/access-control.service';
 import { AuthUser } from '../../shared/models/user.model';
 
 @Component({
@@ -19,9 +19,9 @@ export class ClientLayoutComponent implements OnInit {
   readonly cartTotal = 84000;
 
   constructor(
-    private readonly tokenService: TokenService,
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly accessControl: AccessControlService
   ) {
     this.currentUser$ = this.authService.currentUser$;
   }
@@ -37,8 +37,7 @@ export class ClientLayoutComponent implements OnInit {
   }
 
   get isAdmin(): boolean {
-    const roles = this.currentUser?.roles ?? this.tokenService.getCurrentUserFromToken()?.roles ?? [];
-    return roles.some((role) => ['ADMIN', 'ROLE_ADMIN'].includes(role.toUpperCase()));
+    return this.accessControl.isAdminConsoleUser();
   }
 
   get displayName(): string {

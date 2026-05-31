@@ -11,4 +11,6 @@ export interface AuthUser {
   status?: string | null;
   lastLoginAt?: string | null;
   roles?: string[];
+  permissions?: string[];
+  permissionsLoadedAt?: number;
 }

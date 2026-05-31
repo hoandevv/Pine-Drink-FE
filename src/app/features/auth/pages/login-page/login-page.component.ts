@@ -3,7 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AuthService } from '../../../../core/services/auth.service';
-import { TokenService } from '../../../../core/services/token.service';
+import { AccessControlService } from '../../../../core/services/access-control.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { LoginRequest } from '../../models/login-request.model';
 
@@ -24,7 +24,7 @@ export class LoginPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly authService: AuthService,
-    private readonly tokenService: TokenService,
+    private readonly accessControl: AccessControlService,
     private readonly toastService: ToastService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
@@ -89,15 +89,6 @@ export class LoginPageComponent implements OnInit {
   }
 
   private getRedirectUrlByRole(): string {
-    const user = this.tokenService.getCurrentUserFromToken();
-    const roles = user?.roles ?? [];
-    
-    // Check if user has admin role
-    const isAdmin = roles.some((role) => 
-      ['ADMIN', 'ROLE_ADMIN'].includes(role.toUpperCase())
-    );
-    
-    // Redirect admin to dashboard, customer to home
-    return isAdmin ? '/admin/dashboard' : '/';
+    return this.accessControl.isAdminConsoleUser() ? '/admin/dashboard' : '/';
   }
 }
