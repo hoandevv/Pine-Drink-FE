@@ -10,7 +10,12 @@ export interface BranchCreateRequest {
   supportsPickup?: boolean;
   supportsDelivery?: boolean;
   averagePreparationMinutes?: number;
+  status?: 'ACTIVE' | 'INACTIVE' | string;
   brandId?: string;
 }
 
 export type BranchUpdateRequest = BranchCreateRequest;
+
+export interface BranchStatusUpdateRequest {
+  status: 'ACTIVE' | 'INACTIVE';
+}

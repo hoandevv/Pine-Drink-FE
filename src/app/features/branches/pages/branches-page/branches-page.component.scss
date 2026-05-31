@@ -501,7 +501,7 @@ h2 {
 .table-head,
 .branch-row {
   display: grid;
-  grid-template-columns: minmax(300px, 1.45fr) minmax(160px, 0.9fr) minmax(130px, 0.72fr) minmax(130px, 0.75fr) minmax(120px, 0.66fr) auto;
+  grid-template-columns: minmax(300px, 1.45fr) minmax(160px, 0.9fr) minmax(130px, 0.72fr) minmax(130px, 0.75fr) minmax(120px, 0.66fr) minmax(90px, auto);
   gap: 12px;
   align-items: center;
 }
@@ -690,6 +690,16 @@ em {
   &.danger:hover {
     color: #7f1d1d;
     background: rgba(248, 113, 113, 0.18);
+  }
+
+  &.restore {
+    color: #0f4a2a;
+    background: rgba(142, 230, 168, 0.18);
+  }
+
+  &.restore:hover {
+    color: #063f24;
+    background: rgba(142, 230, 168, 0.34);
   }
 }
 

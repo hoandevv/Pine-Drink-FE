@@ -161,7 +161,7 @@
     <div>Dịch vụ</div>
     <div>Vận hành</div>
     <div>Trạng thái</div>
-    <div></div>
+    <div style="text-align: right;">Thao tác</div>
   </div>
 
   <article class="branch-row" *ngFor="let branch of branches">
@@ -189,11 +189,14 @@
     </div>
     <em [class]="branch.status.toLowerCase()">{{ statusLabel(branch.status) }}</em>
     <div class="row-actions">
-      <button *ngIf="accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action" (click)="openEditForm(branch)" aria-label="Sửa chi nhánh">
+      <button *ngIf="accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action" (click)="openEditForm(branch)" aria-label="Sửa chi nhánh" title="Sửa chi nhánh">
         <span class="material-symbols-outlined">edit</span>
       </button>
-      <button *ngIf="accessControl.can('BRANCH_DELETE')" type="button" class="icon-action danger" (click)="deleteBranch(branch)" aria-label="Xóa chi nhánh">
-        <span class="material-symbols-outlined">delete</span>
+      <button *ngIf="branch.status === 'INACTIVE' && accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action restore" (click)="restoreBranch(branch)" aria-label="Mở lại chi nhánh" title="Mở lại chi nhánh">
+        <span class="material-symbols-outlined">restart_alt</span>
+      </button>
+      <button *ngIf="branch.status !== 'INACTIVE' && accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action danger" (click)="closeBranch(branch)" aria-label="Đóng chi nhánh" title="Đóng chi nhánh">
+        <span class="material-symbols-outlined">lock</span>
       </button>
     </div>
   </article>
