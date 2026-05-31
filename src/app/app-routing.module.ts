@@ -70,6 +70,11 @@ const routes: Routes = [
         loadChildren: () => import('./features/accounts/accounts.module').then((m) => m.AccountsModule)
       },
       {
+        path: 'permissions',
+        data: { permission: 'ACCOUNT_ROLE_VIEW' },
+        loadChildren: () => import('./features/permissions/permissions.module').then((m) => m.PermissionsModule)
+      },
+      {
         path: 'vouchers',
         loadChildren: () => import('./features/vouchers/vouchers.module').then((m) => m.VouchersModule)
       },

@@ -1,0 +1,142 @@
+<app-page-header title="Phân quyền" description="Quản lý role, permission và rủi ro thao tác trong dashboard.">
+  <div class="permission-actions">
+    <button id="manager-safe-preset-btn" type="button" class="safe-preset-btn" (click)="resetManagerSafePreset()">
+      <span class="material-symbols-outlined">shield_lock</span>
+      Preset an toàn cho Quản lý
+    </button>
+  </div>
+</app-page-header>
+
+<section class="permission-hero">
+  <article class="hero-card featured">
+    <span class="material-symbols-outlined">admin_panel_settings</span>
+    <div>
+      <small>Permission center</small>
+      <h2>{{ permissions.length }} quyền hệ thống</h2>
+      <p>Kiểm soát quyền theo role, tránh cấp nhầm thao tác nguy hiểm.</p>
+    </div>
+  </article>
+  <article class="hero-card">
+    <span class="material-symbols-outlined">groups</span>
+    <div>
+      <small>Roles</small>
+      <strong>{{ roles.length }}</strong>
+    </div>
+  </article>
+  <article class="hero-card warning">
+    <span class="material-symbols-outlined">warning</span>
+    <div>
+      <small>Quyền rủi ro cao</small>
+      <strong>{{ highRiskCount }}</strong>
+    </div>
+  </article>
+  <article class="hero-card">
+    <span class="material-symbols-outlined">done_all</span>
+    <div>
+      <small>Lượt gán quyền</small>
+      <strong>{{ totalAssigned }}</strong>
+    </div>
+  </article>
+</section>
+
+<section class="permission-workspace">
+  <aside class="role-panel">
+    <div class="panel-title">
+      <span class="material-symbols-outlined">badge</span>
+      <div>
+        <strong>Vai trò</strong>
+        <small>Chọn role để xem quyền đang có</small>
+      </div>
+    </div>
+
+    <button
+      *ngFor="let role of roles"
+      type="button"
+      class="role-card"
+      [class.active]="selectedRole === role.role"
+      [class.locked]="role.locked"
+      (click)="selectedRole = role.role"
+    >
+      <span class="role-icon material-symbols-outlined">{{ role.locked ? 'workspace_premium' : 'manage_accounts' }}</span>
+      <span>
+        <strong>{{ role.label }}</strong>
+        <small>{{ role.permissions.length }} / {{ permissions.length }} quyền</small>
+      </span>
+      <em *ngIf="role.locked">Locked</em>
+    </button>
+  </aside>
+
+  <section class="matrix-panel">
+    <div class="matrix-toolbar">
+      <div>
+        <span class="eyebrow">{{ selectedRoleData?.role }}</span>
+        <h2>{{ selectedRoleData?.label }}</h2>
+        <p>{{ selectedRoleData?.description }}</p>
+      </div>
+
+      <div class="toolbar-controls">
+        <select id="permission-module-filter" [(ngModel)]="selectedModule">
+          <option *ngFor="let module of moduleOptions" [ngValue]="module">
+            {{ module === 'ALL' ? 'Tất cả module' : module }}
+          </option>
+        </select>
+        <button
+          id="save-role-permissions-btn"
+          type="button"
+          class="save-btn"
+          [disabled]="!selectedRoleData || !canEditRole(selectedRoleData) || savingRole === selectedRole"
+          (click)="selectedRoleData && saveRole(selectedRoleData)"
+        >
+          <span class="material-symbols-outlined">save</span>
+          {{ savingRole === selectedRole ? 'Đang lưu...' : 'Lưu quyền' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="success-banner" *ngIf="successMessage">
+      <span class="material-symbols-outlined">check_circle</span>
+      {{ successMessage }}
+    </div>
+
+    <div class="readonly-banner" *ngIf="selectedRoleData && !canEditRole(selectedRoleData)">
+      <span class="material-symbols-outlined">lock</span>
+      Role này đang ở chế độ chỉ xem hoặc tài khoản hiện tại thiếu quyền gán/gỡ role.
+    </div>
+
+    <div class="permission-groups">
+      <article class="permission-group" *ngFor="let group of visibleGroups">
+        <div class="group-head">
+          <div>
+            <small>Module</small>
+            <h3>{{ group.module }}</h3>
+          </div>
+          <strong>{{ group.permissions.length }} quyền</strong>
+        </div>
+
+        <div class="permission-list">
+          <button
+            *ngFor="let permission of group.permissions"
+            type="button"
+            class="permission-row"
+            [class.enabled]="selectedRoleData && hasPermission(selectedRoleData, permission.code)"
+            [class.danger]="permission.risk === 'HIGH'"
+            [disabled]="!selectedRoleData || !canEditRole(selectedRoleData)"
+            (click)="selectedRoleData && togglePermission(selectedRoleData, permission.code)"
+          >
+            <span class="check-indicator">
+              <span class="material-symbols-outlined">
+                {{ selectedRoleData && hasPermission(selectedRoleData, permission.code) ? 'check' : 'remove' }}
+              </span>
+            </span>
+            <span class="permission-copy">
+              <strong>{{ permission.name }}</strong>
+              <small>{{ permission.code }}</small>
+              <p>{{ permission.description }}</p>
+            </span>
+            <em [class]="permission.risk.toLowerCase()">{{ riskLabel(permission.risk) }}</em>
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>
