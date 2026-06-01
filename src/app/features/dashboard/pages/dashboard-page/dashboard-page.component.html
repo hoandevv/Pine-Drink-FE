@@ -1,131 +1,297 @@
-<section class="dashboard-shell">
-  <div class="hero-card">
-    <div class="hero-card__content">
-      <span class="eyebrow">Pine Drink Admin</span>
-      <h1>Dashboard vận hành hôm nay</h1>
-      <p>Theo dõi doanh thu, đơn hàng, sản phẩm bán chạy và nhịp vận hành cửa hàng trong một màn hình.</p>
+<ng-container *ngIf="isDeliveryOnly; else adminDashboard">
+  <section class="shipper-dashboard">
+    <section class="shipper-hero">
+      <div class="shipper-hero__content">
+        <span class="shipper-eyebrow">PineFresh Logistics Portal</span>
+        <h1>Bảng điều phối giao hàng</h1>
+        <p>Theo dõi đơn được giao, cập nhật trạng thái và hoàn tất giao hàng nhanh chóng trong một workspace dành riêng cho shipper.</p>
 
-      <div class="hero-actions">
-        <button type="button" class="primary-action">
-          <span class="material-symbols-outlined">add_shopping_cart</span>
-          Tạo đơn nhanh
-        </button>
-        <button type="button" class="ghost-action">
-          <span class="material-symbols-outlined">download</span>
-          Xuất báo cáo
-        </button>
-      </div>
-    </div>
-
-    <div class="hero-card__visual" aria-hidden="true">
-      <div class="drink-glass">
-        <span>🍍</span>
-      </div>
-      <div class="floating-chip floating-chip--top">+8.4% Revenue</div>
-      <div class="floating-chip floating-chip--bottom">18 Pending</div>
-    </div>
-  </div>
-
-  <section class="metrics-grid" aria-label="Chỉ số tổng quan">
-    <article class="metric-card" [class]="'metric-card tone-' + metric.tone" *ngFor="let metric of metrics">
-      <div class="metric-card__top">
-        <span class="metric-card__icon material-symbols-outlined">{{ metric.icon }}</span>
-        <span class="metric-card__delta">{{ metric.delta }}</span>
-      </div>
-      <p>{{ metric.title }}</p>
-      <h3>{{ metric.value }}</h3>
-    </article>
-  </section>
-
-  <section class="dashboard-grid">
-    <article class="panel sales-panel">
-      <div class="panel-heading">
-        <div>
-          <span class="eyebrow">Best sellers</span>
-          <h2>Đồ uống bán chạy</h2>
-        </div>
-        <button type="button" class="panel-link">Xem tất cả</button>
-      </div>
-
-      <div class="seller-list">
-        <div class="seller-row" *ngFor="let item of bestSellers; let index = index">
-          <div class="seller-rank">#{{ index + 1 }}</div>
-          <div class="seller-emoji">{{ item.emoji }}</div>
-          <div class="seller-info">
-            <strong>{{ item.name }}</strong>
-            <p>{{ item.category }} · {{ item.sold }} ly</p>
-            <div class="progress-track">
-              <span [style.width.%]="item.percent"></span>
-            </div>
-          </div>
-          <span class="seller-percent">{{ item.percent }}%</span>
+        <div class="shipper-actions">
+          <button type="button" class="shipper-primary-action">
+            <span class="material-symbols-outlined">inventory_2</span>
+            Xem đơn cần giao
+          </button>
+          <button type="button" class="shipper-ghost-action">
+            <span class="material-symbols-outlined">my_location</span>
+            Cập nhật vị trí
+          </button>
         </div>
       </div>
-    </article>
 
-    <article class="panel orders-panel">
-      <div class="panel-heading">
-        <div>
-          <span class="eyebrow">Realtime</span>
-          <h2>Đơn hàng gần đây</h2>
+      <div class="shipper-hero__visual" aria-hidden="true">
+        <div class="delivery-orbit">
+          <span class="material-symbols-outlined">electric_moped</span>
         </div>
-        <button type="button" class="panel-link">Quản lý đơn</button>
+        <div class="shipper-floating-chip chip-top">
+          <span class="material-symbols-outlined">local_shipping</span>
+          5 đơn đang giao
+        </div>
+        <div class="shipper-floating-chip chip-bottom">
+          <span class="material-symbols-outlined">verified</span>
+          92% hoàn thành
+        </div>
       </div>
+    </section>
 
-      <div class="order-list">
-        <div class="order-row" *ngFor="let order of recentOrders">
+    <section class="shipper-metrics" aria-label="Chỉ số giao hàng">
+      <article class="shipper-metric-card" *ngFor="let metric of deliveryMetrics">
+        <span class="material-symbols-outlined">{{ metric.icon }}</span>
+        <p>{{ metric.title }}</p>
+        <strong>{{ metric.value }}</strong>
+        <small>{{ metric.note }}</small>
+      </article>
+    </section>
+
+    <section class="shipper-main-grid">
+      <div class="shipper-orders-column">
+        <div class="shipper-section-heading">
           <div>
-            <strong>{{ order.code }}</strong>
-            <p>{{ order.customer }} · {{ order.time }}</p>
+            <span class="shipper-eyebrow shipper-eyebrow--light">Realtime dispatch</span>
+            <h2>Đơn đang cần giao</h2>
           </div>
-          <div class="order-meta">
-            <strong>{{ order.amount }}</strong>
-            <span class="status-chip" [class.is-done]="order.status === 'Hoàn tất'" [class.is-pending]="order.status === 'Chờ xử lý'">
+          <button type="button" class="shipper-filter-button">
+            Lọc trạng thái
+            <span class="material-symbols-outlined">filter_list</span>
+          </button>
+        </div>
+
+        <article class="shipper-order-card" *ngFor="let order of deliveryOrders">
+          <div class="shipper-order-card__top">
+            <div class="shipper-order-id">
+              <span class="material-symbols-outlined">package_2</span>
+              <div>
+                <h3>{{ order.code }}</h3>
+                <p>{{ order.time }}</p>
+              </div>
+            </div>
+            <span class="shipper-status" [class.status-ready]="order.status === 'READY_FOR_PICKUP'" [class.status-delivering]="order.status === 'DELIVERING'" [class.status-failed]="order.status === 'FAILED'">
               {{ order.status }}
             </span>
           </div>
-        </div>
+
+          <div class="shipper-order-info">
+            <div>
+              <span class="material-symbols-outlined">person</span>
+              <div>
+                <small>Khách hàng</small>
+                <strong>{{ order.customer }}</strong>
+                <a [href]="'tel:' + order.phone">{{ order.phone }}</a>
+              </div>
+            </div>
+            <div>
+              <span class="material-symbols-outlined">store</span>
+              <div>
+                <small>Điểm lấy hàng</small>
+                <strong>{{ order.branch }}</strong>
+                <p>{{ order.items }}</p>
+              </div>
+            </div>
+            <div class="shipper-address">
+              <span class="material-symbols-outlined">location_on</span>
+              <div>
+                <small>Địa chỉ giao hàng</small>
+                <p>{{ order.address }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="shipper-order-card__footer">
+            <div>
+              <small>Tổng tiền</small>
+              <strong>{{ order.amount }}</strong>
+            </div>
+            <div class="shipper-order-actions">
+              <button type="button" class="shipper-icon-button" aria-label="Gọi khách">
+                <span class="material-symbols-outlined">call</span>
+              </button>
+              <button type="button" class="shipper-map-button">{{ order.action }}</button>
+            </div>
+          </div>
+        </article>
       </div>
-    </article>
+
+      <aside class="shipper-side-column">
+        <article class="shipper-progress-card">
+          <h3>Tiến độ hôm nay</h3>
+          <div class="progress-ring" aria-label="75 phần trăm hoàn thành">
+            <svg viewBox="0 0 180 180">
+              <circle cx="90" cy="90" r="74"></circle>
+              <circle cx="90" cy="90" r="74"></circle>
+            </svg>
+            <div>
+              <strong>75%</strong>
+              <span>Hoàn thành</span>
+            </div>
+          </div>
+          <p>Chỉ còn 3 đơn hàng nữa để đạt KPI ngày.</p>
+        </article>
+
+        <article class="shipper-shift-card">
+          <div class="shipper-card-heading">
+            <span class="material-symbols-outlined">schedule</span>
+            <h3>Ca làm việc</h3>
+          </div>
+          <dl>
+            <div><dt>Thời gian</dt><dd>08:00 - 18:00</dd></div>
+            <div><dt>Khu vực</dt><dd>Quận 1, Quận 3</dd></div>
+            <div><dt>Shipper ID</dt><dd>#4492</dd></div>
+          </dl>
+          <span class="shift-live"><i></i> Đang trong ca trực</span>
+        </article>
+
+        <article class="shipper-notice-card">
+          <div class="shipper-section-heading compact">
+            <div>
+              <span class="shipper-eyebrow shipper-eyebrow--light">Updates</span>
+              <h2>Thông báo mới</h2>
+            </div>
+            <em>3 mới</em>
+          </div>
+          <div class="shipper-notice-list">
+            <div class="shipper-notice" *ngFor="let notice of deliveryNotices" [class.is-unread]="notice.unread">
+              <i></i>
+              <div>
+                <strong>{{ notice.title }}</strong>
+                <p>{{ notice.description }}</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </aside>
+    </section>
   </section>
+</ng-container>
 
-  <section class="bottom-grid">
-    <article class="panel chart-panel">
-      <div class="panel-heading">
-        <div>
-          <span class="eyebrow">Revenue flow</span>
-          <h2>Nhịp doanh thu 7 ngày</h2>
-        </div>
-      </div>
-      <div class="mini-chart" aria-label="Biểu đồ doanh thu minh họa">
-        <span style="height: 42%"></span>
-        <span style="height: 58%"></span>
-        <span style="height: 46%"></span>
-        <span style="height: 74%"></span>
-        <span style="height: 66%"></span>
-        <span style="height: 88%"></span>
-        <span style="height: 96%"></span>
-      </div>
-      <p class="chart-note">Doanh thu cuối tuần đang tăng mạnh nhờ nhóm sản phẩm Pine Signature.</p>
-    </article>
+<ng-template #adminDashboard>
+  <section class="dashboard-shell">
+    <div class="hero-card">
+      <div class="hero-card__content">
+        <span class="eyebrow">Pine Drink Admin</span>
+        <h1>Dashboard vận hành hôm nay</h1>
+        <p>Theo dõi doanh thu, đơn hàng, sản phẩm bán chạy và nhịp vận hành cửa hàng trong một màn hình.</p>
 
-    <article class="panel activity-panel">
-      <div class="panel-heading">
-        <div>
-          <span class="eyebrow">Operations</span>
-          <h2>Gợi ý vận hành</h2>
+        <div class="hero-actions">
+          <button type="button" class="primary-action">
+            <span class="material-symbols-outlined">add_shopping_cart</span>
+            Tạo đơn nhanh
+          </button>
+          <button type="button" class="ghost-action">
+            <span class="material-symbols-outlined">download</span>
+            Xuất báo cáo
+          </button>
         </div>
       </div>
 
-      <div class="activity-list">
-        <div class="activity-row" *ngFor="let item of activities">
-          <span class="activity-icon material-symbols-outlined">{{ item.icon }}</span>
+      <div class="hero-card__visual" aria-hidden="true">
+        <div class="drink-glass">
+          <span>🍍</span>
+        </div>
+        <div class="floating-chip floating-chip--top">+8.4% Revenue</div>
+        <div class="floating-chip floating-chip--bottom">18 Pending</div>
+      </div>
+    </div>
+
+    <section class="metrics-grid" aria-label="Chỉ số tổng quan">
+      <article class="metric-card" [class]="'metric-card tone-' + metric.tone" *ngFor="let metric of metrics">
+        <div class="metric-card__top">
+          <span class="metric-card__icon material-symbols-outlined">{{ metric.icon }}</span>
+          <span class="metric-card__delta">{{ metric.delta }}</span>
+        </div>
+        <p>{{ metric.title }}</p>
+        <h3>{{ metric.value }}</h3>
+      </article>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel sales-panel">
+        <div class="panel-heading">
           <div>
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.description }}</p>
+            <span class="eyebrow">Best sellers</span>
+            <h2>Đồ uống bán chạy</h2>
+          </div>
+          <button type="button" class="panel-link">Xem tất cả</button>
+        </div>
+
+        <div class="seller-list">
+          <div class="seller-row" *ngFor="let item of bestSellers; let index = index">
+            <div class="seller-rank">#{{ index + 1 }}</div>
+            <div class="seller-emoji">{{ item.emoji }}</div>
+            <div class="seller-info">
+              <strong>{{ item.name }}</strong>
+              <p>{{ item.category }} · {{ item.sold }} ly</p>
+              <div class="progress-track">
+                <span [style.width.%]="item.percent"></span>
+              </div>
+            </div>
+            <span class="seller-percent">{{ item.percent }}%</span>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
+
+      <article class="panel orders-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Realtime</span>
+            <h2>Đơn hàng gần đây</h2>
+          </div>
+          <button type="button" class="panel-link">Quản lý đơn</button>
+        </div>
+
+        <div class="order-list">
+          <div class="order-row" *ngFor="let order of recentOrders">
+            <div>
+              <strong>{{ order.code }}</strong>
+              <p>{{ order.customer }} · {{ order.time }}</p>
+            </div>
+            <div class="order-meta">
+              <strong>{{ order.amount }}</strong>
+              <span class="status-chip" [class.is-done]="order.status === 'Hoàn tất'" [class.is-pending]="order.status === 'Chờ xử lý'">
+                {{ order.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="panel chart-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Revenue flow</span>
+            <h2>Nhịp doanh thu 7 ngày</h2>
+          </div>
+        </div>
+        <div class="mini-chart" aria-label="Biểu đồ doanh thu minh họa">
+          <span style="height: 42%"></span>
+          <span style="height: 58%"></span>
+          <span style="height: 46%"></span>
+          <span style="height: 74%"></span>
+          <span style="height: 66%"></span>
+          <span style="height: 88%"></span>
+          <span style="height: 96%"></span>
+        </div>
+        <p class="chart-note">Doanh thu cuối tuần đang tăng mạnh nhờ nhóm sản phẩm Pine Signature.</p>
+      </article>
+
+      <article class="panel activity-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Operations</span>
+            <h2>Gợi ý vận hành</h2>
+          </div>
+        </div>
+
+        <div class="activity-list">
+          <div class="activity-row" *ngFor="let item of activities">
+            <span class="activity-icon material-symbols-outlined">{{ item.icon }}</span>
+            <div>
+              <strong>{{ item.title }}</strong>
+              <p>{{ item.description }}</p>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
   </section>
-</section>
+</ng-template>

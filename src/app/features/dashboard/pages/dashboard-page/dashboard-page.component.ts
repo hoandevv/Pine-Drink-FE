@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 
+import { AccessControlService } from '../../../../core/services/access-control.service';
+
 interface MetricCard {
   title: string;
   value: string;
@@ -30,12 +32,96 @@ interface ActivityItem {
   icon: string;
 }
 
+interface DeliveryMetric {
+  title: string;
+  value: string;
+  note: string;
+  icon: string;
+}
+
+interface DeliveryOrder {
+  code: string;
+  time: string;
+  status: 'READY_FOR_PICKUP' | 'DELIVERING' | 'DELIVERED' | 'FAILED';
+  customer: string;
+  phone: string;
+  address: string;
+  branch: string;
+  amount: string;
+  items: string;
+  action: string;
+}
+
+interface DeliveryNotice {
+  title: string;
+  description: string;
+  unread: boolean;
+}
+
 @Component({
   selector: 'app-dashboard-page',
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.scss']
 })
 export class DashboardPageComponent {
+  constructor(private readonly accessControl: AccessControlService) {}
+
+  get isDeliveryOnly(): boolean {
+    return this.accessControl.hasAnyRole(['DELIVERY']) && !this.accessControl.hasAnyRole(['ADMIN', 'MANAGER']);
+  }
+
+  readonly deliveryMetrics: DeliveryMetric[] = [
+    { title: 'Đơn được giao hôm nay', value: '12', note: '+3 đơn so với hôm qua', icon: 'inventory_2' },
+    { title: 'Đang giao', value: '3', note: 'Ưu tiên hoàn tất trước 15:00', icon: 'local_shipping' },
+    { title: 'Đã giao thành công', value: '9', note: 'Tỷ lệ hoàn thành 92%', icon: 'check_circle' },
+    { title: 'Giao thất bại', value: '1', note: 'Cần xác minh lại địa chỉ', icon: 'warning' }
+  ];
+
+  readonly deliveryOrders: DeliveryOrder[] = [
+    {
+      code: '#PD-1024',
+      time: 'Hôm nay, 10:30 AM',
+      status: 'DELIVERING',
+      customer: 'Lê Minh Tuấn',
+      phone: '090 123 4567',
+      address: '24 Lê Thánh Tôn, Bến Nghé, Quận 1, TP. Hồ Chí Minh',
+      branch: 'Pine Drink Flagship - Q.1',
+      amount: '450.000đ',
+      items: 'Pine Latte x2 · Matcha Cloud x1',
+      action: 'Chi tiết & Bản đồ'
+    },
+    {
+      code: '#PD-1025',
+      time: 'Hôm nay, 11:15 AM',
+      status: 'READY_FOR_PICKUP',
+      customer: 'Trần Thị Hoa',
+      phone: '098 765 4321',
+      address: '88 Võ Văn Tần, Phường 6, Quận 3, TP. Hồ Chí Minh',
+      branch: 'Pine Drink Station - Q.3',
+      amount: '185.000đ',
+      items: 'Mango Jasmine Tea x2',
+      action: 'Xác nhận lấy hàng'
+    },
+    {
+      code: '#PD-1026',
+      time: 'Hôm nay, 11:42 AM',
+      status: 'READY_FOR_PICKUP',
+      customer: 'Nguyễn Ngọc Anh',
+      phone: '091 777 2288',
+      address: '12 Nguyễn Trãi, Bến Thành, Quận 1, TP. Hồ Chí Minh',
+      branch: 'Pine Drink Express - Q.1',
+      amount: '212.000đ',
+      items: 'Caramel Freeze x1 · Topping Trân châu x2',
+      action: 'Nhận đơn'
+    }
+  ];
+
+  readonly deliveryNotices: DeliveryNotice[] = [
+    { title: 'Hệ thống: Thưởng nóng', description: '+50k cho mỗi 5 đơn hoàn thành trước 12h trưa nay.', unread: true },
+    { title: 'Điều phối: Đơn #PD-1025', description: 'Khách hàng yêu cầu giao trước cổng chính.', unread: true },
+    { title: 'Cập nhật ứng dụng', description: 'Phiên bản v2.4.1 đã sẵn sàng để nâng cấp.', unread: false }
+  ];
+
   readonly metrics: MetricCard[] = [
     { title: 'Tổng đơn hôm nay', value: '1,248', delta: '+12% so với hôm qua', icon: 'receipt_long', tone: 'green' },
     { title: 'Doanh thu', value: '24.8M', delta: '+8.4% tăng trưởng', icon: 'payments', tone: 'yellow' },

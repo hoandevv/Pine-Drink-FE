@@ -1,13 +1,22 @@
-<div class="admin-shell" [class.sidebar-open]="sidebarOpen">
+<div class="admin-shell" [class.sidebar-open]="sidebarOpen" [class.delivery-mode]="isDeliveryOnly">
   <aside class="admin-sidebar">
     <div class="brand-card">
       <a routerLink="/admin/dashboard" class="brand-logo" aria-label="Pine Drink Admin">
         <span class="brand-logo__mark">🍍</span>
         <span>
-          <strong>Pine Drink</strong>
-          <small>Admin Console</small>
+          <strong>{{ isDeliveryOnly ? 'Pine Delivery' : 'Pine Drink' }}</strong>
+          <small>{{ isDeliveryOnly ? 'Courier Workspace' : 'Admin Console' }}</small>
         </span>
       </a>
+    </div>
+
+    <div *ngIf="isDeliveryOnly" class="delivery-status-card">
+      <span class="material-symbols-outlined">electric_moped</span>
+      <div>
+        <strong>Ca giao hàng đang mở</strong>
+        <small>Sẵn sàng nhận đơn mới</small>
+      </div>
+      <i></i>
     </div>
 
     <nav class="module-nav" aria-label="Admin modules">
@@ -39,16 +48,20 @@
         </button>
         <div class="search-box">
           <span class="material-symbols-outlined">search</span>
-          <input type="text" placeholder="Tìm đơn hàng, sản phẩm, khách hàng..." />
+          <input type="text" [placeholder]="isDeliveryOnly ? 'Tìm mã đơn, khách hàng, số điện thoại...' : 'Tìm đơn hàng, sản phẩm, khách hàng...'" />
         </div>
       </div>
 
       <div class="topbar-actions">
         <a routerLink="/" class="client-link" aria-label="Xem trang khách">
           <span class="material-symbols-outlined">storefront</span>
-          <span>Xem trang khách</span>
+          <span>{{ isDeliveryOnly ? 'Bản đồ giao' : 'Xem trang khách' }}</span>
         </a>
-        <span class="live-chip"><i></i> Live</span>
+        <span class="live-chip"><i></i> {{ isDeliveryOnly ? 'Online' : 'Live' }}</span>
+        <div *ngIf="isDeliveryOnly" class="delivery-quick-stats" aria-label="Delivery quick stats">
+          <span><strong>4</strong><small>Đang giao</small></span>
+          <span><strong>12</strong><small>Hoàn tất</small></span>
+        </div>
         <button type="button" class="icon-button" aria-label="Thông báo">
           <span class="material-symbols-outlined">notifications</span>
         </button>

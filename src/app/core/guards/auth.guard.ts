@@ -32,11 +32,18 @@ export class AuthGuard implements CanActivate, CanActivateChild {
     }
 
     const permission = route?.data?.['permission'] as string | undefined;
-    if (permission && !this.accessControl.can(permission)) {
+    const permissions = route?.data?.['permissions'] as string[] | undefined;
+    const roles = route?.data?.['roles'] as string[] | undefined;
+
+    const hasPermissionAccess = permission ? this.accessControl.can(permission) : true;
+    const hasPermissionsAccess = permissions?.length ? this.accessControl.canAny(permissions) : true;
+    const hasRoleAccess = roles?.length ? this.accessControl.hasAnyRole(roles) : true;
+
+    if (!hasPermissionAccess || !hasPermissionsAccess || !hasRoleAccess) {
       return this.router.createUrlTree(['/']);
     }
 
-    if (redirectUrl.startsWith('/admin') && !permission && !this.accessControl.isAdminConsoleUser()) {
+    if (redirectUrl.startsWith('/admin') && !permission && !permissions?.length && !roles?.length && !this.accessControl.isAdminConsoleUser()) {
       return this.router.createUrlTree(['/']);
     }
 
