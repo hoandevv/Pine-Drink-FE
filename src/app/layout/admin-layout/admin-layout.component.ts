@@ -12,6 +12,8 @@ interface NavItem {
   icon: string;
   route: string;
   permission?: string;
+  permissions?: string[];
+  roles?: string[];
   badge?: string;
 }
 
@@ -22,21 +24,22 @@ interface NavItem {
 })
 export class AdminLayoutComponent {
   readonly navItems: NavItem[] = [
-    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard', permission: 'BRANCH_VIEW' },
-    { label: 'Products', icon: 'local_cafe', route: '/admin/products' },
+    { label: 'Delivery Hub', icon: 'local_shipping', route: '/admin/dashboard', roles: ['DELIVERY'] },
+    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard', roles: ['ADMIN', 'MANAGER'] },
+    { label: 'Products', icon: 'local_cafe', route: '/admin/products', roles: ['ADMIN', 'MANAGER'] },
     { label: 'Branches', icon: 'storefront', route: '/admin/branches', permission: 'BRANCH_VIEW' },
-    { label: 'Categories', icon: 'category', route: '/admin/categories' },
-    { label: 'Toppings', icon: 'icecream', route: '/admin/toppings' },
-    { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', badge: '18' },
-    { label: 'Customers', icon: 'groups', route: '/admin/customers' },
+    { label: 'Categories', icon: 'category', route: '/admin/categories', roles: ['ADMIN', 'MANAGER'] },
+    { label: 'Toppings', icon: 'icecream', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] },
+    { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', roles: ['ADMIN', 'MANAGER', 'DELIVERY'], badge: '18' },
+    { label: 'Customers', icon: 'groups', route: '/admin/customers', roles: ['ADMIN', 'MANAGER'] },
     { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts', permission: 'ACCOUNT_VIEW' },
     { label: 'Permissions', icon: 'verified_user', route: '/admin/permissions', permission: 'ROLE_PERMISSION_VIEW' },
-    { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers' },
-    { label: 'Reports', icon: 'monitoring', route: '/admin/reports' }
+    { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers', roles: ['ADMIN', 'MANAGER'] },
+    { label: 'Reports', icon: 'monitoring', route: '/admin/reports', roles: ['ADMIN', 'MANAGER'] }
   ];
 
   get visibleNavItems(): NavItem[] {
-    return this.navItems.filter((item) => !item.permission || this.accessControl.can(item.permission));
+    return this.navItems.filter((item) => this.canViewNavItem(item));
   }
 
   sidebarOpen = false;
@@ -57,6 +60,10 @@ export class AdminLayoutComponent {
       });
   }
 
+  get isDeliveryOnly(): boolean {
+    return this.accessControl.hasAnyRole(['DELIVERY']) && !this.accessControl.hasAnyRole(['ADMIN', 'MANAGER']);
+  }
+
   getAvatarUrl(): string {
     // Backend now returns full MinIO URLs for public files (avatars)
     // Example: http://localhost:9000/pine-drink-public/avatars/uuid.jpg
@@ -75,6 +82,15 @@ export class AdminLayoutComponent {
 
   isActive(route: string): boolean {
     return this.router.url === route || this.router.url.startsWith(`${route}/`);
+  }
+
+  private canViewNavItem(item: NavItem): boolean {
+    const hasPermissionAccess = item.permission ? this.accessControl.can(item.permission) : true;
+    const hasPermissionsAccess = item.permissions?.length ? this.accessControl.canAny(item.permissions) : true;
+    const hasRoleAccess = item.roles?.length ? this.accessControl.hasAnyRole(item.roles) : true;
+    const deliveryCanSee = !this.isDeliveryOnly || !!item.roles?.includes('DELIVERY');
+
+    return hasPermissionAccess && hasPermissionsAccess && hasRoleAccess && deliveryCanSee;
   }
 
   logout(): void {

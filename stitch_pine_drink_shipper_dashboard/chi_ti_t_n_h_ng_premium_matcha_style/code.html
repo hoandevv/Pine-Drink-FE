@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#164A2F", // Forest Green
+                        "background": "#FFFDF5", // Cream
+                        "on-background": "#142117", // Deep Forest Black
+                        "accent": "#FFC928", // Pineapple Gold
+                        "on-accent": "#142117",
+                        "primary-container": "#1D5034",
+                        "on-primary-fixed": "#FFFFFF",
+                        "surface": "#FFFFFF",
+                        "surface-container-low": "#F9F7EF",
+                        "surface-container": "#F4F2EA",
+                        "outline-variant": "#E0DED5",
+                        "success-green": "#2D6A4F",
+                        "error": "#BA1A1A",
+                        "error-container": "#FFDAD6",
+                        "on-error-container": "#93000A"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "280px",
+                        "container-padding": "32px",
+                        "base": "8px",
+                        "card-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Montserrat", "sans-serif"],
+                        "body-md": ["Montserrat", "sans-serif"],
+                        "headline-md": ["Montserrat", "sans-serif"],
+                        "label-bold": ["Montserrat", "sans-serif"],
+                        "display-lg": ["Montserrat", "sans-serif"],
+                        "headline-lg": ["Montserrat", "sans-serif"],
+                        "status-badge": ["Montserrat", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "label-bold": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "status-badge": ["12px", {"lineHeight": "16px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        body { font-family: 'Montserrat', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Desktop Sidebar Shell -->
+<aside class="fixed left-0 top-0 h-screen w-sidebar-width bg-primary shadow-md hidden lg:flex flex-col py-8 z-50">
+<div class="px-6 mb-12">
+<h1 class="font-headline-lg text-headline-lg font-bold text-accent">PineFresh</h1>
+<p class="text-white opacity-70 font-label-bold text-[12px]">Logistics Portal</p>
+</div>
+<nav class="flex-1 space-y-1">
+<div class="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-accent hover:bg-primary-container transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Dashboard</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-accent hover:bg-primary-container transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md">My Orders</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 border-l-4 border-accent bg-primary-container text-accent cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+<span class="font-body-md">Delivering</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-accent hover:bg-primary-container transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-body-md">History</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-accent hover:bg-primary-container transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="font-body-md">Stats</span>
+</div>
+<div class="flex items-center gap-3 px-4 py-3 text-white/80 hover:text-accent hover:bg-primary-container transition-colors cursor-pointer active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md">Profile</span>
+</div>
+</nav>
+</aside>
+<!-- Top Navigation -->
+<header class="sticky top-0 w-full bg-background/80 backdrop-blur-md border-b border-outline-variant/30 flex justify-between items-center px-container-padding py-4 lg:ml-sidebar-width z-40">
+<div class="flex items-center gap-4">
+<button class="lg:hidden p-2 hover:bg-surface-container-low rounded-full">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Chi tiết đơn hàng</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center bg-surface-container-low px-4 py-2 rounded-full focus-within:ring-2 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-on-background/50">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-48 text-on-background" placeholder="Tìm mã đơn..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary cursor-pointer">notifications</span>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary">
+<img alt="Shipper Profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT-elVmtvnGHrf73JyLEFaY-Nad1EMRIve_Ti9QhSmIlMyWf-c1wLlj9izHYjlSXc8uT1LvgEVvl23M_VU-_7k3yXD6CfVoUhj8KOvtyor7izfOtoZnmEOZDjR-H19UN1HeI294pUEOrip_9McHGH4hJFtznb_QmOs8QEV0Wzxab9bU3vbFC8KISWREUf4QysRKBvnCTzVtYA6b4VxKs1HcbCUymNgIhmUNUJsLv-7PEd73RiCpd9HBbdljbFED5EuAPWESsIfg49E"/>
+</div>
+</div>
+</div>
+</header>
+<main class="lg:ml-sidebar-width min-h-screen pb-32">
+<div class="max-w-5xl mx-auto px-container-padding py-8 space-y-card-gap">
+<!-- Hero Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<div class="flex items-center gap-3">
+<span class="bg-primary text-white px-3 py-1 rounded-full font-status-badge text-status-badge">#PD-1024</span>
+<span class="bg-accent/20 text-primary border border-accent/30 px-3 py-1 rounded-full font-status-badge text-status-badge flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">local_shipping</span>
+                        DELIVERING
+                    </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-on-background">Pine Drink Express Delivery</h1>
+<p class="text-on-background/60 font-body-md flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+                    Thời gian tạo: Hôm nay, 14:20
+                </p>
+</div>
+<div class="flex gap-4">
+<button class="bg-surface border border-outline-variant text-on-background px-6 py-3 rounded-lg font-label-bold flex items-center gap-2 hover:bg-surface-container-low active:scale-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-primary">call</span>
+                    Gọi khách
+                </button>
+<button class="bg-primary text-white px-6 py-3 rounded-lg font-label-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-accent">map</span>
+                    Mở bản đồ
+                </button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-card-gap">
+<!-- Left Column: Customer & Timeline -->
+<div class="md:col-span-2 space-y-card-gap">
+<!-- Customer Information Card -->
+<section class="bg-white p-container-padding rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-outline-variant/50">
+<h3 class="font-headline-md text-headline-md mb-6 flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined">person</span>
+                        Thông tin khách hàng
+                    </h3>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+<div class="space-y-4">
+<div>
+<p class="text-on-background/50 font-label-bold text-[12px] uppercase tracking-wider">Tên khách hàng</p>
+<p class="font-body-lg text-on-background font-semibold">Nguyễn Minh Tuấn</p>
+</div>
+<div>
+<p class="text-on-background/50 font-label-bold text-[12px] uppercase tracking-wider">Số điện thoại</p>
+<p class="font-body-lg text-primary font-bold">090 123 4567</p>
+</div>
+</div>
+<div class="space-y-4">
+<div>
+<p class="text-on-background/50 font-label-bold text-[12px] uppercase tracking-wider">Địa chỉ giao hàng</p>
+<p class="font-body-md text-on-background leading-relaxed">Phòng 402, Tòa nhà Landmark 81, Phường 22, Quận Bình Thạnh, TP. Hồ Chí Minh</p>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 bg-surface-container-low rounded-lg border-l-4 border-accent">
+<p class="text-primary font-label-bold flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[18px]">sticky_note_2</span>
+                            Ghi chú từ khách
+                        </p>
+<p class="text-on-background/70 font-body-md italic">"Vui lòng gửi lễ tân nếu gọi không được. Đừng bỏ đá nhiều quá ạ. Cảm ơn!"</p>
+</div>
+</section>
+<!-- Order Items Card -->
+<section class="bg-white p-container-padding rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-outline-variant/50">
+<h3 class="font-headline-md text-headline-md mb-6 flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined">coffee</span>
+                        Chi tiết món hàng
+                    </h3>
+<div class="space-y-4">
+<!-- Item 1 -->
+<div class="flex items-center gap-4 p-4 hover:bg-surface-container-low rounded-xl transition-colors">
+<div class="h-16 w-16 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+<img alt="Pineapple Tea" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcO74cKn-LmpjzLtJ-AYsNJiV7kN7I-i7MOYjDXjRx2xbl2T5NO0UXXwAMqBKhV7t8sH8QbA_OALJgX0a8qe1akoUQPSCR_HRHclnrycYinQIK9Y8p5gukEtZ87MURZUCn4P7aypR9kgNazePSgzIwT_lHtWQkbsvucFzsJv_x3mbqUSzdaelKPNLcbrhXHPdp9KokI-L3qvchRt75Pc5yYiwPPZXnlx2rG4omROJmqsips2rsgKOb7BKh6g70X8LE-pCckeh1WRuD"/>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg font-bold text-on-background">Trà Dứa Nhiệt Đới (L)</h4>
+<p class="text-on-background/60 font-label-bold text-[13px]">Topping: Trân châu trắng, Thạch dứa</p>
+</div>
+<div class="text-right">
+<p class="font-body-md font-bold text-on-background">x 2</p>
+<p class="font-body-md text-on-background">110.000đ</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-4 p-4 hover:bg-surface-container-low rounded-xl transition-colors">
+<div class="h-16 w-16 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
+<img alt="Salted Coffee" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbKyur3JsBuZdNsL011JoGz_YcxxJWR5X1NvugpNtO5RiXcd_89fD-Vk5BtI5u2t0lADZC_3FgdhAom7tnwgLQCPQAg2SEb96lxjTRs11oocVQeKkMuGhFH9anbj8HHxUNV4wOacipu3niEG6LCmy5DMBODUU-knxYedrnXF_1IJ7HUEvNIOm-boqkjt36KRfA7fZuv6uDdobZz15UN1mMyUH_JMOX9_KKpR82H6dru63KaFY3U1UES-h8VpI6Ny4PIg6PhynRRXrX"/>
+</div>
+<div class="flex-1">
+<h4 class="font-body-lg font-bold text-on-background">Cà Phê Muối PineFresh</h4>
+<p class="text-on-background/60 font-label-bold text-[13px]">Size: M | 50% Đường, 0% Đá</p>
+</div>
+<div class="text-right">
+<p class="font-body-md font-bold text-on-background">x 1</p>
+<p class="font-body-md text-on-background">45.000đ</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Timeline & Payment -->
+<div class="space-y-card-gap">
+<!-- Delivery Timeline -->
+<section class="bg-white p-container-padding rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-outline-variant/50">
+<h3 class="font-headline-md text-headline-md mb-6 text-primary">Tiến độ</h3>
+<div class="relative space-y-8 pl-8 before:content-[''] before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant">
+<div class="relative">
+<span class="absolute -left-[31px] top-1 h-4 w-4 rounded-full bg-success-green border-4 border-background"></span>
+<p class="font-label-bold text-success-green">Đã gán đơn</p>
+<p class="text-[12px] text-on-background/50">14:22, Hôm nay</p>
+</div>
+<div class="relative">
+<span class="absolute -left-[31px] top-1 h-4 w-4 rounded-full bg-success-green border-4 border-background"></span>
+<p class="font-label-bold text-success-green">Đã lấy hàng</p>
+<p class="text-[12px] text-on-background/50">14:45, Hôm nay</p>
+</div>
+<div class="relative">
+<span class="absolute -left-[31px] top-1 h-4 w-4 rounded-full bg-primary ring-4 ring-accent/30"></span>
+<p class="font-label-bold text-primary">Đang giao hàng</p>
+<p class="text-[12px] text-on-background/50">Vừa xong</p>
+</div>
+<div class="relative opacity-30">
+<span class="absolute -left-[31px] top-1 h-4 w-4 rounded-full bg-outline-variant border-4 border-background"></span>
+<p class="font-label-bold text-on-background/50">Giao thành công</p>
+<p class="text-[12px] text-on-background/50">--:--</p>
+</div>
+</div>
+</section>
+<!-- Payment Details Card -->
+<section class="bg-primary text-white p-container-padding rounded-lg shadow-lg relative overflow-hidden">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-accent opacity-10 rounded-full blur-2xl"></div>
+<h3 class="font-headline-md text-headline-md mb-6 text-accent">Thanh toán</h3>
+<div class="space-y-4">
+<div class="flex justify-between items-center opacity-80">
+<span class="font-body-md">Tạm tính</span>
+<span class="font-body-md">155.000đ</span>
+</div>
+<div class="flex justify-between items-center opacity-80">
+<span class="font-body-md">Phí vận chuyển</span>
+<span class="font-body-md">20.000đ</span>
+</div>
+<div class="flex justify-between items-center border-b border-white/20 pb-4">
+<span class="font-body-md opacity-80">Giảm giá</span>
+<span class="font-body-md text-accent">-15.000đ</span>
+</div>
+<div class="flex justify-between items-center pt-2">
+<span class="font-headline-md">Tổng cộng</span>
+<span class="font-headline-md text-accent">160.000đ</span>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-white/20">
+<div class="flex items-center justify-between mb-4">
+<p class="font-label-bold text-[12px] uppercase opacity-70">Hình thức</p>
+<span class="bg-accent text-primary px-3 py-1 rounded-full font-status-badge">TIỀN MẶT (COD)</span>
+</div>
+<div class="flex items-center justify-between">
+<p class="font-label-bold text-[12px] uppercase opacity-70">Trạng thái</p>
+<span class="text-accent font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">error</span>
+                                CHƯA TRẢ
+                            </span>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Bar (Mobile Priority) -->
+<div class="fixed bottom-0 left-0 right-0 lg:left-sidebar-width bg-white/80 backdrop-blur-md p-4 lg:p-8 z-50">
+<div class="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4 items-stretch sm:items-center glass-panel p-4 rounded-xl shadow-2xl border border-outline-variant/50">
+<button class="flex-1 flex items-center justify-center gap-2 bg-error-container text-on-error-container font-label-bold py-4 rounded-lg hover:bg-error/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined">report</span>
+            Báo thất bại
+        </button>
+<button class="flex-[2] flex items-center justify-center gap-2 bg-accent text-primary font-label-bold py-4 rounded-lg hover:opacity-90 active:scale-95 transition-all shadow-lg">
+<span class="material-symbols-outlined">check_circle</span>
+            Cập nhật: Đã giao hàng
+        </button>
+</div>
+</div>
+<!-- Bottom Mobile Nav Shell -->
+<nav class="lg:hidden fixed bottom-0 left-0 w-full z-[60] flex justify-around items-center px-4 py-3 pb-safe bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.08)] border-t border-outline-variant/50">
+<div class="flex flex-col items-center justify-center text-on-background/50 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-bold text-[10px]">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-background/50 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-label-bold text-[10px]">Orders</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-accent text-primary rounded-xl px-4 py-1 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">local_shipping</span>
+<span class="font-label-bold text-[10px]">Delivering</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-background/50 active:scale-90 transition-transform duration-200">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-bold text-[10px]">Profile</span>
+</div>
+</nav>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.innerText.includes('Cập nhật')) {
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span> Đang xử lý...';
+                    setTimeout(() => {
+                        btn.innerHTML = '<span class="material-symbols-outlined">check</span> Hoàn tất!';
+                        btn.classList.replace('bg-accent', 'bg-success-green');
+                        btn.classList.replace('text-primary', 'text-white');
+                    }, 1500);
+                }
+            });
+        });
+    });
+</script>
+</body></html>

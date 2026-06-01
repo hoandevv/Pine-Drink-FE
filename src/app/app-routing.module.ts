@@ -33,14 +33,15 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: '', pathMatch: 'full', redirectTo: 'orders' },
       {
         path: 'dashboard',
-        data: { permission: 'BRANCH_VIEW' },
+        data: { roles: ['ADMIN', 'MANAGER', 'DELIVERY'] },
         loadChildren: () => import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule)
       },
       {
         path: 'products',
+        data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/products/products.module').then((m) => m.ProductsModule)
       },
       {
@@ -50,18 +51,22 @@ const routes: Routes = [
       },
       {
         path: 'categories',
+        data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/categories/categories.module').then((m) => m.CategoriesModule)
       },
       {
         path: 'toppings',
+        data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/toppings/toppings.module').then((m) => m.ToppingsModule)
       },
       {
         path: 'orders',
+        data: { roles: ['ADMIN', 'MANAGER', 'DELIVERY'] },
         loadChildren: () => import('./features/orders/orders.module').then((m) => m.OrdersModule)
       },
       {
         path: 'customers',
+        data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/customers/customers.module').then((m) => m.CustomersModule)
       },
       {
@@ -76,10 +81,12 @@ const routes: Routes = [
       },
       {
         path: 'vouchers',
+        data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/vouchers/vouchers.module').then((m) => m.VouchersModule)
       },
       {
         path: 'reports',
+        data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/reports/reports.module').then((m) => m.ReportsModule)
       }
     ]
