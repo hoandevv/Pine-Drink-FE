@@ -3,7 +3,9 @@ import { Router } from '@angular/router';
 
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
-import { MOCK_BRANCHES, MOCK_VOUCHERS, MockBranch, MockVoucher } from '../../../../shared/mock-data';
+import { Branch } from '../../../branches/models/branch.model';
+import { BranchService } from '../../../branches/services/branch.service';
+import { MOCK_VOUCHERS, MockVoucher } from '../../../../shared/mock-data';
 
 @Component({
   selector: 'app-home',
@@ -13,14 +15,16 @@ import { MOCK_BRANCHES, MOCK_VOUCHERS, MockBranch, MockVoucher } from '../../../
 export class HomeComponent implements OnInit {
   bestSellerProducts: Product[] = [];
   vouchers: MockVoucher[] = [];
-  nearbyBranches: MockBranch[] = [];
-  selectedBranch: MockBranch | null = null;
+  nearbyBranches: Branch[] = [];
+  selectedBranch: Branch | null = null;
   loadingProducts = false;
   productError = '';
+  branchError = '';
 
   constructor(
     private readonly router: Router,
-    private readonly productService: ProductService
+    private readonly productService: ProductService,
+    private readonly branchService: BranchService
   ) {}
 
   ngOnInit(): void {
@@ -29,19 +33,11 @@ export class HomeComponent implements OnInit {
 
   loadData(): void {
     this.loadProducts();
+    this.loadBranches();
 
     this.vouchers = MOCK_VOUCHERS
       .filter(voucher => voucher.isActive)
       .slice(0, 3);
-
-    this.nearbyBranches = MOCK_BRANCHES
-      .filter(branch => branch.isOpen)
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-      .slice(0, 2);
-
-    if (this.nearbyBranches.length > 0) {
-      this.selectedBranch = this.nearbyBranches[0];
-    }
   }
 
   loadProducts(): void {
@@ -75,7 +71,7 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/stores']);
   }
 
-  selectBranch(branch: MockBranch): void {
+  selectBranch(branch: Branch): void {
     this.selectedBranch = branch;
   }
 
@@ -91,5 +87,28 @@ export class HomeComponent implements OnInit {
     if (product.bestSeller) { return 'Best seller'; }
     if (product.featured) { return 'Nổi bật'; }
     return '';
+  }
+
+  private loadBranches(): void {
+    this.branchError = '';
+    this.branchService.getActiveBranches(0, 6).subscribe({
+      next: page => {
+        this.nearbyBranches = (page.content || []).slice(0, 2);
+        this.selectedBranch = this.nearbyBranches[0] || null;
+      },
+      error: () => {
+        this.nearbyBranches = [];
+        this.selectedBranch = null;
+        this.branchError = 'Không tải được chi nhánh từ hệ thống.';
+      }
+    });
+  }
+
+  getBranchDistance(index: number): string {
+    return `${index + 1} chi nhánh`;
+  }
+
+  getBranchHours(branch: Branch): string {
+    return branch.averagePreparationMinutes ? `Chuẩn bị ${branch.averagePreparationMinutes} phút` : 'Đang mở';
   }
 }

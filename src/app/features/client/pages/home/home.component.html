@@ -26,7 +26,7 @@
   <div>
     <span class="material-symbols-outlined">location_on</span>
     <strong>{{ selectedBranch.name }}</strong>
-    <small>{{ 'home.quickOrder.nearestBranch' | translate }} - {{ selectedBranch.distance }}</small>
+    <small>{{ 'home.quickOrder.nearestBranch' | translate }} - {{ selectedBranch.address || 'Pine Drink' }}</small>
   </div>
   <div class="order-toggle">
     <button type="button" class="active">{{ 'home.quickOrder.pickupAtStore' | translate }}</button>
@@ -140,15 +140,17 @@
     <a (click)="navigateToStores()" style="cursor: pointer;">{{ 'home.stores.viewAll' | translate }}</a>
   </div>
   <div class="store-grid">
-    <article *ngFor="let store of nearbyBranches" class="store-card">
-      <img [src]="store.image" [alt]="store.name" />
+    <article *ngFor="let store of nearbyBranches; let i = index" class="store-card">
+      <div class="store-card__visual">
+        <span class="material-symbols-outlined">storefront</span>
+      </div>
       <div>
-        <span>{{ store.distance }}</span>
+        <span>{{ getBranchDistance(i) }}</span>
         <h3>{{ store.name }}</h3>
-        <p>{{ store.address }}</p>
+        <p>{{ store.address || store.phone || 'Pine Drink branch' }}</p>
         <small>
           <span class="material-symbols-outlined">schedule</span>
-          {{ store.openTime }} - {{ store.closeTime }}
+          {{ getBranchHours(store) }}
         </small>
         <button type="button" (click)="selectBranch(store)">{{ 'home.stores.orderHere' | translate }}</button>
       </div>

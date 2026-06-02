@@ -67,20 +67,21 @@
 }
 
 .hero-copy h1 {
-  margin: 0;
-  max-width: 520px;
-  color: #102018;
-  font-size: clamp(24px, 2.5vw, 32px);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+  margin: 0 0 8px;
+  max-width: 620px;
+  color: #064e3b;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 900;
 }
 
 .hero-copy p {
-  max-width: 520px;
-  margin: 0;
-  color: #637267;
-  font-size: 13px;
-  line-height: 1.45;
+  max-width: 620px;
+  margin: 0 0 20px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .hero-actions {

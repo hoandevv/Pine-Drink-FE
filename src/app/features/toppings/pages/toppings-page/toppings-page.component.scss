@@ -98,21 +98,21 @@
 }
 
 .master-hero h1 {
-  max-width: 420px;
-  margin: 7px 0 3px;
-  color: #052e16;
-  font-size: clamp(22px, 2.3vw, 30px);
-  line-height: 1.02;
-  letter-spacing: -0.05em;
+  max-width: 620px;
+  margin: 0 0 8px;
+  color: #064e3b;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  font-weight: 900;
 }
 
 .master-hero p {
-  max-width: 660px;
-  margin: 0;
-  color: #647067;
-  font-size: 12px;
-  font-weight: 750;
-  line-height: 1.4;
+  max-width: 620px;
+  margin: 0 0 20px;
+  color: #374151;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .hero-panel {

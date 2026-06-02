@@ -45,13 +45,18 @@ export class AdminLayoutComponent {
       ]
     },
     {
-      title: 'Sản phẩm',
+      title: 'Menu',
       items: [
         { label: 'Products', icon: 'local_cafe', route: '/admin/products', roles: ['ADMIN', 'MANAGER'] },
-        { label: 'Variants', icon: 'tune', route: '/admin/products/variants', roles: ['ADMIN', 'MANAGER'], compact: true },
-        { label: 'Toppings', icon: 'icecream', route: '/admin/products/toppings', roles: ['ADMIN', 'MANAGER'], compact: true },
-        { label: 'Topping Master', icon: 'bakery_dining', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] },
         { label: 'Categories', icon: 'category', route: '/admin/categories', roles: ['ADMIN', 'MANAGER'] }
+      ]
+    },
+    {
+      title: 'Cấu hình sản phẩm',
+      items: [
+        { label: 'Variants', icon: 'tune', route: '/admin/products/variants', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Product Toppings', icon: 'icecream', route: '/admin/products/toppings', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Topping Master', icon: 'bakery_dining', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] }
       ]
     },
     {

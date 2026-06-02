@@ -4,8 +4,8 @@
       <span class="dot"></span>
       <span>Product Topping Studio</span>
     </div>
-    <h1>Gắn topping cho từng món, kiểm soát mặc định và số lượng tối đa.</h1>
-    <p>Chọn sản phẩm, lấy topping active từ kho master, rồi cấu hình option bán kèm đúng chuẩn Pine Drink.</p>
+    <h1>Topping theo món, mặc định rõ, số lượng dễ kiểm soát.</h1>
+    <p>Chọn sản phẩm, lấy topping active từ kho master và cấu hình option bán kèm đúng chuẩn Pine Drink.</p>
     <div class="hero-actions">
       <button id="refresh-product-toppings-btn" type="button" class="btn ghost btn-sm" (click)="refresh()" [disabled]="loading || productLoading || toppingLoading">
         <span class="material-symbols-outlined">refresh</span>
@@ -112,11 +112,12 @@
         <button id="edit-product-topping-{{ item.id }}" type="button" class="icon-btn" (click)="openEditDrawer(item)" title="Sửa">
           <span class="material-symbols-outlined">edit</span>
         </button>
-        <button id="toggle-product-topping-{{ item.id }}" type="button" class="icon-btn" (click)="toggleStatus(item)" title="Đổi trạng thái">
-          <span class="material-symbols-outlined">{{ item.status === 'ACTIVE' ? 'visibility_off' : 'visibility' }}</span>
+        <button id="toggle-product-topping-{{ item.id }}" type="button" class="state-action" (click)="toggleStatus(item)">
+          <span class="material-symbols-outlined">{{ item.status === 'ACTIVE' ? 'pause_circle' : 'play_circle' }}</span>
+          {{ item.status === 'ACTIVE' ? 'Tạm ẩn' : 'Bật lại' }}
         </button>
-        <button id="delete-product-topping-{{ item.id }}" type="button" class="icon-btn danger" (click)="deleteProductTopping(item)" title="Gỡ topping">
-          <span class="material-symbols-outlined">link_off</span>
+        <button id="delete-product-topping-{{ item.id }}" type="button" class="icon-btn danger" (click)="deleteProductTopping(item)" title="Xóa cấu hình topping">
+          <span class="material-symbols-outlined">delete</span>
         </button>
       </div>
     </article>

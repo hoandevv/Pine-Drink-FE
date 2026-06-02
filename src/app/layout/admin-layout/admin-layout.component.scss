@@ -83,14 +83,15 @@
 }
 
 .brand-logo strong {
-  font-size: 22px;
+  font-size: 19px;
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.035em;
 }
 
 .brand-logo small {
-  margin-top: 5px;
+  margin-top: 4px;
   color: rgba(26, 61, 46, 0.58);
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -111,9 +112,9 @@
   gap: 10px;
   margin: 2px 6px 0;
   color: rgba(26, 61, 46, 0.48);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 950;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.095em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -126,14 +127,15 @@
 }
 
 .module-link {
-  min-height: 42px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 12px;
+  padding: 0 11px;
   border-radius: 14px;
   color: rgba(26, 61, 46, 0.68);
   text-decoration: none;
+  font-size: 13px;
   font-weight: 850;
   transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
@@ -173,19 +175,19 @@
 }
 
 .module-link__icon {
-  font-size: 20px;
+  font-size: 19px;
 }
 
 .module-link em {
-  min-width: 26px;
-  height: 24px;
+  min-width: 24px;
+  height: 22px;
   display: inline-grid;
   place-items: center;
   margin-left: auto;
   border-radius: 999px;
   background: rgba(26, 61, 46, 0.14);
   color: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 950;
 }
@@ -216,7 +218,7 @@
 }
 
 .logout-button {
-  min-height: 46px;
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -226,6 +228,7 @@
   color: #1a3d2e;
   background: rgba(26, 61, 46, 0.08);
   cursor: pointer;
+  font-size: 13px;
   font-weight: 900;
   transition: background 0.2s ease;
 }

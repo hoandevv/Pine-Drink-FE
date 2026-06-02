@@ -26,7 +26,7 @@ export class ProductToppingService {
       .set('sort', 'createdAt,desc');
 
     return this.http
-      .get<BaseResponse<PageResponse<ProductTopping>>>(this.productToppingsUrl(productId), { params })
+      .get<BaseResponse<PageResponse<ProductTopping> | ProductTopping[]>>(this.productToppingsUrl(productId), { params })
       .pipe(map((response) => this.normalizePage(response.data, page, size)));
   }
 
@@ -76,10 +76,23 @@ export class ProductToppingService {
   }
 
   private normalizePage(
-    data: PageResponse<ProductTopping> | null | undefined,
+    data: PageResponse<ProductTopping> | ProductTopping[] | null | undefined,
     fallbackPage: number,
     fallbackSize: number
   ): PageResponse<ProductTopping> {
+    if (Array.isArray(data)) {
+      const content = data.map((item) => this.normalizeProductTopping(item));
+      return {
+        content,
+        page: fallbackPage,
+        size: fallbackSize,
+        totalElements: content.length,
+        totalPages: content.length ? 1 : 0,
+        first: true,
+        last: true
+      };
+    }
+
     const content = (data?.content || []).map((item) => this.normalizeProductTopping(item));
     return {
       ...data,
