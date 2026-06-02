@@ -9,8 +9,10 @@ import {
   MockTopping
 } from '../../../../shared/mock-data';
 import { Product } from '../../../products/models/product.model';
+import { ProductTopping } from '../../../products/models/product-topping.model';
 import { ProductVariant } from '../../../products/models/product-variant.model';
 import { ProductService } from '../../../products/services/product.service';
+import { ProductToppingService } from '../../../products/services/product-topping.service';
 import { ProductVariantService } from '../../../products/services/product-variant.service';
 
 interface SizeOption {
@@ -68,6 +70,7 @@ export class ProductDetailComponent implements OnInit {
     private readonly router: Router,
     private readonly location: Location,
     private readonly productService: ProductService,
+    private readonly productToppingService: ProductToppingService,
     private readonly productVariantService: ProductVariantService
   ) {}
 
@@ -98,6 +101,7 @@ export class ProductDetailComponent implements OnInit {
         this.product = product;
         this.loading = false;
         this.loadVariants(product.id);
+        this.loadProductToppings(product.id);
       },
       error: () => {
         this.product = null;
@@ -244,6 +248,34 @@ export class ProductDetailComponent implements OnInit {
         priceModifier: Number(variant.priceDelta) || 0,
         finalPrice: Number(variant.finalPrice) || undefined,
         variant
+      }));
+  }
+
+  private loadProductToppings(productId: string): void {
+    this.productToppingService.getActiveProductToppings(productId).subscribe({
+      next: productToppings => {
+        this.availableToppings = this.mapProductToppings(productToppings);
+        this.selectedToppings = this.selectedToppings.filter(topping =>
+          this.availableToppings.some(available => available.id === topping.id)
+        );
+      },
+      error: () => {
+        this.availableToppings = [];
+        this.selectedToppings = [];
+      }
+    });
+  }
+
+  private mapProductToppings(productToppings: ProductTopping[]): MockTopping[] {
+    return productToppings
+      .filter(item => item.status === 'ACTIVE')
+      .map(item => ({
+        id: item.toppingId || item.id,
+        name: item.toppingName,
+        price: Number(item.toppingPrice) || 0,
+        isAvailable: item.status === 'ACTIVE',
+        category: item.toppingGroupName || 'Khác',
+        image: item.toppingImageUrl || undefined
       }));
   }
 }

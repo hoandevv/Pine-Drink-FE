@@ -7,6 +7,20 @@
     <input id="account-search" type="search" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Tìm nhân sự theo tên, email, mã tài khoản hoặc role...">
   </label>
 
+  <div class="branch-filter" aria-label="Account branch filter">
+    <span class="material-symbols-outlined">storefront</span>
+    <select
+      id="account-branch-filter"
+      [ngModel]="selectedBranchId"
+      (ngModelChange)="filterByBranch($event)"
+      [disabled]="isLoadingBranches">
+      <option value="All">{{ isLoadingBranches ? 'Đang tải chi nhánh...' : 'Tất cả chi nhánh' }}</option>
+      <option *ngFor="let branch of availableBranches" [value]="branch.id">
+        {{ branch.name }}{{ branch.code ? ' · ' + branch.code : '' }}
+      </option>
+    </select>
+  </div>
+
   <button *ngIf="accessControl.can('ACCOUNT_CREATE')" type="button" class="create-account-btn" (click)="openCreateDrawer()">
     <span class="material-symbols-outlined">person_add</span>
     Thêm tài khoản

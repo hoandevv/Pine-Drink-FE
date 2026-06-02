@@ -1,0 +1,185 @@
+<section class="topping-studio-hero" aria-label="Product topping studio overview">
+  <div class="hero-copy">
+    <div class="badge-eyebrow">
+      <span class="dot"></span>
+      <span>Product Topping Studio</span>
+    </div>
+    <h1>Gắn topping cho từng món, kiểm soát mặc định và số lượng tối đa.</h1>
+    <p>Chọn sản phẩm, lấy topping active từ kho master, rồi cấu hình option bán kèm đúng chuẩn Pine Drink.</p>
+    <div class="hero-actions">
+      <button id="refresh-product-toppings-btn" type="button" class="btn ghost btn-sm" (click)="refresh()" [disabled]="loading || productLoading || toppingLoading">
+        <span class="material-symbols-outlined">refresh</span>
+        Làm mới
+      </button>
+      <button id="open-assign-topping-btn" type="button" class="btn primary btn-sm" (click)="openCreateDrawer()" [disabled]="!selectedProductId || toppingLoading">
+        <span class="material-symbols-outlined">add_circle</span>
+        Gắn topping
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-metrics">
+    <article><span>Đã gắn</span><strong>{{ pageData.totalElements }}</strong></article>
+    <article><span>Đang bán</span><strong>{{ activeCount }}</strong></article>
+    <article><span>Mặc định</span><strong>{{ defaultCount }}</strong></article>
+  </div>
+</section>
+
+<div class="alert" *ngIf="errorMessage">
+  <span class="material-symbols-outlined">error</span>
+  {{ errorMessage }}
+</div>
+
+<section class="studio-board" [class.is-loading]="loading">
+  <div class="board-toolbar">
+    <label class="product-picker">
+      <span>Sản phẩm</span>
+      <select id="product-topping-product-select" [ngModel]="selectedProductId" (ngModelChange)="onProductChange($event)" [disabled]="productLoading">
+        <option value="" disabled>Chọn sản phẩm</option>
+        <option *ngFor="let product of products; trackBy: trackProduct" [ngValue]="product.id">
+          {{ product.name }} · {{ product.code }}
+        </option>
+      </select>
+    </label>
+
+    <div class="toolbar-filters">
+      <label class="search-box">
+        <span class="material-symbols-outlined">search</span>
+        <input id="product-topping-search-input" type="search" [(ngModel)]="searchTerm" placeholder="Tìm topping, mã, nhóm...">
+      </label>
+      <select id="product-topping-status-filter" [(ngModel)]="statusFilter">
+        <option value="ALL">Tất cả</option>
+        <option value="ACTIVE">Đang bán</option>
+        <option value="INACTIVE">Tạm ẩn</option>
+      </select>
+      <span class="loading-pill" *ngIf="loading || productLoading || toppingLoading">Đang tải...</span>
+    </div>
+  </div>
+
+  <div class="selected-product" *ngIf="selectedProduct as product">
+    <div>
+      <span class="eyebrow">Đang cấu hình topping</span>
+      <h2>{{ product.name }}</h2>
+      <p>{{ product.categoryName || 'Chưa gắn danh mục' }} · Giá gốc {{ formatCurrency(product.price) }}</p>
+    </div>
+    <span class="product-code">{{ product.code }}</span>
+  </div>
+
+  <app-empty-state *ngIf="!loading && selectedProductId && !productToppings.length"
+    title="Sản phẩm chưa có topping"
+    description="Gắn topping active từ kho master để khách có thêm lựa chọn."
+    icon="icecream">
+    <button type="button" class="btn primary btn-sm" (click)="openCreateDrawer()">
+      <span class="material-symbols-outlined">add</span>
+      Gắn topping đầu tiên
+    </button>
+  </app-empty-state>
+
+  <app-empty-state *ngIf="!productLoading && !products.length"
+    title="Chưa có sản phẩm"
+    description="Cần tạo sản phẩm trước khi cấu hình topping."
+    icon="local_cafe">
+  </app-empty-state>
+
+  <div class="topping-grid" *ngIf="visibleProductToppings.length">
+    <article class="topping-card" *ngFor="let item of visibleProductToppings; trackBy: trackProductTopping">
+      <div class="card-top">
+        <div class="topping-avatar">
+          <img *ngIf="item.toppingImageUrl" [src]="item.toppingImageUrl" [alt]="item.toppingName">
+          <span *ngIf="!item.toppingImageUrl" class="material-symbols-outlined">icecream</span>
+        </div>
+        <span class="status" [class.inactive]="item.status === 'INACTIVE'">
+          {{ item.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}
+        </span>
+      </div>
+
+      <div class="card-content">
+        <p class="code">{{ item.toppingCode }}</p>
+        <h3>{{ item.toppingName }}</h3>
+        <div class="chips">
+          <span>{{ item.toppingGroupName || 'Khác' }}</span>
+          <span *ngIf="item.isDefault">Mặc định</span>
+          <span>Tối đa {{ item.maxQuantity }}</span>
+        </div>
+      </div>
+
+      <div class="price-row">
+        <span>Giá bán thêm</span>
+        <strong>{{ formatCurrency(item.toppingPrice) }}</strong>
+      </div>
+
+      <div class="card-actions">
+        <button id="edit-product-topping-{{ item.id }}" type="button" class="icon-btn" (click)="openEditDrawer(item)" title="Sửa">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button id="toggle-product-topping-{{ item.id }}" type="button" class="icon-btn" (click)="toggleStatus(item)" title="Đổi trạng thái">
+          <span class="material-symbols-outlined">{{ item.status === 'ACTIVE' ? 'visibility_off' : 'visibility' }}</span>
+        </button>
+        <button id="delete-product-topping-{{ item.id }}" type="button" class="icon-btn danger" (click)="deleteProductTopping(item)" title="Gỡ topping">
+          <span class="material-symbols-outlined">link_off</span>
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <div class="pagination-bar" *ngIf="pageData.totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select id="product-topping-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+    <div class="page-status">Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} topping</div>
+    <div class="page-actions">
+      <button id="product-topping-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.first || loading"><span class="material-symbols-outlined">chevron_left</span></button>
+      <button id="product-topping-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.last || loading"><span class="material-symbols-outlined">chevron_right</span></button>
+    </div>
+  </div>
+</section>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<aside class="topping-drawer" [class.open]="drawerOpen" aria-label="Form gắn topping">
+  <form [formGroup]="form" (ngSubmit)="saveProductTopping()">
+    <div class="drawer-head">
+      <div>
+        <span class="eyebrow">{{ selectedProductTopping ? 'Cập nhật' : 'Gắn mới' }}</span>
+        <h2>{{ selectedProductTopping ? selectedProductTopping.toppingName : 'Gắn topping' }}</h2>
+      </div>
+      <button id="close-product-topping-drawer-btn" type="button" class="icon-btn" (click)="closeDrawer()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <label>Topping master
+      <select id="assign-topping-select" formControlName="toppingId">
+        <option value="" disabled>Chọn topping</option>
+        <option *ngFor="let topping of availableToppings; trackBy: trackTopping" [ngValue]="topping.id">
+          {{ topping.name }} · {{ formatCurrency(topping.price) }} · {{ topping.groupName || 'Khác' }}
+        </option>
+      </select>
+      <small *ngIf="form.controls.toppingId.touched && form.controls.toppingId.invalid">Vui lòng chọn topping.</small>
+    </label>
+
+    <label>Số lượng tối đa mỗi ly
+      <input id="product-topping-max-quantity-input" type="number" min="1" max="20" formControlName="maxQuantity" />
+      <small *ngIf="form.controls.maxQuantity.touched && form.controls.maxQuantity.invalid">Số lượng từ 1 đến 20.</small>
+    </label>
+
+    <label class="switch-row">
+      <input id="product-topping-default-input" type="checkbox" formControlName="isDefault" />
+      <span>
+        <strong>Topping mặc định</strong>
+        <small>Tự tick sẵn khi khách mở sản phẩm.</small>
+      </span>
+    </label>
+
+    <div class="drawer-actions">
+      <button type="button" class="btn ghost" (click)="closeDrawer()" [disabled]="saving">Hủy</button>
+      <button id="save-product-topping-btn" type="submit" class="btn primary" [disabled]="saving">
+        <span class="material-symbols-outlined">save</span>
+        {{ saving ? 'Đang lưu...' : 'Lưu cấu hình' }}
+      </button>
+    </div>
+  </form>
+</aside>

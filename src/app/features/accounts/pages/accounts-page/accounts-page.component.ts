@@ -24,6 +24,7 @@ interface AccountRow extends AccountListItemResponse {
 export class AccountsPageComponent implements OnInit {
   searchTerm = '';
   selectedRole = 'All';
+  selectedBranchId = 'All';
   isLoading = false;
   isDrawerOpen = false;
   isEditDrawerOpen = false;
@@ -69,6 +70,7 @@ export class AccountsPageComponent implements OnInit {
     this.accountService.searchAccounts({
       keyword: this.searchTerm.trim() || undefined,
       roleCode: this.selectedRole === 'All' ? undefined : this.selectedRole,
+      branchId: this.selectedBranchId === 'All' ? undefined : this.selectedBranchId,
       page: this.currentPage,
       size: this.pageSize
     }).pipe(
@@ -105,6 +107,12 @@ export class AccountsPageComponent implements OnInit {
 
   filterByRole(role: string): void {
     this.selectedRole = role;
+    this.currentPage = 0;
+    this.loadAccounts();
+  }
+
+  filterByBranch(branchId: string): void {
+    this.selectedBranchId = branchId;
     this.currentPage = 0;
     this.loadAccounts();
   }

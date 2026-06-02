@@ -10,7 +10,7 @@
 .admin-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 292px minmax(0, 1fr);
+  grid-template-columns: 268px minmax(0, 1fr);
   transition: grid-template-columns 0.26s ease;
 }
 
@@ -24,8 +24,8 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 22px;
+  gap: 14px;
+  padding: 18px;
   color: #1a3d2e;
   background:
     radial-gradient(circle at 24% 8%, rgba(255, 214, 79, 0.18), transparent 32%),
@@ -96,24 +96,24 @@
 
 .module-nav {
   display: grid;
-  gap: 14px;
-  margin-top: 8px;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 .module-group {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .module-group__title {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 4px 6px 0;
+  margin: 2px 6px 0;
   color: rgba(26, 61, 46, 0.48);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 950;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -126,12 +126,12 @@
 }
 
 .module-link {
-  min-height: 48px;
+  min-height: 42px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 14px;
-  border-radius: 17px;
+  gap: 10px;
+  padding: 0 12px;
+  border-radius: 14px;
   color: rgba(26, 61, 46, 0.68);
   text-decoration: none;
   font-weight: 850;
@@ -147,25 +147,17 @@
 }
 
 .module-link--compact {
-  min-height: 38px;
-  margin: -3px 0 2px 28px;
-  padding: 0 12px;
-  gap: 9px;
+  min-height: 34px;
+  margin: -2px 0 1px 20px;
+  padding: 0 10px;
+  gap: 8px;
   border-radius: 13px;
   color: rgba(26, 61, 46, 0.58);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(26, 61, 46, 0.06);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
-
-.module-link--compact::before {
-  content: '';
-  width: 12px;
-  height: 1px;
-  margin-left: -4px;
-  background: rgba(26, 61, 46, 0.32);
 }
 
 .module-link--compact .module-link__icon {
@@ -181,7 +173,7 @@
 }
 
 .module-link__icon {
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .module-link em {
@@ -540,10 +532,6 @@
   border-color: rgba(234, 255, 242, 0.08);
 }
 
-.delivery-mode .module-link--compact::before {
-  background: rgba(234, 255, 242, 0.28);
-}
-
 .delivery-mode .module-link--compact:hover,
 .delivery-mode .module-link--compact.is-active {
   color: #ecfdf5;
@@ -605,9 +593,6 @@
   border-radius: 14px;
 }
 
-.sidebar-collapsed .module-link--compact::before {
-  display: none;
-}
 
 .sidebar-collapsed .module-link em {
   position: absolute;

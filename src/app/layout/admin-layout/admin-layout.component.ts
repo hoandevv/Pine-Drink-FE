@@ -49,8 +49,9 @@ export class AdminLayoutComponent {
       items: [
         { label: 'Products', icon: 'local_cafe', route: '/admin/products', roles: ['ADMIN', 'MANAGER'] },
         { label: 'Variants', icon: 'tune', route: '/admin/products/variants', roles: ['ADMIN', 'MANAGER'], compact: true },
-        { label: 'Categories', icon: 'category', route: '/admin/categories', roles: ['ADMIN', 'MANAGER'] },
-        { label: 'Toppings', icon: 'icecream', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] }
+        { label: 'Toppings', icon: 'icecream', route: '/admin/products/toppings', roles: ['ADMIN', 'MANAGER'], compact: true },
+        { label: 'Topping Master', icon: 'bakery_dining', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Categories', icon: 'category', route: '/admin/categories', roles: ['ADMIN', 'MANAGER'] }
       ]
     },
     {
