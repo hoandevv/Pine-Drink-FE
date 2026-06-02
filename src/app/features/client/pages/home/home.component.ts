@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
 import { Branch } from '../../../branches/models/branch.model';
+import { BranchHours } from '../../../branches/models/branch-hours.model';
 import { BranchService } from '../../../branches/services/branch.service';
 import { MOCK_VOUCHERS, MockVoucher } from '../../../../shared/mock-data';
 
@@ -20,6 +21,7 @@ export class HomeComponent implements OnInit {
   loadingProducts = false;
   productError = '';
   branchError = '';
+  branchHoursByBranchId: Record<string, BranchHours[]> = {};
 
   constructor(
     private readonly router: Router,
@@ -93,8 +95,9 @@ export class HomeComponent implements OnInit {
     this.branchError = '';
     this.branchService.getActiveBranches(0, 6).subscribe({
       next: page => {
-        this.nearbyBranches = (page.content || []).slice(0, 2);
+        this.nearbyBranches = (page.content || []).slice(0, 4);
         this.selectedBranch = this.nearbyBranches[0] || null;
+        this.loadBranchHours(this.nearbyBranches);
       },
       error: () => {
         this.nearbyBranches = [];
@@ -105,10 +108,75 @@ export class HomeComponent implements OnInit {
   }
 
   getBranchDistance(index: number): string {
-    return `${index + 1} chi nhánh`;
+    return index === 0 ? 'Cửa hàng nổi bật' : `Chi nhánh ${index + 1}`;
   }
 
   getBranchHours(branch: Branch): string {
-    return branch.averagePreparationMinutes ? `Chuẩn bị ${branch.averagePreparationMinutes} phút` : 'Đang mở';
+    const hours = this.branchHoursByBranchId[branch.id] || [];
+    if (hours.length === 0) {
+      return 'Chưa cập nhật giờ mở cửa';
+    }
+
+    const openDays = hours.filter(item => !item.closed);
+    if (openDays.length === 0) {
+      return 'Tạm đóng cả tuần';
+    }
+
+    const first = openDays[0];
+    const sameTime = openDays.every(item => item.openTime === first.openTime && item.closeTime === first.closeTime);
+    const days = this.compactDayRange(openDays.map(item => item.dayOfWeek));
+    return sameTime
+      ? `${days} · ${this.normalizeTime(first.openTime)} - ${this.normalizeTime(first.closeTime)}`
+      : openDays.map(item => `${this.dayLabel(item.dayOfWeek)} ${this.normalizeTime(item.openTime)}-${this.normalizeTime(item.closeTime)}`).join(' · ');
+  }
+
+  getBranchServices(branch: Branch): string {
+    const services = [];
+    if (branch.supportsPickup) { services.push('Nhận tại quầy'); }
+    if (branch.supportsDelivery) { services.push('Giao hàng'); }
+    return services.length ? services.join(' · ') : 'Chưa bật dịch vụ';
+  }
+
+  getBranchContact(branch: Branch): string {
+    return [branch.phone, branch.email].filter(Boolean).join(' · ') || 'Chưa cập nhật liên hệ';
+  }
+
+  private loadBranchHours(branches: Branch[]): void {
+    this.branchHoursByBranchId = {};
+    branches.forEach(branch => {
+      this.branchService.getBranchHours(branch.id).subscribe({
+        next: hours => {
+          this.branchHoursByBranchId = {
+            ...this.branchHoursByBranchId,
+            [branch.id]: hours.sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+          };
+        }
+      });
+    });
+  }
+
+  private dayLabel(dayOfWeek: number): string {
+    const labels: Record<number, string> = {
+      1: 'T2',
+      2: 'T3',
+      3: 'T4',
+      4: 'T5',
+      5: 'T6',
+      6: 'T7',
+      7: 'CN'
+    };
+    return labels[dayOfWeek] || `Ngày ${dayOfWeek}`;
+  }
+
+  private compactDayRange(days: number[]): string {
+    const sortedDays = [...days].sort((a, b) => a - b);
+    if (sortedDays.length === 7) { return 'Cả tuần'; }
+    if (sortedDays.join(',') === '1,2,3,4,5,6') { return 'T2 - T7'; }
+    if (sortedDays.join(',') === '6,7') { return 'Cuối tuần'; }
+    return sortedDays.map(day => this.dayLabel(day)).join(', ');
+  }
+
+  private normalizeTime(value: string): string {
+    return value?.slice(0, 5) || '--:--';
   }
 }

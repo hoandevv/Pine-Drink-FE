@@ -143,6 +143,83 @@
       </div>
     </div>
 
+    <div class="form-card branch-hours-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">schedule</span>
+        <div>
+          <strong>Giờ mở cửa</strong>
+          <small>{{ editingBranch ? 'Cấu hình lịch theo ngày, dữ liệu lưu vào BranchHours backend.' : 'Thiết lập trước lịch mở cửa; hệ thống sẽ lưu sau khi tạo chi nhánh.' }}</small>
+        </div>
+      </div>
+
+      <div class="hours-guide">
+        <span class="material-symbols-outlined">info</span>
+        <p>Mỗi ngày cần một dòng lịch riêng. Nếu chi nhánh mở giống nhau từ Thứ 2 đến Thứ 7, nhập giờ rồi bấm <strong>Áp dụng T2 - T7</strong>.</p>
+      </div>
+
+      <div class="week-strip" *ngIf="!loadingHours">
+        <span *ngFor="let day of dayOptions" [class.configured]="hasBranchHours(day.value)">
+          {{ day.label }}
+          <small>{{ hasBranchHours(day.value) ? 'Đã có' : 'Chưa có' }}</small>
+        </span>
+      </div>
+
+      <div class="hours-list" *ngIf="!loadingHours && branchHours.length > 0">
+        <article class="hours-item" *ngFor="let hours of branchHours">
+          <div>
+            <strong>{{ dayLabel(hours.dayOfWeek) }}</strong>
+            <span>{{ hours.closed ? 'Đóng cửa' : (hours.openTime | slice:0:5) + ' - ' + (hours.closeTime | slice:0:5) }}</span>
+          </div>
+          <div class="hours-actions">
+            <button type="button" class="icon-action" (click)="editBranchHours(hours)" aria-label="Sửa giờ mở cửa">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <button type="button" class="icon-action danger" (click)="deleteBranchHours(hours)" aria-label="Xóa giờ mở cửa">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div class="hours-empty" *ngIf="!loadingHours && branchHours.length === 0">
+        <span class="material-symbols-outlined">event_busy</span>
+        <p>Chưa có lịch. Chọn giờ bên dưới rồi dùng nút áp dụng nhanh để tạo nhiều ngày cùng lúc.</p>
+      </div>
+      <div class="loading-strip inline" *ngIf="loadingHours">Đang tải giờ mở cửa...</div>
+
+      <form class="hours-form" [formGroup]="branchHoursForm" (ngSubmit)="saveBranchHours()">
+        <label>
+          <span>Ngày</span>
+          <select id="branch-hours-day-input" formControlName="dayOfWeek">
+            <option *ngFor="let day of dayOptions" [ngValue]="day.value">{{ day.label }}</option>
+          </select>
+        </label>
+        <label>
+          <span>Mở cửa</span>
+          <input id="branch-hours-open-input" type="time" formControlName="openTime">
+        </label>
+        <label>
+          <span>Đóng cửa</span>
+          <input id="branch-hours-close-input" type="time" formControlName="closeTime">
+        </label>
+        <label class="closed-toggle">
+          <input id="branch-hours-closed-input" type="checkbox" formControlName="closed">
+          <span>Đóng cả ngày</span>
+        </label>
+        <div class="preset-actions">
+          <button *ngFor="let preset of schedulePresets" type="button" class="preset-btn" [disabled]="savingHours" (click)="applySchedulePreset(preset.days)">
+            {{ preset.label }}
+          </button>
+        </div>
+        <div class="hours-submit">
+          <button type="button" class="ghost-btn" (click)="resetBranchHoursForm()" *ngIf="editingBranchHours">Hủy sửa</button>
+          <button id="branch-hours-save-btn" type="submit" class="soft-btn" [disabled]="savingHours">
+            {{ savingHours ? 'Đang lưu...' : (editingBranchHours ? 'Cập nhật giờ' : 'Thêm giờ') }}
+          </button>
+        </div>
+      </form>
+    </div>
+
     <div class="form-actions wide">
       <button id="branch-cancel-btn" type="button" class="ghost-btn" (click)="closeForm()">Hủy</button>
       <button id="branch-save-btn" type="submit" class="btn btn-primary" [disabled]="saving">
@@ -184,6 +261,7 @@
     </div>
     <div class="ops-cell">
       <strong>{{ branch.averagePreparationMinutes || 15 }} phút</strong>
+      <span class="hours-summary"><span class="material-symbols-outlined">schedule</span>{{ branchHoursSummary(branch) }}</span>
       <span *ngIf="branch.latitude && branch.longitude">Có vị trí bản đồ</span>
       <span *ngIf="!branch.latitude || !branch.longitude">Thiếu vị trí</span>
     </div>

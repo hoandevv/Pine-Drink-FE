@@ -145,13 +145,30 @@
         <span class="material-symbols-outlined">storefront</span>
       </div>
       <div>
-        <span>{{ getBranchDistance(i) }}</span>
+        <span class="store-badge">{{ getBranchDistance(i) }}</span>
         <h3>{{ store.name }}</h3>
-        <p>{{ store.address || store.phone || 'Pine Drink branch' }}</p>
-        <small>
-          <span class="material-symbols-outlined">schedule</span>
-          {{ getBranchHours(store) }}
-        </small>
+        <p class="store-address">
+          <span class="material-symbols-outlined">location_on</span>
+          {{ store.address || 'Chưa cập nhật địa chỉ' }}
+        </p>
+        <div class="store-meta-list">
+          <small>
+            <span class="material-symbols-outlined">schedule</span>
+            {{ getBranchHours(store) }}
+          </small>
+          <small>
+            <span class="material-symbols-outlined">timer</span>
+            Chuẩn bị {{ store.averagePreparationMinutes || 15 }} phút
+          </small>
+          <small>
+            <span class="material-symbols-outlined">room_service</span>
+            {{ getBranchServices(store) }}
+          </small>
+          <small>
+            <span class="material-symbols-outlined">call</span>
+            {{ getBranchContact(store) }}
+          </small>
+        </div>
         <button type="button" (click)="selectBranch(store)">{{ 'home.stores.orderHere' | translate }}</button>
       </div>
     </article>

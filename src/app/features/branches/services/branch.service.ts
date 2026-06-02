@@ -7,6 +7,7 @@ import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
 import { BranchCreateRequest, BranchStatusUpdateRequest, BranchUpdateRequest } from '../models/branch-request.model';
+import { BranchHours, BranchHoursRequest } from '../models/branch-hours.model';
 import { Branch } from '../models/branch.model';
 
 @Injectable({ providedIn: 'root' })
@@ -80,5 +81,29 @@ export class BranchService {
 
   restoreBranch(id: string): Observable<Branch> {
     return this.updateBranchStatus(id, { status: 'ACTIVE' });
+  }
+
+  getBranchHours(branchId: string): Observable<BranchHours[]> {
+    return this.http
+      .get<BaseResponse<BranchHours[]>>(`${this.apiUrl}/${branchId}/hours`)
+      .pipe(map((response) => response.data || []));
+  }
+
+  createBranchHours(branchId: string, request: BranchHoursRequest): Observable<BranchHours> {
+    return this.http
+      .post<BaseResponse<BranchHours>>(`${this.apiUrl}/${branchId}/hours`, request)
+      .pipe(map((response) => response.data));
+  }
+
+  updateBranchHours(branchId: string, hoursId: string, request: BranchHoursRequest): Observable<BranchHours> {
+    return this.http
+      .put<BaseResponse<BranchHours>>(`${this.apiUrl}/${branchId}/hours/${hoursId}`, request)
+      .pipe(map((response) => response.data));
+  }
+
+  deleteBranchHours(branchId: string, hoursId: string): Observable<void> {
+    return this.http
+      .delete<BaseResponse<void>>(`${this.apiUrl}/${branchId}/hours/${hoursId}`)
+      .pipe(map((response) => response.data));
   }
 }
