@@ -9,14 +9,18 @@ import { PageResponse } from '../../../shared/models/page-response.model';
 import { Product } from '../models/product.model';
 import { ProductCreateRequest, ProductUpdateRequest } from '../models/product-request.model';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class ProductService {
   private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.products}`;
 
   constructor(private readonly http: HttpClient) {}
 
   getProducts(page: number, size: number, keyword?: string, categoryId?: string, status?: string): Observable<PageResponse<Product>> {
-    let params = new HttpParams().set('page', page).set('size', size);
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
 
     if (keyword) { params = params.set('keyword', keyword); }
     if (categoryId) { params = params.set('categoryId', categoryId); }
@@ -24,22 +28,77 @@ export class ProductService {
 
     return this.http
       .get<BaseResponse<PageResponse<Product>>>(this.apiUrl, { params })
-      .pipe(map((response) => response.data));
+      .pipe(map((response) => this.normalizeProductPage(response.data, page, size)));
   }
 
   getProductById(id: string): Observable<Product> {
-    return this.http.get<BaseResponse<Product>>(`${this.apiUrl}/${id}`).pipe(map((response) => response.data));
+    return this.http
+      .get<BaseResponse<Product>>(`${this.apiUrl}/${id}`)
+      .pipe(map((response) => this.normalizeProduct(response.data)));
   }
 
-  createProduct(request: ProductCreateRequest): Observable<Product> {
-    return this.http.post<BaseResponse<Product>>(this.apiUrl, request).pipe(map((response) => response.data));
+  createProduct(request: ProductCreateRequest, file?: File): Observable<Product> {
+    if (file) {
+      return this.http
+        .post<BaseResponse<Product>>(this.apiUrl, this.toMultipartRequest(request, file))
+        .pipe(map((response) => this.normalizeProduct(response.data)));
+    }
+
+    return this.http
+      .post<BaseResponse<Product>>(this.apiUrl, this.toBackendRequest(request))
+      .pipe(map((response) => this.normalizeProduct(response.data)));
   }
 
-  updateProduct(id: string, request: ProductUpdateRequest): Observable<Product> {
-    return this.http.put<BaseResponse<Product>>(`${this.apiUrl}/${id}`, request).pipe(map((response) => response.data));
+  updateProduct(id: string, request: ProductUpdateRequest, file?: File): Observable<Product> {
+    if (file) {
+      return this.http
+        .put<BaseResponse<Product>>(`${this.apiUrl}/${id}`, this.toMultipartRequest(request, file))
+        .pipe(map((response) => this.normalizeProduct(response.data)));
+    }
+
+    return this.http
+      .put<BaseResponse<Product>>(`${this.apiUrl}/${id}`, this.toBackendRequest(request))
+      .pipe(map((response) => this.normalizeProduct(response.data)));
   }
 
   deleteProduct(id: string): Observable<void> {
     return this.http.delete<BaseResponse<null>>(`${this.apiUrl}/${id}`).pipe(map(() => void 0));
+  }
+
+  private toBackendRequest(request: ProductCreateRequest | ProductUpdateRequest): Record<string, unknown> {
+    const { price, ...rest } = request;
+    return {
+      ...rest,
+      ...(price !== undefined ? { basePrice: price } : {})
+    };
+  }
+
+  private toMultipartRequest(request: ProductCreateRequest | ProductUpdateRequest, file: File): FormData {
+    const formData = new FormData();
+    formData.append('request', new Blob([JSON.stringify(this.toBackendRequest(request))], { type: 'application/json' }));
+    formData.append('file', file);
+    return formData;
+  }
+
+  private normalizeProductPage(data: PageResponse<Product>, fallbackPage: number, fallbackSize: number): PageResponse<Product> {
+    const content = (data?.content || []).map((product) => this.normalizeProduct(product));
+    return {
+      ...data,
+      content,
+      page: data?.page ?? fallbackPage,
+      size: data?.size ?? fallbackSize,
+      totalElements: data?.totalElements ?? content.length,
+      totalPages: data?.totalPages ?? (content.length > 0 ? 1 : 0),
+      first: data?.first ?? true,
+      last: data?.last ?? true
+    };
+  }
+
+  private normalizeProduct(product: Product): Product {
+    const basePrice = (product as Product & { basePrice?: number }).basePrice;
+    return {
+      ...product,
+      price: product.price ?? Number(basePrice) ?? 0
+    };
   }
 }

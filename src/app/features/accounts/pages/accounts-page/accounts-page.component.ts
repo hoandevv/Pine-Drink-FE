@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest } from 'src/app/core/services/account.service';
+import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest, AccountDetailResponse, AccountRoleAssignmentResponse } from 'src/app/core/services/account.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { finalize } from 'rxjs';
 import { AccessControlService } from 'src/app/core/services/access-control.service';
+import { BranchService } from 'src/app/features/branches/services/branch.service';
+import { Branch } from 'src/app/features/branches/models/branch.model';
 
 interface AccountRow extends AccountListItemResponse {
   displayName: string;
@@ -25,11 +27,14 @@ export class AccountsPageComponent implements OnInit {
   isLoading = false;
   isDrawerOpen = false;
   isEditDrawerOpen = false;
+  isDetailDrawerOpen = false;
   isCreating = false;
   isUpdating = false;
+  isLoadingDetail = false;
   isUploadingAvatar = false;
   showCreatePassword = false;
   editingAccount: AccountRow | null = null;
+  selectedAccountDetail: AccountDetailResponse | null = null;
   accounts: AccountRow[] = [];
   adminCount = 0;
   lockedCount = 0;
@@ -44,15 +49,19 @@ export class AccountsPageComponent implements OnInit {
   updateForm: UpdateAccountRequest = this.getEmptyUpdateForm();
   readonly internalRoles = ['ADMIN', 'MANAGER', 'DELIVERY'];
   readonly roles = ['All', ...this.internalRoles];
+  availableBranches: Branch[] = [];
+  isLoadingBranches = false;
 
   constructor(
     private accountService: AccountService,
     private authService: AuthService,
-    public readonly accessControl: AccessControlService
+    public readonly accessControl: AccessControlService,
+    private readonly branchService: BranchService
   ) {}
 
   ngOnInit(): void {
     this.loadAccounts();
+    this.loadBranchesForScope();
   }
 
   loadAccounts(): void {
@@ -121,6 +130,7 @@ export class AccountsPageComponent implements OnInit {
     }
 
     this.createForm = this.getEmptyForm();
+    this.applyRoleScopeDefaults();
     this.showCreatePassword = false;
     this.isDrawerOpen = true;
   }
@@ -137,16 +147,24 @@ export class AccountsPageComponent implements OnInit {
     this.showCreatePassword = !this.showCreatePassword;
   }
 
+  viewAccount(account: AccountRow): void {
+    this.isDetailDrawerOpen = true;
+    this.loadAccountDetail(account.id);
+  }
+
+  closeDetailDrawer(): void {
+    if (this.isLoadingDetail) {
+      return;
+    }
+
+    this.isDetailDrawerOpen = false;
+    this.selectedAccountDetail = null;
+  }
+
   editAccount(account: AccountRow): void {
     this.editingAccount = account;
-    this.updateForm = {
-      fullName: account.fullName || account.displayName,
-      email: account.email || '',
-      phone: account.phone || '',
-      avatarUrl: account.avatarUrl || ''
-      // brandId reserved for future multi-brand assignment flow.
-    };
     this.isEditDrawerOpen = true;
+    this.loadAccountDetail(account.id, true);
   }
 
   closeEditDrawer(): void {
@@ -156,6 +174,7 @@ export class AccountsPageComponent implements OnInit {
 
     this.isEditDrawerOpen = false;
     this.editingAccount = null;
+    this.selectedAccountDetail = null;
   }
 
   updateAccount(): void {
@@ -168,7 +187,6 @@ export class AccountsPageComponent implements OnInit {
       email: this.updateForm.email?.trim() || undefined,
       phone: this.updateForm.phone?.trim() || undefined,
       avatarUrl: this.updateForm.avatarUrl?.trim() || undefined
-      // brandId reserved for future multi-brand assignment flow.
     };
 
     this.isUpdating = true;
@@ -255,11 +273,17 @@ export class AccountsPageComponent implements OnInit {
       email: this.createForm.email?.trim() || undefined,
       phone: this.createForm.phone?.trim() || undefined,
       status: 'ACTIVE',
-      scopeType: 'SYSTEM'
+      scopeType: this.createForm.scopeType || 'BRANCH',
+      scopeBranchId: this.createForm.scopeBranchId?.trim() || undefined
     };
 
     if (!payload.username || !payload.password || !payload.fullName || !payload.roleCode) {
       window.alert('Vui lòng nhập đủ username, mật khẩu, họ tên và vai trò.');
+      return;
+    }
+
+    if (payload.scopeType === 'BRANCH' && !payload.scopeBranchId) {
+      window.alert('Vui lòng chọn chi nhánh cho Manager/Delivery.');
       return;
     }
 
@@ -289,8 +313,55 @@ export class AccountsPageComponent implements OnInit {
       phone: '',
       roleCode: 'DELIVERY',
       status: 'ACTIVE',
-      scopeType: 'SYSTEM'
+      scopeType: 'BRANCH',
+      scopeBranchId: ''
     };
+  }
+
+  onCreateRoleChange(roleCode: string): void {
+    this.createForm.roleCode = roleCode;
+    this.applyRoleScopeDefaults();
+  }
+
+  private applyRoleScopeDefaults(): void {
+    if (this.createForm.roleCode === 'ADMIN') {
+      this.createForm.scopeType = 'SYSTEM';
+      this.createForm.scopeBranchId = undefined;
+      return;
+    }
+
+    this.createForm.scopeType = 'BRANCH';
+    if (!this.createForm.scopeBranchId && this.availableBranches.length === 1) {
+      this.createForm.scopeBranchId = this.availableBranches[0].id;
+    }
+  }
+
+  private loadBranchesForScope(): void {
+    this.isLoadingBranches = true;
+    this.branchService.getActiveBranches(0, 200).pipe(
+      finalize(() => {
+        this.isLoadingBranches = false;
+      })
+    ).subscribe({
+      next: (page) => {
+        const branches = page.content || [];
+        this.availableBranches = this.filterBranchesByCurrentScope(branches);
+        this.applyRoleScopeDefaults();
+      },
+      error: () => {
+        this.availableBranches = [];
+      }
+    });
+  }
+
+  private filterBranchesByCurrentScope(branches: Branch[]): Branch[] {
+    const scope = this.authService.getCurrentUser()?.scope;
+    if (!scope || scope.type === 'SYSTEM') {
+      return branches;
+    }
+
+    const allowedIds = new Set(scope.branchIds || []);
+    return branches.filter((branch) => allowedIds.has(branch.id));
   }
 
   private getEmptyUpdateForm(): UpdateAccountRequest {
@@ -299,8 +370,64 @@ export class AccountsPageComponent implements OnInit {
       email: '',
       phone: '',
       avatarUrl: ''
-      // brandId reserved for future multi-brand assignment flow.
     };
+  }
+
+  private loadAccountDetail(accountId: string, forEdit = false): void {
+    this.isLoadingDetail = true;
+    this.accountService.getAccountDetail(accountId).pipe(
+      finalize(() => {
+        this.isLoadingDetail = false;
+      })
+    ).subscribe({
+      next: (res) => {
+        const detail = res.data;
+        if (!detail) {
+          return;
+        }
+
+        this.selectedAccountDetail = detail;
+        if (forEdit) {
+          this.patchUpdateForm(detail);
+        }
+      },
+      error: () => {
+        window.alert('Không thể tải đầy đủ thông tin tài khoản.');
+      }
+    });
+  }
+
+  private patchUpdateForm(detail: AccountDetailResponse): void {
+    this.updateForm = {
+      fullName: detail.fullName || '',
+      email: detail.email || '',
+      phone: detail.phone || '',
+      avatarUrl: detail.avatarUrl || ''
+    };
+  }
+
+  getDetailPrimaryRole(): AccountRoleAssignmentResponse | null {
+    return this.selectedAccountDetail?.roleAssignments?.[0] || null;
+  }
+
+  getRoleAssignments(detail: AccountDetailResponse | null): AccountRoleAssignmentResponse[] {
+    return detail?.roleAssignments || [];
+  }
+
+  getBranchName(branchId?: string | null): string {
+    if (!branchId) {
+      return 'Toàn hệ thống';
+    }
+
+    return this.availableBranches.find((branch) => branch.id === branchId)?.name || branchId;
+  }
+
+  formatDateTime(value?: string | null): string {
+    if (!value) {
+      return 'Chưa có';
+    }
+
+    return new Date(value).toLocaleString('vi-VN');
   }
 
   private getPrimaryRole(account: AccountListItemResponse): string {

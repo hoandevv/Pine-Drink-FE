@@ -1,19 +1,199 @@
-<app-page-header title="Categories" description="Nhóm menu đồ uống theo module backend dự kiến: danh mục, số sản phẩm, trạng thái và doanh thu.">
-  <button type="button" class="btn btn-primary">+ Thêm danh mục</button>
-</app-page-header>
+<section class="category-hero" aria-label="Tổng quan danh mục">
+  <div class="hero-main">
+    <div class="hero-copy">
+      <div class="badge-eyebrow">
+        <span class="dot"></span>
+        <span class="text">Pine Drink Catalog</span>
+      </div>
+      <h1>Danh mục gọn, menu dễ đọc, thao tác nhanh.</h1>
+      <p>Quản lý ảnh đại diện, mô tả ngắn, thứ tự ưu tiên và trạng thái hiển thị cho từng nhóm đồ uống.</p>
 
-<section class="category-grid">
-  <article class="category-card" *ngFor="let category of categories" [style.--accent]="category.color">
-    <div class="category-card__top">
-      <span class="material-symbols-outlined">category</span>
-      <strong>{{ category.status }}</strong>
+      <div class="hero-actions">
+        <button id="refresh-categories-btn" type="button" class="btn ghost btn-sm" (click)="refresh()" [disabled]="loading">
+          <span class="material-symbols-outlined">refresh</span>
+          Làm mới
+        </button>
+        <button id="open-create-category-btn" type="button" class="btn primary btn-sm" (click)="openCreateDrawer()">
+          <span class="material-symbols-outlined">add</span>
+          Thêm danh mục
+        </button>
+      </div>
     </div>
-    <h3>{{ category.name }}</h3>
-    <p>{{ category.code }}</p>
-    <div class="category-stats">
-      <span><b>{{ category.products }}</b> sản phẩm</span>
-      <span><b>{{ category.revenue }}</b> tháng này</span>
+
+    <div class="hero-metrics">
+      <article class="metric-mini">
+        <span>Tổng</span>
+        <strong>{{ pageData.totalElements }}</strong>
+      </article>
+      <article class="metric-mini">
+        <span>Bật</span>
+        <strong>{{ activeCount }}</strong>
+      </article>
+      <article class="metric-mini">
+        <span>Ẩn</span>
+        <strong>{{ inactiveCount }}</strong>
+      </article>
     </div>
-    <button type="button">Quản lý danh mục</button>
-  </article>
+  </div>
+
+  <div class="hero-visual-compact">
+    <div class="abstract-shape"></div>
+  </div>
 </section>
+
+<div class="alert" *ngIf="errorMessage">
+  <span class="material-symbols-outlined">error</span>
+  {{ errorMessage }}
+</div>
+
+<section class="category-board" [class.is-loading]="loading">
+  <div class="board-toolbar">
+    <div></div>
+    <span class="loading-pill" *ngIf="loading">Đang tải...</span>
+  </div>
+
+  <app-empty-state *ngIf="!loading && !categories.length" 
+    title="Danh mục đang trống"
+    description="Tổ chức menu Pine Drink bằng cách tạo nhóm đồ uống đầu tiên của bạn ngay bây giờ." 
+    icon="category">
+    <button type="button" class="btn primary btn-sm" (click)="openCreateDrawer()">
+      <span class="material-symbols-outlined">add</span>
+      Tạo danh mục đầu tiên
+    </button>
+  </app-empty-state>
+
+  <div class="category-grid" *ngIf="categories.length">
+    <article class="category-card" *ngFor="let category of categories; trackBy: trackCategory">
+      <div class="category-media">
+        <img *ngIf="category.imageUrl && !imageBrokenIds.has(category.id)" [src]="category.imageUrl"
+          [alt]="category.name" (error)="markImageBroken(category.id)" />
+        <div class="media-fallback" *ngIf="!category.imageUrl || imageBrokenIds.has(category.id)">
+          <span class="material-symbols-outlined">local_cafe</span>
+        </div>
+        <span class="status" [class.inactive]="category.status === 'INACTIVE'">
+          {{ category.status === 'ACTIVE' ? 'Đang bật' : 'Tạm ẩn' }}
+        </span>
+      </div>
+
+      <div class="category-content">
+        <div class="category-title-row">
+          <div>
+            <p class="code">{{ category.code }}</p>
+            <h3>{{ category.name }}</h3>
+          </div>
+          <span class="order">#{{ category.displayOrder }}</span>
+        </div>
+        <p class="description">{{ category.description || 'Chưa có mô tả cho danh mục này.' }}</p>
+      </div>
+
+      <div class="category-actions">
+        <button id="edit-category-{{ category.id }}" type="button" class="icon-btn" (click)="openEditDrawer(category)"
+          title="Sửa">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button id="toggle-category-{{ category.id }}" type="button" class="icon-btn" (click)="toggleStatus(category)"
+          title="Đổi trạng thái">
+          <span class="material-symbols-outlined">{{ category.status === 'ACTIVE' ? 'visibility_off' : 'visibility'
+            }}</span>
+        </button>
+        <button id="delete-category-{{ category.id }}" type="button" class="icon-btn danger"
+          (click)="deleteCategory(category)" title="Xóa">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </div>
+    </article>
+  </div>
+
+  <div class="pagination-bar" *ngIf="pageData.totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select id="category-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+
+    <div class="page-status">
+      Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} danh mục
+    </div>
+
+    <div class="page-actions">
+      <button id="category-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <button id="category-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<aside class="category-drawer" [class.open]="drawerOpen" aria-label="Form danh mục">
+  <form [formGroup]="form" (ngSubmit)="saveCategory()">
+    <div class="drawer-head">
+      <div>
+        <span class="eyebrow">{{ selectedCategory ? 'Cập nhật' : 'Tạo mới' }}</span>
+        <h2>{{ selectedCategory ? selectedCategory.name : 'Thêm danh mục' }}</h2>
+      </div>
+      <button id="close-category-drawer-btn" type="button" class="icon-btn" (click)="closeDrawer()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <label>
+      Tên danh mục
+      <input id="category-name-input" type="text" formControlName="name" placeholder="Ví dụ: Trà trái cây" />
+      <small *ngIf="form.controls.name.touched && form.controls.name.invalid">Tên danh mục bắt buộc, tối đa 150 ký
+        tự.</small>
+    </label>
+
+    <label>
+      Mô tả
+      <textarea id="category-description-input" rows="4" formControlName="description"
+        placeholder="Mô tả ngắn giúp nhân viên nhận biết nhóm món."></textarea>
+    </label>
+
+    <div class="image-uploader-section">
+      <span class="field-label">Ảnh đại diện</span>
+      <div class="uploader-container">
+        <label class="preview-box" for="category-image-file-input">
+          <img *ngIf="previewSource; else uploadPlaceholder" [src]="previewSource" alt="Xem trước" />
+          <ng-template #uploadPlaceholder>
+            <div class="placeholder">
+              <span class="material-symbols-outlined">add_photo_alternate</span>
+              <p>Chưa có ảnh</p>
+            </div>
+          </ng-template>
+        </label>
+
+        <div class="upload-info">
+          <button type="button" class="btn ghost btn-sm" (click)="fileInput.click()">
+            <span class="material-symbols-outlined">upload</span>
+            Tải ảnh lên
+          </button>
+          <input #fileInput id="category-image-file-input" type="file" hidden accept="image/*"
+            (change)="onImageSelected($event)" />
+          <p class="hint">Khuyên dùng ảnh 1:1, dung lượng < 2MB.</p>
+        </div>
+      </div>
+    </div>
+
+    <label>
+      Hoặc URL ảnh (Nếu có sẵn)
+      <input id="category-image-input" type="url" formControlName="imageUrl" placeholder="https://..." />
+    </label>
+
+    <label>
+      Thứ tự hiển thị
+      <input id="category-order-input" type="number" min="0" formControlName="displayOrder" />
+    </label>
+
+    <div class="drawer-actions">
+      <button id="cancel-category-btn" type="button" class="btn ghost" (click)="closeDrawer()">Hủy</button>
+      <button id="save-category-btn" type="submit" class="btn primary" [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : 'Lưu danh mục' }}
+      </button>
+    </div>
+  </form>
+</aside>

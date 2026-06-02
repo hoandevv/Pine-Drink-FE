@@ -3,9 +3,11 @@ import { RouterModule, Routes } from '@angular/router';
 
 import { ProductDetailComponent } from './pages/product-detail/product-detail.component';
 import { ProductListComponent } from './pages/product-list/product-list.component';
+import { ProductVariantsPageComponent } from './pages/product-variants-page/product-variants-page.component';
 
 const routes: Routes = [
   { path: '', component: ProductListComponent },
+  { path: 'variants', component: ProductVariantsPageComponent },
   { path: 'create', component: ProductDetailComponent },
   { path: ':id', component: ProductDetailComponent }
 ];

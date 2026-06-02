@@ -1,6 +1,10 @@
+export interface ScopeAccess {
+  type: 'SYSTEM' | 'BRANCH' | string;
+  branchIds: string[];
+}
+
 export interface AuthUser {
   id: string;
-  brandId?: string | null;
   username: string;
   fullName?: string | null;
   email: string;
@@ -10,6 +14,7 @@ export interface AuthUser {
   avatarUrl?: string | null;
   status?: string | null;
   lastLoginAt?: string | null;
+  scope?: ScopeAccess | null;
   roles?: string[];
   permissions?: string[];
   permissionsLoadedAt?: number;

@@ -106,7 +106,7 @@
       radial-gradient(circle at top right, rgba(255, 230, 109, 0.22), transparent 34%),
       rgba(255, 253, 244, 0.9);
 
-    > .material-symbols-outlined {
+    >.material-symbols-outlined {
       width: 32px;
       height: 32px;
       display: grid;
@@ -290,8 +290,13 @@ select:focus,
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .form-drawer {
@@ -311,8 +316,13 @@ select:focus,
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(calc(100% + 28px)); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(calc(100% + 28px));
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 .form-head {
@@ -379,7 +389,7 @@ h2 {
   margin-bottom: 2px;
 }
 
-.section-title > .material-symbols-outlined {
+.section-title>.material-symbols-outlined {
   width: 40px;
   height: 40px;
   display: grid;
@@ -818,6 +828,7 @@ em {
 }
 
 @media (max-width: 680px) {
+
   .header-actions,
   .branch-toolbar,
   .field-row,

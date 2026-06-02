@@ -4,8 +4,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ToastService } from '../../../../core/services/toast.service';
 import { SelectOption } from '../../../../shared/models/select-option.model';
+import { Product } from '../../models/product.model';
 import { ProductCreateRequest, ProductUpdateRequest } from '../../models/product-request.model';
 import { ProductService } from '../../services/product.service';
+import { CategoryService } from '../../../categories/services/category.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -13,52 +15,55 @@ import { ProductService } from '../../services/product.service';
   styleUrls: ['./product-detail.component.scss']
 })
 export class ProductDetailComponent implements OnInit {
-  readonly categoryOptions: SelectOption[] = [
-    { label: 'Coffee', value: 'coffee' },
-    { label: 'Tea', value: 'tea' },
-    { label: 'Freeze', value: 'freeze' },
-    { label: 'Juice', value: 'juice' }
-  ];
+  categoryOptions: SelectOption[] = [];
 
   readonly form = this.formBuilder.nonNullable.group({
-    code: ['', [Validators.required]],
     name: ['', [Validators.required]],
     description: [''],
     price: [0, [Validators.required, Validators.min(1)]],
     imageUrl: [''],
     categoryId: ['', [Validators.required]],
-    status: ['ACTIVE' as 'ACTIVE' | 'INACTIVE']
+    preparationMinutes: [10, [Validators.min(0)]],
+    availableIceLevels: ['0,30,50,70,100'],
+    availableSugarLevels: ['0,30,50,70,100'],
+    featured: [false],
+    bestSeller: [false],
+    status: ['ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK']
   });
 
   submitting = false;
   isEditMode = false;
   private productId = '';
+  private selectedImageFile: File | null = null;
 
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly productService: ProductService,
+    private readonly categoryService: CategoryService,
     private readonly toastService: ToastService
   ) {}
 
   ngOnInit(): void {
+    this.loadCategories();
     const productId = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!productId;
     if (!productId) { return; }
 
     this.productId = productId;
     this.productService.getProductById(productId).subscribe({
-      next: (product) => {
-        this.form.patchValue({
-          code: product.code,
-          name: product.name,
-          description: product.description ?? '',
-          price: product.price,
-          imageUrl: product.imageUrl ?? '',
-          categoryId: product.categoryId,
-          status: product.status
-        });
+      next: (product) => this.patchProduct(product)
+    });
+  }
+
+  private loadCategories(): void {
+    this.categoryService.getActiveCategories().subscribe({
+      next: (categories) => {
+        this.categoryOptions = categories.map(c => ({
+          label: c.name,
+          value: c.id
+        }));
       }
     });
   }
@@ -70,22 +75,13 @@ export class ProductDetailComponent implements OnInit {
     }
 
     this.submitting = true;
-    const rawValue = this.form.getRawValue();
+    const request = this.buildRequest();
 
     if (this.isEditMode) {
-      const request: ProductUpdateRequest = {
-        name: rawValue.name,
-        description: rawValue.description,
-        price: rawValue.price,
-        imageUrl: rawValue.imageUrl,
-        categoryId: rawValue.categoryId,
-        status: rawValue.status
-      };
-
-      this.productService.updateProduct(this.productId, request).subscribe({
+      this.productService.updateProduct(this.productId, request as ProductUpdateRequest, this.selectedImageFile ?? undefined).subscribe({
         next: () => {
-          this.toastService.success('Cap nhat product thanh cong.');
-          this.router.navigate(['/products']);
+          this.toastService.success('Cập nhật sản phẩm thành công.');
+          this.router.navigate(['/admin/products']);
         },
         error: () => { this.submitting = false; },
         complete: () => { this.submitting = false; }
@@ -93,19 +89,10 @@ export class ProductDetailComponent implements OnInit {
       return;
     }
 
-    const request: ProductCreateRequest = {
-      code: rawValue.code,
-      name: rawValue.name,
-      description: rawValue.description,
-      price: rawValue.price,
-      imageUrl: rawValue.imageUrl,
-      categoryId: rawValue.categoryId
-    };
-
-    this.productService.createProduct(request).subscribe({
+    this.productService.createProduct(request as ProductCreateRequest, this.selectedImageFile ?? undefined).subscribe({
       next: () => {
-        this.toastService.success('Tao product thanh cong.');
-        this.router.navigate(['/products']);
+        this.toastService.success('Tạo sản phẩm thành công.');
+        this.router.navigate(['/admin/products']);
       },
       error: () => { this.submitting = false; },
       complete: () => { this.submitting = false; }
@@ -113,6 +100,43 @@ export class ProductDetailComponent implements OnInit {
   }
 
   cancel(): void {
-    this.router.navigate(['/products']);
+    this.router.navigate(['/admin/products']);
+  }
+
+  onImageSelected(file: File): void {
+    this.selectedImageFile = file;
+  }
+
+  private patchProduct(product: Product): void {
+    this.form.patchValue({
+      name: product.name,
+      description: product.description ?? '',
+      price: product.price,
+      imageUrl: product.imageUrl ?? '',
+      categoryId: product.categoryId,
+      preparationMinutes: product.preparationMinutes ?? 10,
+      availableIceLevels: product.availableIceLevels ?? '0,30,50,70,100',
+      availableSugarLevels: product.availableSugarLevels ?? '0,30,50,70,100',
+      featured: product.featured ?? false,
+      bestSeller: product.bestSeller ?? false,
+      status: product.status
+    });
+  }
+
+  private buildRequest(): ProductCreateRequest | ProductUpdateRequest {
+    const rawValue = this.form.getRawValue();
+
+    return {
+      name: rawValue.name,
+      description: rawValue.description,
+      price: rawValue.price,
+      imageUrl: rawValue.imageUrl,
+      categoryId: rawValue.categoryId,
+      preparationMinutes: rawValue.preparationMinutes,
+      availableIceLevels: rawValue.availableIceLevels,
+      availableSugarLevels: rawValue.availableSugarLevels,
+      featured: rawValue.featured,
+      bestSeller: rawValue.bestSeller
+    };
   }
 }

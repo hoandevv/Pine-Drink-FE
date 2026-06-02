@@ -1,10 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { SelectOption } from '../../../../shared/models/select-option.model';
 import { Product } from '../../models/product.model';
+import { ProductService } from '../../services/product.service';
+import { CategoryService } from '../../../categories/services/category.service';
 
 @Component({
   selector: 'app-product-list',
@@ -12,43 +15,54 @@ import { Product } from '../../models/product.model';
   styleUrls: ['./product-list.component.scss']
 })
 export class ProductListComponent implements OnInit {
+  pageSize = 12;
+  readonly pageSizeOptions = [6, 12, 24, 48];
+
   readonly filterForm = this.formBuilder.nonNullable.group({
     keyword: [''],
     categoryId: [''],
     status: ['']
   });
 
-  readonly categoryOptions: SelectOption[] = [
-    { label: 'Coffee', value: 'coffee' },
-    { label: 'Tea', value: 'tea' },
-    { label: 'Freeze', value: 'freeze' },
-    { label: 'Juice', value: 'juice' }
-  ];
+  categoryOptions: SelectOption[] = [];
 
   readonly statusOptions: SelectOption[] = [
-    { label: 'ACTIVE', value: 'ACTIVE' },
-    { label: 'INACTIVE', value: 'INACTIVE' }
+    { label: 'Đang bán', value: 'ACTIVE' },
+    { label: 'Tạm ẩn', value: 'INACTIVE' }
   ];
 
   products: Product[] = [];
   loading = false;
-  pageData: PageResponse<Product> = {
-    content: [],
-    page: 0,
-    size: 10,
-    totalElements: 0,
-    totalPages: 0,
-    first: true,
-    last: true
-  };
+  errorMessage = '';
+  pageData: PageResponse<Product> = this.createEmptyPage();
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly productService: ProductService,
+    private readonly categoryService: CategoryService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
+    this.loadCategories();
+  }
+
+  get activeProducts(): number {
+    return this.products.filter((product) => product.status === 'ACTIVE').length;
+  }
+
+  get hiddenProducts(): number {
+    return this.products.filter((product) => product.status === 'INACTIVE').length;
+  }
+
+  get averagePrice(): number {
+    if (!this.products.length) {
+      return 0;
+    }
+
+    const total = this.products.reduce((sum, product) => sum + (Number(product.price) || 0), 0);
+    return Math.round(total / this.products.length);
   }
 
   search(): void {
@@ -68,91 +82,107 @@ export class ProductListComponent implements OnInit {
     this.router.navigate(['/admin/products', id]);
   }
 
-  deleteProduct(id: string): void {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa product này khỏi mock UI không?')) {
+  deleteProduct(product: Product): void {
+    const productName = product.name || product.code || 'sản phẩm này';
+    if (!window.confirm(`Xóa ${productName}? Thao tác này không thể hoàn tác.`)) {
       return;
     }
 
-    this.products = this.products.filter((product) => product.id !== id);
-    this.pageData = {
-      ...this.pageData,
-      content: this.products,
-      totalElements: this.products.length,
-      totalPages: this.products.length > 0 ? 1 : 0,
-      first: true,
-      last: true
-    };
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.productService.deleteProduct(product.id)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: () => this.loadProducts(this.pageData.page),
+        error: () => {
+          this.errorMessage = 'Không thể xóa sản phẩm. Vui lòng thử lại hoặc kiểm tra quyền thao tác.';
+        }
+      });
   }
 
   onPageChange(page: number): void {
     this.loadProducts(page);
   }
 
-  private readonly mockProducts: Product[] = [
-    {
-      id: 'mock-1',
-      code: 'PD-PINE-001',
-      name: 'Pineapple Mint Tea',
-      description: 'Trà dứa bạc hà mát lạnh, best seller mùa hè.',
-      price: 49000,
-      categoryId: 'fruit-tea',
-      categoryName: 'Trà trái cây',
-      status: 'ACTIVE'
-    },
-    {
-      id: 'mock-2',
-      code: 'PD-MILK-002',
-      name: 'Brown Sugar Milk Tea',
-      description: 'Sữa tươi đường nâu cùng trân châu mềm dẻo.',
-      price: 59000,
-      categoryId: 'milk-tea',
-      categoryName: 'Milk Tea Signature',
-      status: 'ACTIVE'
-    },
-    {
-      id: 'mock-3',
-      code: 'PD-SMOOTH-003',
-      name: 'Tropical Pine Smoothie',
-      description: 'Smoothie dứa nhiệt đới, kem cheese và topping trái cây.',
-      price: 69000,
-      categoryId: 'smoothie',
-      categoryName: 'Smoothie Dứa',
-      status: 'ACTIVE'
-    },
-    {
-      id: 'mock-4',
-      code: 'PD-LATTE-004',
-      name: 'Matcha Pine Latte',
-      description: 'Matcha latte mix syrup dứa signature Pine Drink.',
-      price: 65000,
-      categoryId: 'coffee',
-      categoryName: 'Coffee & Latte',
-      status: 'INACTIVE'
+  changePage(page: number): void {
+    if (page < 0 || page >= this.pageData.totalPages || page === this.pageData.page || this.loading) {
+      return;
     }
-  ];
+
+    this.loadProducts(page);
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = Number(size) || 12;
+    this.loadProducts(0);
+  }
+
+  trackProduct(_: number, product: Product): string {
+    return product.id;
+  }
 
   private loadProducts(page = 0): void {
     const filters = this.filterForm.getRawValue();
-    const keyword = filters.keyword.trim().toLowerCase();
+    const keyword = filters.keyword.trim();
 
-    const content = this.mockProducts.filter((product) => {
-      const matchesKeyword = !keyword || product.name.toLowerCase().includes(keyword) || product.code.toLowerCase().includes(keyword);
-      const matchesCategory = !filters.categoryId || product.categoryId === filters.categoryId;
-      const matchesStatus = !filters.status || product.status === filters.status;
+    this.loading = true;
+    this.errorMessage = '';
 
-      return matchesKeyword && matchesCategory && matchesStatus;
-    });
+    this.productService.getProducts(page, this.pageSize, keyword, filters.categoryId, filters.status)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (pageResponse) => {
+          const normalizedPage = this.normalizePage(pageResponse, page);
+          this.products = normalizedPage.content;
+          this.pageData = normalizedPage;
+        },
+        error: () => {
+          this.products = [];
+          this.pageData = this.createEmptyPage(page);
+          this.errorMessage = 'Không tải được danh sách sản phẩm từ server. Vui lòng kiểm tra backend hoặc thử lại.';
+        }
+      });
+  }
 
-    this.products = content;
-    this.pageData = {
+  private normalizePage(pageResponse: PageResponse<Product> | null | undefined, page: number): PageResponse<Product> {
+    if (!pageResponse) {
+      return this.createEmptyPage(page);
+    }
+
+    const content = Array.isArray(pageResponse.content) ? pageResponse.content : [];
+
+    return {
       content,
+      page: pageResponse.page ?? page,
+      size: pageResponse.size ?? this.pageSize,
+      totalElements: pageResponse.totalElements ?? content.length,
+      totalPages: pageResponse.totalPages ?? (content.length ? 1 : 0),
+      first: pageResponse.first ?? page === 0,
+      last: pageResponse.last ?? true
+    };
+  }
+
+  private createEmptyPage(page = 0): PageResponse<Product> {
+    return {
+      content: [],
       page,
-      size: content.length || 10,
-      totalElements: content.length,
-      totalPages: content.length > 0 ? 1 : 0,
+      size: this.pageSize,
+      totalElements: 0,
+      totalPages: 0,
       first: true,
       last: true
     };
-    this.loading = false;
+  }
+
+  private loadCategories(): void {
+    this.categoryService.getActiveCategories().subscribe({
+      next: (categories) => {
+        this.categoryOptions = categories.map(c => ({
+          label: c.name,
+          value: c.id
+        }));
+      }
+    });
   }
 }

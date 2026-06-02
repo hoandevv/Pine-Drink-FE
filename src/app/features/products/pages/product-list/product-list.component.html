@@ -1,61 +1,149 @@
-<app-page-header title="Products" description="Catalog đồ uống Pine Drink: mock data trực quan, bộ lọc sẵn sàng nối API thật.">
-  <button type="button" class="btn btn-primary" (click)="createProduct()">+ Create Product</button>
-</app-page-header>
+<section class="product-studio">
+  <div class="studio-hero">
+    <div class="hero-copy">
+      <span class="hero-kicker"><i></i> Admin Catalog</span>
+      <h1>Quản lý sản phẩm</h1>
+      <p>Điều phối menu Pine Drink, trạng thái bán, giá và danh mục trong một workspace gọn, sáng, trực quan.</p>
 
-<section class="product-hero">
-  <div>
-    <span class="eyebrow">Menu Performance</span>
-    <h2>Signature drinks đang bán tốt</h2>
-    <p>Theo dõi sản phẩm, giá bán, category và trạng thái phục vụ trong một màn hình premium.</p>
-  </div>
-  <div class="hero-stats">
-    <span><b>{{ pageData.totalElements || products.length }}</b> products</span>
-    <span><b>4</b> categories</span>
-  </div>
-</section>
-
-<section class="filters card-surface">
-  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filters-form">
-    <input type="text" formControlName="keyword" placeholder="Tìm theo tên hoặc code" />
-    <select formControlName="categoryId">
-      <option value="">Tất cả categories</option>
-      <option *ngFor="let category of categoryOptions" [value]="category.value">{{ category.label }}</option>
-    </select>
-    <select formControlName="status">
-      <option value="">Tất cả status</option>
-      <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
-    </select>
-    <div class="filter-actions">
-      <button type="submit" class="btn btn-primary">Search</button>
-      <button type="button" class="btn btn-secondary" (click)="reset()">Reset</button>
+      <div class="hero-actions">
+        <button id="create-product-button" type="button" class="primary-action" (click)="createProduct()">
+          <span class="material-symbols-outlined">add</span>
+          Thêm sản phẩm
+        </button>
+        <button id="refresh-products-button" type="button" class="ghost-action" (click)="search()" [disabled]="loading">
+          <span class="material-symbols-outlined">sync</span>
+          Làm mới
+        </button>
+      </div>
     </div>
+
+    <div class="hero-panel" aria-label="Tổng quan sản phẩm">
+      <article class="metric-card total">
+        <span>Tổng sản phẩm</span>
+        <strong>{{ pageData.totalElements }}</strong>
+        <small>Đang quản lý</small>
+      </article>
+      <article class="metric-card active">
+        <span>Đang bán</span>
+        <strong>{{ activeProducts }}</strong>
+        <small>Hiển thị trên menu</small>
+      </article>
+      <article class="metric-card hidden">
+        <span>Tạm ẩn</span>
+        <strong>{{ hiddenProducts }}</strong>
+        <small>Cần rà soát</small>
+      </article>
+      <article class="metric-card price">
+        <span>Giá trung bình</span>
+        <strong>{{ averagePrice | number }}</strong>
+        <small>VND / sản phẩm</small>
+      </article>
+    </div>
+  </div>
+
+  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filter-dock">
+    <label class="search-field" for="product-keyword-input">
+      <span class="material-symbols-outlined">search</span>
+      <input id="product-keyword-input" type="text" formControlName="keyword" placeholder="Tìm tên sản phẩm, mã SKU..." />
+    </label>
+
+    <label class="select-field" for="product-category-filter">
+      <span>Danh mục</span>
+      <select id="product-category-filter" formControlName="categoryId" aria-label="Lọc danh mục">
+        <option value="">Tất cả</option>
+        <option *ngFor="let category of categoryOptions" [value]="category.value">{{ category.label }}</option>
+      </select>
+    </label>
+
+    <label class="select-field" for="product-status-filter">
+      <span>Trạng thái</span>
+      <select id="product-status-filter" formControlName="status" aria-label="Lọc trạng thái">
+        <option value="">Tất cả</option>
+        <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+      </select>
+    </label>
+
+    <button id="search-products-button" type="submit" class="filter-action" [disabled]="loading">
+      <span class="material-symbols-outlined">tune</span>
+      Lọc
+    </button>
+    <button id="reset-products-button" type="button" class="filter-reset" (click)="reset()" [disabled]="loading">Reset</button>
   </form>
 </section>
 
-<section class="product-grid" *ngIf="products.length > 0; else productsEmpty">
-  <article class="product-card" *ngFor="let product of products">
-    <div class="drink-art">
-      <img *ngIf="product.imageUrl; else drinkIcon" [src]="product.imageUrl" [alt]="product.name" />
-      <ng-template #drinkIcon><span class="material-symbols-outlined">local_cafe</span></ng-template>
-      <em [class.inactive]="product.status === 'INACTIVE'">{{ product.status }}</em>
+<div class="product-alert" *ngIf="errorMessage">
+  <span class="material-symbols-outlined">error</span>
+  <p>{{ errorMessage }}</p>
+  <button type="button" (click)="search()">Thử lại</button>
+</div>
+
+<section class="loading-grid" *ngIf="loading" aria-label="Đang tải sản phẩm">
+  <article *ngFor="let item of [1, 2, 3, 4]" class="skeleton-card"></article>
+</section>
+
+<section class="product-grid" *ngIf="!loading && products.length > 0; else productsEmpty">
+  <article class="product-card" *ngFor="let product of products; trackBy: trackProduct" [class.is-inactive]="product.status === 'INACTIVE'">
+    <div class="product-media">
+      <img *ngIf="product.imageUrl; else drinkIcon" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+      <ng-template #drinkIcon>
+        <div class="drink-mark">
+          <span class="material-symbols-outlined">local_cafe</span>
+        </div>
+      </ng-template>
+      <span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">
+        {{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}
+      </span>
     </div>
-    <div class="product-info">
-      <p>{{ product.code }} • {{ product.categoryName || product.categoryId }}</p>
-      <h3>{{ product.name }}</h3>
-      <span>{{ product.description || 'Đồ uống tropical signature của Pine Drink.' }}</span>
+
+    <div class="product-body">
+      <div class="product-meta">
+        <span>{{ product.code }}</span>
+        <span>{{ product.categoryName || product.categoryId || 'Chưa phân loại' }}</span>
+      </div>
+      <h2>{{ product.name }}</h2>
+      <p>{{ product.description || 'Sản phẩm chưa có mô tả. Hãy cập nhật để khách hàng dễ chọn hơn.' }}</p>
     </div>
-    <footer>
-      <strong>{{ product.price | number }} VND</strong>
-      <div>
-        <button type="button" (click)="editProduct(product.id)"><span class="material-symbols-outlined">edit</span></button>
-        <button type="button" (click)="deleteProduct(product.id)"><span class="material-symbols-outlined">delete</span></button>
+
+    <footer class="product-footer">
+      <div class="price-block">
+        <span>Giá bán</span>
+        <strong>{{ product.price | number }} VND</strong>
+      </div>
+      <div class="card-actions">
+        <button type="button" class="icon-btn edit" [attr.aria-label]="'Sửa ' + product.name" (click)="editProduct(product.id)">
+          <span class="material-symbols-outlined">edit</span>
+        </button>
+        <button type="button" class="icon-btn danger" [attr.aria-label]="'Xóa ' + product.name" (click)="deleteProduct(product)">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
       </div>
     </footer>
   </article>
 </section>
 
 <ng-template #productsEmpty>
-  <app-empty-state title="Chưa có products" description="Khi backend trả danh sách sản phẩm, màn hình này sẽ hiển thị ngay."></app-empty-state>
+  <app-empty-state *ngIf="!loading" title="Chưa có sản phẩm phù hợp" description="Hãy thêm sản phẩm mới hoặc điều chỉnh bộ lọc để xem dữ liệu từ server."></app-empty-state>
 </ng-template>
 
-<app-pagination [page]="pageData.page" [size]="pageData.size" [totalPages]="pageData.totalPages" [totalElements]="pageData.totalElements" (pageChange)="onPageChange($event)"></app-pagination>
+<div class="pagination-bar" *ngIf="pageData.totalElements > 0">
+  <div class="page-size-control">
+    <span>Hiển thị</span>
+    <select id="product-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
+      <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+    </select>
+    <span>/ trang</span>
+  </div>
+
+  <div class="page-status">
+    Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} sản phẩm
+  </div>
+
+  <div class="page-actions">
+    <button id="product-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading">
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <button id="product-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>

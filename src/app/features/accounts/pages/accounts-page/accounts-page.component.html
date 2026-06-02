@@ -75,6 +75,9 @@
     <span class="login-cell">{{ account.lastLoginAt || 'Chưa có' }}</span>
     <em [class]="account.statusClass">{{ account.statusLabel }}</em>
     <div class="row-actions">
+      <button *ngIf="accessControl.can('ACCOUNT_VIEW')" type="button" (click)="viewAccount(account)" [attr.aria-label]="'Xem tài khoản ' + account.displayName">
+        <span class="material-symbols-outlined">visibility</span>
+      </button>
       <button *ngIf="accessControl.can('ACCOUNT_UPDATE')" type="button" (click)="editAccount(account)" [attr.aria-label]="'Sửa tài khoản ' + account.displayName">
          <span class="material-symbols-outlined">edit</span>
       </button>
@@ -113,6 +116,67 @@
     </div>
   </div>
 </section>
+
+<div class="drawer-backdrop" *ngIf="isDetailDrawerOpen" (click)="closeDetailDrawer()"></div>
+<aside class="account-drawer detail-drawer" [class.open]="isDetailDrawerOpen" aria-label="Account detail">
+  <div class="drawer-head">
+    <div>
+      <small>Hồ sơ tài khoản</small>
+      <h2>{{ selectedAccountDetail?.fullName || selectedAccountDetail?.username || 'Đang tải...' }}</h2>
+      <p>Xem role, scope chi nhánh và lịch sử cập nhật.</p>
+    </div>
+    <button type="button" class="drawer-close" (click)="closeDetailDrawer()" aria-label="Đóng thông tin">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <div class="detail-loading" *ngIf="isLoadingDetail">
+    <span class="material-symbols-outlined">hourglass_top</span>
+    Đang tải thông tin tài khoản...
+  </div>
+
+  <section class="account-detail-card" *ngIf="selectedAccountDetail as detail">
+    <div class="detail-profile">
+      <div class="avatar-preview" [class.empty]="!detail.avatarUrl">
+        <img *ngIf="detail.avatarUrl" [src]="detail.avatarUrl" alt="Account avatar">
+        <span *ngIf="!detail.avatarUrl" class="material-symbols-outlined">person</span>
+      </div>
+      <div>
+        <strong>{{ detail.fullName || detail.username }}</strong>
+        <small>{{ detail.id }}</small>
+      </div>
+      <em [class]="(detail.status || 'UNKNOWN').toLowerCase()">{{ detail.status || 'UNKNOWN' }}</em>
+    </div>
+
+    <div class="detail-grid">
+      <div><span>Username</span><strong>{{ detail.username }}</strong></div>
+      <div><span>Email</span><strong>{{ detail.email || 'Chưa có' }}</strong></div>
+      <div><span>Số điện thoại</span><strong>{{ detail.phone || 'Chưa có' }}</strong></div>
+      <div><span>Giới tính</span><strong>{{ detail.gender || 'Chưa có' }}</strong></div>
+      <div><span>Ngày sinh</span><strong>{{ detail.dateOfBirth || 'Chưa có' }}</strong></div>
+      <div><span>Lần đăng nhập</span><strong>{{ formatDateTime(detail.lastLoginAt) }}</strong></div>
+      <div><span>Ngày tạo</span><strong>{{ formatDateTime(detail.createdAt) }}</strong></div>
+      <div><span>Cập nhật</span><strong>{{ formatDateTime(detail.updatedAt) }}</strong></div>
+    </div>
+
+    <div class="role-assignment-list">
+      <div class="section-title">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+        Role & scope
+      </div>
+
+      <article *ngFor="let assignment of getRoleAssignments(detail)" class="assignment-card">
+        <div>
+          <strong>{{ assignment.roleName || assignment.roleCode }}</strong>
+          <small>{{ assignment.scopeType || 'SYSTEM' }} · {{ getBranchName(assignment.scopeBranchId) }}</small>
+        </div>
+        <em>{{ assignment.status || 'ACTIVE' }}</em>
+      </article>
+
+      <p class="field-hint" *ngIf="getRoleAssignments(detail).length === 0">Chưa có role assignment.</p>
+    </div>
+  </section>
+</aside>
 
 <div class="drawer-backdrop" *ngIf="isDrawerOpen" (click)="closeCreateDrawer()"></div>
 <aside class="account-drawer" [class.open]="isDrawerOpen" aria-label="Create internal account">
@@ -155,12 +219,43 @@
 
     <label>
       <span>Vai trò</span>
-      <select name="roleCode" [(ngModel)]="createForm.roleCode" required>
+      <select name="roleCode" [ngModel]="createForm.roleCode" (ngModelChange)="onCreateRoleChange($event)" required>
         <option value="ADMIN">ADMIN</option>
         <option value="MANAGER">MANAGER</option>
         <option value="DELIVERY">DELIVERY</option>
       </select>
     </label>
+
+    <section class="scope-card" [class.system-scope]="createForm.scopeType === 'SYSTEM'">
+      <div class="scope-card-head">
+        <span class="material-symbols-outlined">account_tree</span>
+        <div>
+          <strong>{{ createForm.scopeType === 'SYSTEM' ? 'Toàn hệ thống' : 'Phạm vi chi nhánh' }}</strong>
+          <small>
+            {{ createForm.scopeType === 'SYSTEM'
+              ? 'ADMIN được quyền quản trị mọi chi nhánh.'
+              : 'Manager/Delivery chỉ thao tác trong chi nhánh được gán.' }}
+          </small>
+        </div>
+      </div>
+
+      <label *ngIf="createForm.scopeType === 'BRANCH'" class="branch-picker">
+        <span>Chi nhánh phụ trách</span>
+        <select
+          name="scopeBranchId"
+          [(ngModel)]="createForm.scopeBranchId"
+          [disabled]="isLoadingBranches"
+          required>
+          <option value="">{{ isLoadingBranches ? 'Đang tải chi nhánh...' : 'Chọn chi nhánh' }}</option>
+          <option *ngFor="let branch of availableBranches" [value]="branch.id">
+            {{ branch.name }}{{ branch.code ? ' · ' + branch.code : '' }}
+          </option>
+        </select>
+        <small *ngIf="!isLoadingBranches && availableBranches.length === 0" class="field-hint warning">
+          Không có chi nhánh khả dụng trong scope hiện tại.
+        </small>
+      </label>
+    </section>
 
     <label>
       <span>Email</span>
@@ -174,7 +269,7 @@
 
     <div class="drawer-actions">
       <button type="button" class="ghost-btn" (click)="closeCreateDrawer()" [disabled]="isCreating">Hủy</button>
-      <button type="submit" class="submit-btn" [disabled]="isCreating">
+      <button type="submit" class="submit-btn" [disabled]="isCreating || (createForm.scopeType === 'BRANCH' && !createForm.scopeBranchId)">
         <span class="material-symbols-outlined">person_add</span>
         {{ isCreating ? 'Đang tạo...' : 'Tạo tài khoản' }}
       </button>
@@ -196,6 +291,21 @@
   </div>
 
   <form class="create-form" (ngSubmit)="updateAccount()">
+    <div class="detail-loading compact" *ngIf="isLoadingDetail">
+      <span class="material-symbols-outlined">sync</span>
+      Đang lấy dữ liệu đầy đủ từ server...
+    </div>
+
+    <section class="scope-card compact" *ngIf="selectedAccountDetail?.roleAssignments?.length">
+      <div class="scope-card-head">
+        <span class="material-symbols-outlined">verified_user</span>
+        <div>
+          <strong>{{ getDetailPrimaryRole()?.roleName || getDetailPrimaryRole()?.roleCode }}</strong>
+          <small>{{ getDetailPrimaryRole()?.scopeType || 'SYSTEM' }} · {{ getBranchName(getDetailPrimaryRole()?.scopeBranchId) }}</small>
+        </div>
+      </div>
+    </section>
+
     <label>
       <span>Họ tên</span>
       <input name="editFullName" type="text" [(ngModel)]="updateForm.fullName" placeholder="Nguyễn Văn A">
@@ -226,7 +336,6 @@
       </div>
     </label>
 
-    <!-- Brand ID reserved for future multi-brand assignment flow. -->
 
     <div class="drawer-actions">
       <button type="button" class="ghost-btn" (click)="closeEditDrawer()" [disabled]="isUpdating">Hủy</button>

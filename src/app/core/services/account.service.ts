@@ -7,7 +7,6 @@ import { PageResponse } from 'src/app/shared/models/page-response.model';
 
 export interface AccountListItemResponse {
   id: string;
-  brandId?: string | null;
   username: string;
   email?: string | null;
   fullName?: string | null;
@@ -19,10 +18,26 @@ export interface AccountListItemResponse {
   lastLoginAt?: string | null;
 }
 
+export interface AccountRoleAssignmentResponse {
+  assignmentId: string;
+  roleId?: string;
+  roleCode: string;
+  roleName?: string;
+  scopeId?: string;
+  scopeType?: 'SYSTEM' | 'BRANCH' | string;
+  scopeBranchId?: string | null;
+  status?: string;
+  assignedAt?: string | null;
+  expiresAt?: string | null;
+}
+
 export interface AccountDetailResponse extends AccountListItemResponse {
   phone: string;
+  dateOfBirth?: string | null;
+  gender?: string | null;
   createdAt: string;
   updatedAt: string;
+  roleAssignments?: AccountRoleAssignmentResponse[];
 }
 
 export interface UpdateAccountStatusRequest {
@@ -35,9 +50,11 @@ export interface CreateAccountRequest {
   fullName: string;
   email?: string;
   phone?: string;
+  avatarUrl?: string;
   roleCode: string;
   status?: string;
-  scopeType?: string;
+  scopeType?: 'SYSTEM' | 'BRANCH' | string;
+  scopeBranchId?: string;
 }
 
 export interface UpdateAccountRequest {
@@ -45,7 +62,13 @@ export interface UpdateAccountRequest {
   email?: string;
   phone?: string;
   avatarUrl?: string;
-  brandId?: string;
+}
+
+export interface AssignRoleRequest {
+  roleCode: string;
+  scopeType?: 'SYSTEM' | 'BRANCH' | string;
+  branchId?: string;
+  expiresAt?: string;
 }
 
 @Injectable({
@@ -60,7 +83,7 @@ export class AccountService {
     keyword?: string;
     status?: string;
     roleCode?: string;
-    brandId?: string;
+    branchId?: string;
     page?: number;
     size?: number;
   }): Observable<BaseResponse<PageResponse<AccountListItemResponse>>> {
@@ -88,5 +111,17 @@ export class AccountService {
 
   updateAccountStatus(id: string, status: string): Observable<BaseResponse<AccountDetailResponse>> {
     return this.http.patch<BaseResponse<AccountDetailResponse>>(`${this.apiUrl}/${id}/status`, { status });
+  }
+
+  getAccountRoles(id: string): Observable<BaseResponse<AccountRoleAssignmentResponse[]>> {
+    return this.http.get<BaseResponse<AccountRoleAssignmentResponse[]>>(`${this.apiUrl}/${id}/roles`);
+  }
+
+  assignRole(id: string, request: AssignRoleRequest): Observable<BaseResponse<AccountRoleAssignmentResponse[]>> {
+    return this.http.post<BaseResponse<AccountRoleAssignmentResponse[]>>(`${this.apiUrl}/${id}/roles`, request);
+  }
+
+  revokeRole(id: string, assignmentId: string): Observable<BaseResponse<void>> {
+    return this.http.delete<BaseResponse<void>>(`${this.apiUrl}/${id}/roles/${assignmentId}`);
   }
 }

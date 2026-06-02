@@ -1,15 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { 
-  MOCK_PRODUCTS, 
-  MOCK_CATEGORIES, 
-  MOCK_BRANCHES, 
-  MOCK_CART,
-  MockProduct, 
-  MockCategory, 
-  MockBranch,
-  MockCartItem 
-} from '../../../../shared/mock-data';
+import { forkJoin } from 'rxjs';
+
+import { MOCK_BRANCHES, MOCK_CART, MockBranch, MockCartItem } from '../../../../shared/mock-data';
+import { Category } from '../../../categories/models/category.model';
+import { CategoryService } from '../../../categories/services/category.service';
+import { Product } from '../../../products/models/product.model';
+import { ProductService } from '../../../products/services/product.service';
+
+interface ClientCategoryTab {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
+  imageUrl?: string;
+}
 
 @Component({
   selector: 'app-menu',
@@ -17,26 +22,31 @@ import {
   styleUrls: ['./menu.component.scss']
 })
 export class MenuComponent implements OnInit {
-  allProducts: MockProduct[] = [];
-  filteredProducts: MockProduct[] = [];
-  categories: MockCategory[] = [];
+  allProducts: Product[] = [];
+  filteredProducts: Product[] = [];
+  categories: ClientCategoryTab[] = [];
   selectedBranch: MockBranch | null = null;
   cartItems: MockCartItem[] = [];
-  
-  selectedCategoryId: string = 'all';
-  searchQuery: string = '';
+
+  selectedCategoryId = 'all';
+  searchQuery = '';
   sortBy: 'best-seller' | 'newest' | 'price-low' = 'best-seller';
+  currentPage = 1;
+  pageSize = 6;
+  loading = false;
+  errorMessage = '';
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly productService: ProductService,
+    private readonly categoryService: CategoryService
   ) {}
 
   ngOnInit(): void {
     this.loadData();
     this.loadCartData();
-    
-    // Check for category query param
+
     this.route.queryParams.subscribe(params => {
       if (params['category']) {
         this.selectedCategoryId = params['category'];
@@ -46,23 +56,29 @@ export class MenuComponent implements OnInit {
   }
 
   loadData(): void {
-    // Load all products
-    this.allProducts = MOCK_PRODUCTS.filter(p => p.isAvailable);
-    this.filteredProducts = [...this.allProducts];
+    this.loading = true;
+    this.errorMessage = '';
 
-    // Load categories with "All" option
-    this.categories = [
-      { id: 'all', name: 'Tất cả', icon: 'apps', count: this.allProducts.length, color: '#f4fafd', description: 'Tất cả sản phẩm', isActive: true },
-      ...MOCK_CATEGORIES.filter(cat => cat.isActive)
-    ];
-
-    // Load selected branch (nearest by default)
-    const branches = MOCK_BRANCHES.filter(b => b.isOpen).sort((a, b) => a.distanceKm - b.distanceKm);
-    if (branches.length > 0) {
-      this.selectedBranch = branches[0];
-    }
-
-    this.sortProducts();
+    forkJoin({
+      productsPage: this.productService.getProducts(0, 100, '', '', 'ACTIVE'),
+      categories: this.categoryService.getActiveCategories()
+    }).subscribe({
+      next: ({ productsPage, categories }) => {
+        this.allProducts = productsPage.content.filter(product => product.status === 'ACTIVE');
+        this.categories = this.buildCategoryTabs(categories);
+        this.filteredProducts = [...this.allProducts];
+        this.loadSelectedBranch();
+        this.filterProducts();
+        this.loading = false;
+      },
+      error: () => {
+        this.allProducts = [];
+        this.filteredProducts = [];
+        this.categories = [{ id: 'all', name: 'Tất cả', icon: 'apps', count: 0 }];
+        this.errorMessage = 'Không tải được menu từ server. Vui lòng thử lại sau.';
+        this.loading = false;
+      }
+    });
   }
 
   loadCartData(): void {
@@ -72,44 +88,78 @@ export class MenuComponent implements OnInit {
   filterProducts(): void {
     let filtered = [...this.allProducts];
 
-    // Filter by category
     if (this.selectedCategoryId !== 'all') {
-      filtered = filtered.filter(p => p.categoryId === this.selectedCategoryId);
+      filtered = filtered.filter(product => product.categoryId === this.selectedCategoryId);
     }
 
-    // Filter by search query
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name.toLowerCase().includes(query) || 
-        p.description.toLowerCase().includes(query)
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        (product.description || '').toLowerCase().includes(query) ||
+        (product.categoryName || '').toLowerCase().includes(query)
       );
     }
 
     this.filteredProducts = filtered;
+    this.currentPage = 1;
     this.sortProducts();
   }
 
   sortProducts(): void {
     switch (this.sortBy) {
       case 'best-seller':
-        this.filteredProducts.sort((a, b) => {
-          if (a.isBestSeller && !b.isBestSeller) return -1;
-          if (!a.isBestSeller && b.isBestSeller) return 1;
-          return b.rating - a.rating;
-        });
+        this.filteredProducts.sort((a, b) => Number(b.bestSeller) - Number(a.bestSeller));
         break;
       case 'newest':
-        this.filteredProducts.sort((a, b) => {
-          if (a.isNew && !b.isNew) return -1;
-          if (!a.isNew && b.isNew) return 1;
-          return 0;
-        });
+        this.filteredProducts.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         break;
       case 'price-low':
         this.filteredProducts.sort((a, b) => a.price - b.price);
         break;
     }
+
+    this.normalizeCurrentPage();
+  }
+
+  get pagedProducts(): Product[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredProducts.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredProducts.length / this.pageSize));
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const pages = new Set<number>([1, total, this.currentPage]);
+
+    if (this.currentPage > 1) { pages.add(this.currentPage - 1); }
+    if (this.currentPage < total) { pages.add(this.currentPage + 1); }
+
+    return Array.from(pages).sort((a, b) => a - b);
+  }
+
+  get paginationStart(): number {
+    return this.filteredProducts.length === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get paginationEnd(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredProducts.length);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) { return; }
+    this.currentPage = page;
+  }
+
+  nextPage(): void {
+    this.goToPage(this.currentPage + 1);
+  }
+
+  previousPage(): void {
+    this.goToPage(this.currentPage - 1);
   }
 
   selectCategory(categoryId: string): void {
@@ -120,14 +170,14 @@ export class MenuComponent implements OnInit {
   selectSort(sortBy: 'best-seller' | 'newest' | 'price-low'): void {
     this.sortBy = sortBy;
     this.sortProducts();
+    this.currentPage = 1;
   }
 
   onSearchChange(): void {
     this.filterProducts();
   }
 
-  addToCart(product: MockProduct): void {
-    // Navigate to product detail page for customization
+  addToCart(product: Product): void {
     this.router.navigate(['/product', product.id]);
   }
 
@@ -143,11 +193,53 @@ export class MenuComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
+  productImage(product: Product): string {
+    return product.imageUrl || 'assets/images/product-placeholder.svg';
+  }
+
+  productBadge(product: Product): string {
+    if (product.bestSeller) { return 'Best seller'; }
+    if (product.featured) { return 'Nổi bật'; }
+    return '';
+  }
+
   get cartCount(): number {
     return this.cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }
 
   get cartTotal(): number {
     return this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }
+
+  private normalizeCurrentPage(): void {
+    this.currentPage = Math.min(Math.max(this.currentPage, 1), this.totalPages);
+  }
+
+  private buildCategoryTabs(categories: Category[]): ClientCategoryTab[] {
+    const activeCategories = categories.filter(category => category.status === 'ACTIVE');
+    return [
+      { id: 'all', name: 'Tất cả', icon: 'apps', count: this.allProducts.length },
+      ...activeCategories.map(category => ({
+        id: category.id,
+        name: category.name,
+        icon: this.categoryIcon(category.name),
+        imageUrl: category.imageUrl,
+        count: this.allProducts.filter(product => product.categoryId === category.id).length
+      }))
+    ];
+  }
+
+  private categoryIcon(name: string): string {
+    const normalized = name.toLowerCase();
+    if (normalized.includes('coffee') || normalized.includes('cà phê')) { return 'local_cafe'; }
+    if (normalized.includes('tea') || normalized.includes('trà')) { return 'emoji_food_beverage'; }
+    if (normalized.includes('juice') || normalized.includes('nước ép')) { return 'nutrition'; }
+    if (normalized.includes('freeze') || normalized.includes('đá')) { return 'ac_unit'; }
+    return 'local_drink';
+  }
+
+  private loadSelectedBranch(): void {
+    const branches = MOCK_BRANCHES.filter(branch => branch.isOpen).sort((a, b) => a.distanceKm - b.distanceKm);
+    this.selectedBranch = branches[0] || null;
   }
 }

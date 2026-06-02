@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_BRANCHES, MOCK_VOUCHERS, MockProduct, MockCategory, MockBranch, MockVoucher } from '../../../../shared/mock-data';
+
+import { Product } from '../../../products/models/product.model';
+import { ProductService } from '../../../products/services/product.service';
+import { MOCK_BRANCHES, MOCK_VOUCHERS, MockBranch, MockVoucher } from '../../../../shared/mock-data';
 
 @Component({
   selector: 'app-home',
@@ -8,42 +11,56 @@ import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_BRANCHES, MOCK_VOUCHERS, MockProdu
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit {
-  categories: MockCategory[] = [];
-  bestSellerProducts: MockProduct[] = [];
+  bestSellerProducts: Product[] = [];
   vouchers: MockVoucher[] = [];
   nearbyBranches: MockBranch[] = [];
   selectedBranch: MockBranch | null = null;
+  loadingProducts = false;
+  productError = '';
 
-  constructor(private router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly productService: ProductService
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
   loadData(): void {
-    // Load categories
-    this.categories = MOCK_CATEGORIES.filter(cat => cat.isActive);
+    this.loadProducts();
 
-    // Load best seller products
-    this.bestSellerProducts = MOCK_PRODUCTS
-      .filter(product => product.isBestSeller && product.isAvailable)
-      .slice(0, 4);
-
-    // Load active vouchers
     this.vouchers = MOCK_VOUCHERS
       .filter(voucher => voucher.isActive)
       .slice(0, 3);
 
-    // Load nearby branches (sorted by distance)
     this.nearbyBranches = MOCK_BRANCHES
       .filter(branch => branch.isOpen)
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, 2);
 
-    // Set default selected branch (nearest)
     if (this.nearbyBranches.length > 0) {
       this.selectedBranch = this.nearbyBranches[0];
     }
+  }
+
+  loadProducts(): void {
+    this.loadingProducts = true;
+    this.productError = '';
+    this.productService.getProducts(0, 24, undefined, undefined, 'ACTIVE').subscribe({
+      next: page => {
+        const products = page.content || [];
+        this.bestSellerProducts = products
+          .sort((a, b) => Number(b.bestSeller) - Number(a.bestSeller) || Number(b.featured) - Number(a.featured))
+          .slice(0, 4);
+        this.loadingProducts = false;
+      },
+      error: () => {
+        this.bestSellerProducts = [];
+        this.productError = 'Không tải được sản phẩm từ hệ thống.';
+        this.loadingProducts = false;
+      }
+    });
   }
 
   formatPrice(price: number): string {
@@ -58,21 +75,21 @@ export class HomeComponent implements OnInit {
     this.router.navigate(['/stores']);
   }
 
-  navigateToCategory(categoryId: string): void {
-    this.router.navigate(['/menu'], { queryParams: { category: categoryId } });
-  }
-
   selectBranch(branch: MockBranch): void {
     this.selectedBranch = branch;
   }
 
   applyVoucher(voucherCode: string): void {
     console.log('Applying voucher:', voucherCode);
-    // TODO: Implement voucher application logic
   }
 
-  addToCart(product: MockProduct): void {
-    // Navigate to product detail page for customization
+  addToCart(product: Product): void {
     this.router.navigate(['/product', product.id]);
+  }
+
+  getProductBadge(product: Product): string {
+    if (product.bestSeller) { return 'Best seller'; }
+    if (product.featured) { return 'Nổi bật'; }
+    return '';
   }
 }

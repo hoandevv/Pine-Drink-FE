@@ -1,5 +1,4 @@
 export interface BranchCreateRequest {
-  code?: string;
   name: string;
   address: string;
   phone?: string;
@@ -10,8 +9,6 @@ export interface BranchCreateRequest {
   supportsPickup?: boolean;
   supportsDelivery?: boolean;
   averagePreparationMinutes?: number;
-  status?: 'ACTIVE' | 'INACTIVE' | string;
-  brandId?: string;
 }
 
 export type BranchUpdateRequest = BranchCreateRequest;
