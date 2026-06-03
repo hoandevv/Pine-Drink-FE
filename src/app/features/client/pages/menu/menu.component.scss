@@ -159,6 +159,42 @@
     font-size: 0.82rem;
   }
 
+  .branch-meta {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.35rem;
+  }
+
+  .address-line {
+    display: block;
+    overflow: hidden;
+    color: #71806f;
+    font-size: 0.78rem;
+    font-weight: 750;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .time-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    width: fit-content;
+    padding: 0.32rem 0.55rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(255, 245, 196, 0.96), rgba(222, 241, 212, 0.96));
+    color: #315436;
+    font-size: 0.76rem;
+    font-weight: 950;
+    box-shadow: inset 0 0 0 1px rgba(84, 131, 73, 0.12), 0 8px 18px rgba(39, 73, 48, 0.08);
+
+    .material-symbols-outlined {
+      font-size: 0.95rem;
+      color: #7a6a1f;
+    }
+  }
+
   button {
     border: 0;
     border-radius: 999px;
@@ -477,6 +513,15 @@
   &.featured {
     border-color: rgba(217, 154, 22, 0.22);
   }
+
+  &.sold-out {
+    border-color: rgba(154, 52, 18, 0.2);
+
+    img,
+    .image-fallback {
+      filter: grayscale(0.35) brightness(0.72);
+    }
+  }
 }
 
 .product-image {
@@ -522,6 +567,36 @@
     font-size: 0.75rem;
     font-weight: 900;
     box-shadow: 0 10px 24px rgba(39, 73, 48, 0.12);
+  }
+
+  .sold-out-badge {
+    background: rgba(255, 247, 237, 0.94);
+    color: #9a3412;
+  }
+
+  .sold-out-overlay {
+    position: absolute;
+    left: 50%;
+    bottom: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    max-width: calc(100% - 1.7rem);
+    padding: 0.55rem 0.78rem;
+    border-radius: 999px;
+    background: rgba(120, 53, 15, 0.88);
+    color: #fff7ed;
+    font-size: 0.78rem;
+    font-weight: 950;
+    white-space: nowrap;
+    transform: translateX(-50%);
+    box-shadow: 0 14px 30px rgba(120, 53, 15, 0.26);
+    backdrop-filter: blur(14px);
+
+    .material-symbols-outlined {
+      font-size: 1rem;
+      color: #fed7aa;
+    }
   }
 }
 
@@ -592,8 +667,15 @@
     box-shadow: 0 12px 24px rgba(36, 77, 49, 0.22);
     transition: transform 0.2s ease;
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: rotate(90deg) scale(1.05);
+    }
+
+    &:disabled {
+      background: linear-gradient(135deg, #9a3412, #d97706);
+      cursor: not-allowed;
+      opacity: 0.86;
+      box-shadow: 0 10px 22px rgba(154, 52, 18, 0.18);
     }
   }
 }

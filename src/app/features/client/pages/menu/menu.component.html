@@ -10,9 +10,15 @@
       <div class="hero-card" *ngIf="selectedBranch">
         <span class="material-symbols-outlined">location_on</span>
         <div>
-          <small>Chi nhánh gần bạn</small>
+          <small>Chi nhánh đang chọn</small>
           <strong>{{ selectedBranch.name }}</strong>
-          <p>{{ selectedBranch.distance }} • {{ selectedBranch.estimatedTime }}</p>
+          <div class="branch-meta">
+            <span class="address-line">{{ selectedBranch.address || 'Chưa cập nhật địa chỉ' }}</span>
+            <span class="time-pill">
+              <span class="material-symbols-outlined">schedule</span>
+              {{ selectedBranch.averagePreparationMinutes || 15 }} phút
+            </span>
+          </div>
         </div>
         <button id="client-change-branch-button" type="button" (click)="changeBranch()">Đổi</button>
       </div>
@@ -77,15 +83,30 @@
       </div>
 
       <div class="product-grid" *ngIf="filteredProducts.length > 0; else emptyMenu">
-        <article *ngFor="let product of pagedProducts" class="product-card" [class.featured]="product.featured">
-          <button class="product-image" type="button" (click)="addToCart(product)" [attr.aria-label]="'Xem ' + product.name">
+        <article
+          *ngFor="let product of pagedProducts"
+          class="product-card"
+          [class.featured]="product.featured"
+          [class.sold-out]="isProductSoldOut(product)"
+        >
+          <button
+            class="product-image"
+            type="button"
+            (click)="addToCart(product)"
+            [disabled]="isProductSoldOut(product)"
+            [attr.aria-label]="'Xem ' + product.name"
+          >
             <img *ngIf="product.imageUrl; else productFallback" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
             <ng-template #productFallback>
               <div class="image-fallback">
                 <span class="material-symbols-outlined">local_cafe</span>
               </div>
             </ng-template>
-            <span *ngIf="productBadge(product)" class="badge">{{ productBadge(product) }}</span>
+            <span *ngIf="productBadge(product)" class="badge" [class.sold-out-badge]="isProductSoldOut(product)">{{ productBadge(product) }}</span>
+            <span *ngIf="isProductSoldOut(product)" class="sold-out-overlay">
+              <span class="material-symbols-outlined">inventory_2</span>
+              Tạm hết tại chi nhánh
+            </span>
           </button>
 
           <div class="product-body">
@@ -101,9 +122,15 @@
             <p>{{ product.description || 'Món Pine Drink đang chờ cập nhật mô tả chi tiết.' }}</p>
 
             <div class="product-footer">
-              <strong>{{ formatPrice(product.price) }}</strong>
-              <button type="button" class="add-button" (click)="addToCart(product)" [attr.aria-label]="'Thêm ' + product.name">
-                <span class="material-symbols-outlined">add</span>
+              <strong>{{ formatPrice(productDisplayPrice(product)) }}</strong>
+              <button
+                type="button"
+                class="add-button"
+                (click)="addToCart(product)"
+                [disabled]="isProductSoldOut(product)"
+                [attr.aria-label]="'Thêm ' + product.name"
+              >
+                <span class="material-symbols-outlined">{{ isProductSoldOut(product) ? 'block' : 'add' }}</span>
               </button>
             </div>
           </div>

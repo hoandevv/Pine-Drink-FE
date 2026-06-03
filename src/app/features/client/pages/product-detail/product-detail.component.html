@@ -17,6 +17,13 @@
           <span class="material-symbols-outlined">local_cafe</span>
         </div>
         <span *ngIf="productBadge" class="product-badge">{{ productBadge }}</span>
+        <div class="stock-overlay" *ngIf="selectedBranchId" [class.is-unavailable]="isProductUnavailable">
+          <span class="material-symbols-outlined">{{ isProductUnavailable ? 'block' : 'verified' }}</span>
+          <div>
+            <strong>{{ availabilityLoading ? 'Đang kiểm tra' : (isProductUnavailable ? 'Tạm hết tại chi nhánh' : 'Còn hàng') }}</strong>
+            <small>{{ selectedBranch?.name }}</small>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -36,31 +43,7 @@
 
       <p class="product-description">{{ product.description }}</p>
 
-      <div class="availability-card" [class.is-unavailable]="isProductUnavailable">
-        <div class="availability-copy">
-          <span class="eyebrow">Chi nhánh phục vụ</span>
-          <strong>{{ selectedBranch?.name || 'Chưa chọn chi nhánh' }}</strong>
-          <small>{{ availabilityLoading ? 'Đang kiểm tra tồn hàng...' : availabilityText }}</small>
-          <small class="sale-hint" *ngIf="branchSaleHint">{{ branchSaleHint }}</small>
-        </div>
 
-        <div class="branch-picker" *ngIf="branches.length; else noBranches">
-          <button
-            *ngFor="let branch of branches"
-            type="button"
-            class="branch-chip"
-            [class.selected]="selectedBranchId === branch.id"
-            (click)="selectBranch(branch.id)"
-          >
-            <span class="material-symbols-outlined">storefront</span>
-            <span>{{ branch.name }}</span>
-          </button>
-        </div>
-
-        <ng-template #noBranches>
-          <p class="branch-empty">Chưa có chi nhánh active để kiểm tra món.</p>
-        </ng-template>
-      </div>
 
       <!-- Size Selection -->
       <div class="customization-group">

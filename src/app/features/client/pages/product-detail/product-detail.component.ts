@@ -40,6 +40,7 @@ export class ProductDetailComponent implements OnInit {
 
   branches: Branch[] = [];
   selectedBranchId = '';
+  selectedBranchName = '';
   branchProductAvailability: BranchProductAvailability | null = null;
   branchToppingAvailabilities: BranchToppingAvailability[] = [];
   availabilityLoading = false;
@@ -255,7 +256,7 @@ export class ProductDetailComponent implements OnInit {
   get branchSaleHint(): string {
     const salePrice = this.branchProductAvailability?.salePrice;
     if (salePrice === null || salePrice === undefined || Number(salePrice) <= 0) { return ''; }
-    return `Giá chi nhánh: ${this.formatPrice(Number(salePrice))}`;
+    return `Giá tại ${this.selectedBranch?.name || this.selectedBranchName || 'chi nhánh'}: ${this.formatPrice(Number(salePrice))}`;
   }
 
   get toppingCategories(): string[] {
@@ -326,12 +327,19 @@ export class ProductDetailComponent implements OnInit {
     this.branchService.getActiveBranches(0, 100).subscribe({
       next: page => {
         this.branches = page.content || [];
-        this.selectedBranchId = this.selectedBranchId || this.branches[0]?.id || '';
+        const storedBranchId = sessionStorage.getItem('selectedBranchId') || '';
+        const storedBranchName = sessionStorage.getItem('selectedBranchName') || '';
+        const storedBranch = this.branches.find(branch => branch.id === storedBranchId);
+        const fallbackBranch = this.branches[0];
+
+        this.selectedBranchId = storedBranch?.id || fallbackBranch?.id || '';
+        this.selectedBranchName = storedBranch?.name || storedBranchName || fallbackBranch?.name || '';
         this.refreshAvailability();
       },
       error: () => {
         this.branches = [];
-        this.selectedBranchId = '';
+        this.selectedBranchId = sessionStorage.getItem('selectedBranchId') || '';
+        this.selectedBranchName = sessionStorage.getItem('selectedBranchName') || '';
       }
     });
   }

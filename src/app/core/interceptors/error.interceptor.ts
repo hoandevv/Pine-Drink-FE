@@ -13,10 +13,13 @@ interface ErrorPayload {
   errorCode?: string | null;
   message?: string;
   fieldErrors?: FieldError[];
+  errors?: FieldError[] | null;
 }
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
+  private readonly sessionExpiredCodes = new Set(['AUTH_002', 'AUTH_003', 'AUTH_004']);
+
   constructor(
     private readonly router: Router,
     private readonly tokenService: TokenService,
@@ -44,7 +47,7 @@ export class ErrorInterceptor implements HttpInterceptor {
       status: error.status,
       errorCode: payload.errorCode ?? undefined,
       message: payload.message ?? this.resolveFallbackMessage(error.status),
-      fieldErrors: payload.fieldErrors ?? []
+      fieldErrors: payload.fieldErrors ?? payload.errors ?? []
     };
   }
 
@@ -56,6 +59,7 @@ export class ErrorInterceptor implements HttpInterceptor {
         this.toastService.error(message);
         break;
       case 400:
+      case 409:
         this.toastService.warning(message);
         break;
       case 401:
@@ -74,9 +78,9 @@ export class ErrorInterceptor implements HttpInterceptor {
   }
 
   private handleUnauthorized(error: ApiError, message: string): void {
-    const isLoginError = error.errorCode === 'AUTH_001';
+    const shouldEndSession = !error.errorCode || this.sessionExpiredCodes.has(error.errorCode);
 
-    if (isLoginError) {
+    if (!shouldEndSession) {
       this.toastService.warning(message);
       return;
     }

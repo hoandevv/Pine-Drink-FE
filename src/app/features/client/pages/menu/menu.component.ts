@@ -2,7 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { MOCK_BRANCHES, MOCK_CART, MockBranch, MockCartItem } from '../../../../shared/mock-data';
+import { MOCK_CART, MockCartItem } from '../../../../shared/mock-data';
+import { BranchProductAvailability } from '../../../branches/models/branch-availability.model';
+import { Branch } from '../../../branches/models/branch.model';
+import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
+import { BranchService } from '../../../branches/services/branch.service';
 import { Category } from '../../../categories/models/category.model';
 import { CategoryService } from '../../../categories/services/category.service';
 import { Product } from '../../../products/models/product.model';
@@ -25,7 +29,8 @@ export class MenuComponent implements OnInit {
   allProducts: Product[] = [];
   filteredProducts: Product[] = [];
   categories: ClientCategoryTab[] = [];
-  selectedBranch: MockBranch | null = null;
+  selectedBranch: Branch | null = null;
+  productAvailabilityMap = new Map<string, BranchProductAvailability>();
   cartItems: MockCartItem[] = [];
 
   selectedCategoryId = 'all';
@@ -40,7 +45,9 @@ export class MenuComponent implements OnInit {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly productService: ProductService,
-    private readonly categoryService: CategoryService
+    private readonly categoryService: CategoryService,
+    private readonly branchService: BranchService,
+    private readonly branchAvailabilityService: BranchAvailabilityService
   ) {}
 
   ngOnInit(): void {
@@ -178,6 +185,7 @@ export class MenuComponent implements OnInit {
   }
 
   addToCart(product: Product): void {
+    if (this.isProductSoldOut(product)) { return; }
     this.router.navigate(['/product', product.id]);
   }
 
@@ -198,9 +206,20 @@ export class MenuComponent implements OnInit {
   }
 
   productBadge(product: Product): string {
+    if (this.isProductSoldOut(product)) { return 'Hết hàng'; }
     if (product.bestSeller) { return 'Best seller'; }
     if (product.featured) { return 'Nổi bật'; }
     return '';
+  }
+
+  isProductSoldOut(product: Product): boolean {
+    const availability = this.productAvailabilityMap.get(product.id);
+    return Boolean(availability && !availability.available);
+  }
+
+  productDisplayPrice(product: Product): number {
+    const availability = this.productAvailabilityMap.get(product.id);
+    return availability?.salePrice ?? product.price;
   }
 
   get cartCount(): number {
@@ -239,7 +258,48 @@ export class MenuComponent implements OnInit {
   }
 
   private loadSelectedBranch(): void {
-    const branches = MOCK_BRANCHES.filter(branch => branch.isOpen).sort((a, b) => a.distanceKm - b.distanceKm);
-    this.selectedBranch = branches[0] || null;
+    const storedBranchId = sessionStorage.getItem('selectedBranchId') || '';
+    const storedBranchName = sessionStorage.getItem('selectedBranchName') || '';
+
+    this.branchService.getActiveBranches(0, 100).subscribe({
+      next: page => {
+        const branches = page.content || [];
+        const storedBranch = branches.find(branch => branch.id === storedBranchId);
+        const fallbackBranch = branches[0] || null;
+        this.selectedBranch = storedBranch || fallbackBranch;
+
+        if (this.selectedBranch) {
+          sessionStorage.setItem('selectedBranchId', this.selectedBranch.id);
+          sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
+          this.loadProductAvailabilities(this.selectedBranch.id);
+        }
+      },
+      error: () => {
+        this.selectedBranch = storedBranchId
+          ? ({ id: storedBranchId, name: storedBranchName || 'Chi nhánh đã chọn', status: 'ACTIVE' } as Branch)
+          : null;
+
+        if (storedBranchId) {
+          this.loadProductAvailabilities(storedBranchId);
+        }
+      }
+    });
+  }
+
+  private loadProductAvailabilities(branchId: string): void {
+    this.productAvailabilityMap.clear();
+
+    this.branchAvailabilityService.getProductAvailabilities(branchId).subscribe({
+      next: availabilities => {
+        this.productAvailabilityMap = new Map(
+          availabilities
+            .filter(item => item.status === 'ACTIVE')
+            .map(item => [item.productId, item])
+        );
+      },
+      error: () => {
+        this.productAvailabilityMap.clear();
+      }
+    });
   }
 }

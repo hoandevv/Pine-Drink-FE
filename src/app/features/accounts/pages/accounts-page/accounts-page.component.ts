@@ -277,6 +277,7 @@ export class AccountsPageComponent implements OnInit {
     const payload: CreateAccountRequest = {
       ...this.createForm,
       username: this.createForm.username.trim(),
+      password: this.createForm.password.trim(),
       fullName: this.createForm.fullName.trim(),
       email: this.createForm.email?.trim() || undefined,
       phone: this.createForm.phone?.trim() || undefined,
@@ -285,13 +286,9 @@ export class AccountsPageComponent implements OnInit {
       scopeBranchId: this.createForm.scopeBranchId?.trim() || undefined
     };
 
-    if (!payload.username || !payload.password || !payload.fullName || !payload.roleCode) {
-      window.alert('Vui lòng nhập đủ username, mật khẩu, họ tên và vai trò.');
-      return;
-    }
-
-    if (payload.scopeType === 'BRANCH' && !payload.scopeBranchId) {
-      window.alert('Vui lòng chọn chi nhánh cho Manager/Delivery.');
+    const validationMessage = this.getCreateValidationMessage(payload);
+    if (validationMessage) {
+      window.alert(validationMessage);
       return;
     }
 
@@ -306,10 +303,58 @@ export class AccountsPageComponent implements OnInit {
         this.isDrawerOpen = false;
         this.loadAccounts();
       },
-      error: () => {
-        window.alert('Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.');
+      error: (error) => {
+        window.alert(this.getAccountErrorMessage(error, 'Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.'));
       }
     });
+  }
+
+  private getCreateValidationMessage(payload: CreateAccountRequest): string | null {
+    if (!payload.username || !payload.password || !payload.fullName || !payload.roleCode) {
+      return 'Vui lòng nhập đủ username, mật khẩu, họ tên và vai trò.';
+    }
+
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+      return 'Email chưa đúng định dạng.';
+    }
+
+    if (payload.password.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự.';
+    }
+
+    if (!/[A-Z]/.test(payload.password) || !/[a-z]/.test(payload.password) || !/\d/.test(payload.password)) {
+      return 'Mật khẩu cần có chữ hoa, chữ thường và số.';
+    }
+
+    if (payload.phone && !/^(0|\+84)\d{9,10}$/.test(payload.phone)) {
+      return 'Số điện thoại chưa đúng định dạng.';
+    }
+
+    if (payload.scopeType === 'BRANCH' && !payload.scopeBranchId) {
+      return 'Vui lòng chọn chi nhánh cho Manager/Delivery.';
+    }
+
+    return null;
+  }
+
+  private getAccountErrorMessage(error: { errorCode?: string; message?: string; fieldErrors?: { field: string; message: string }[] }, fallback: string): string {
+    const errorMessages: Record<string, string> = {
+      AUTH_010: 'Mật khẩu chưa đủ mạnh. Vui lòng dùng ít nhất 8 ký tự gồm chữ hoa, chữ thường và số.',
+      AUTH_013: 'Tên đăng nhập này đã được sử dụng.',
+      AUTH_014: 'Email này đã được sử dụng.',
+      AUTH_015: 'Số điện thoại này đã được sử dụng.',
+      AUTH_021: 'Tài khoản chưa được gán vào chi nhánh phù hợp.'
+    };
+
+    if (error?.fieldErrors?.length) {
+      return error.fieldErrors.map((fieldError) => `${fieldError.field}: ${fieldError.message}`).join('\n');
+    }
+
+    if (error?.errorCode && errorMessages[error.errorCode]) {
+      return errorMessages[error.errorCode];
+    }
+
+    return error?.message || fallback;
   }
 
   private getEmptyForm(): CreateAccountRequest {
