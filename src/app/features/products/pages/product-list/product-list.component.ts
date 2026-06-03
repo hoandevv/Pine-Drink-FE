@@ -1,13 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, of, switchMap } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { SelectOption } from '../../../../shared/models/select-option.model';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../../categories/services/category.service';
+import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
+import { BranchService } from '../../../branches/services/branch.service';
+import { BranchProductAvailability, BranchProductAvailabilityRequest } from '../../../branches/models/branch-availability.model';
+import { Branch } from '../../../branches/models/branch.model';
 
 @Component({
   selector: 'app-product-list',
@@ -32,6 +36,11 @@ export class ProductListComponent implements OnInit {
   ];
 
   products: Product[] = [];
+  branches: Branch[] = [];
+  selectedBranchId = '';
+  productAvailabilityMap = new Map<string, BranchProductAvailability>();
+  availabilityLoading = false;
+  updatingAvailabilityIds = new Set<string>();
   loading = false;
   errorMessage = '';
   pageData: PageResponse<Product> = this.createEmptyPage();
@@ -40,12 +49,15 @@ export class ProductListComponent implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly router: Router,
     private readonly productService: ProductService,
-    private readonly categoryService: CategoryService
+    private readonly categoryService: CategoryService,
+    private readonly branchService: BranchService,
+    private readonly branchAvailabilityService: BranchAvailabilityService
   ) {}
 
   ngOnInit(): void {
     this.loadProducts();
     this.loadCategories();
+    this.loadBranches();
   }
 
   get activeProducts(): number {
@@ -63,6 +75,18 @@ export class ProductListComponent implements OnInit {
 
     const total = this.products.reduce((sum, product) => sum + (Number(product.price) || 0), 0);
     return Math.round(total / this.products.length);
+  }
+
+  get selectedBranch(): Branch | undefined {
+    return this.branches.find((branch) => branch.id === this.selectedBranchId);
+  }
+
+  get availableAtBranchCount(): number {
+    return this.products.filter((product) => this.getAvailability(product.id)?.available).length;
+  }
+
+  get soldOutAtBranchCount(): number {
+    return this.products.filter((product) => this.getAvailability(product.id) && !this.getAvailability(product.id)?.available).length;
   }
 
   search(): void {
@@ -122,6 +146,42 @@ export class ProductListComponent implements OnInit {
     return product.id;
   }
 
+  onBranchChanged(branchId: string): void {
+    this.selectedBranchId = branchId;
+    this.refreshAvailability();
+  }
+
+  getAvailability(productId: string): BranchProductAvailability | undefined {
+    return this.productAvailabilityMap.get(productId);
+  }
+
+  getBranchSalePrice(product: Product): number {
+    const availability = this.getAvailability(product.id);
+    return availability?.salePrice ?? product.price;
+  }
+
+  isSoldOutAtBranch(product: Product): boolean {
+    const availability = this.getAvailability(product.id);
+    return Boolean(availability && !availability.available);
+  }
+
+  isUpdatingAvailability(productId: string): boolean {
+    return this.updatingAvailabilityIds.has(productId);
+  }
+
+  markProductAvailable(product: Product): void {
+    this.saveProductAvailability(product, true);
+  }
+
+  markProductSoldOut(product: Product): void {
+    const reason = window.prompt(`Lý do hết hàng cho ${product.name}?`, this.getAvailability(product.id)?.soldOutReason || 'Hết nguyên liệu');
+    if (reason === null) {
+      return;
+    }
+
+    this.saveProductAvailability(product, false, reason.trim() || 'Hết nguyên liệu');
+  }
+
   private loadProducts(page = 0): void {
     const filters = this.filterForm.getRawValue();
     const keyword = filters.keyword.trim();
@@ -136,9 +196,11 @@ export class ProductListComponent implements OnInit {
           const normalizedPage = this.normalizePage(pageResponse, page);
           this.products = normalizedPage.content;
           this.pageData = normalizedPage;
+          this.refreshAvailability();
         },
         error: () => {
           this.products = [];
+          this.productAvailabilityMap.clear();
           this.pageData = this.createEmptyPage(page);
           this.errorMessage = 'Không tải được danh sách sản phẩm từ server. Vui lòng kiểm tra backend hoặc thử lại.';
         }
@@ -184,5 +246,72 @@ export class ProductListComponent implements OnInit {
         }));
       }
     });
+  }
+
+  private loadBranches(): void {
+    this.branchService.getActiveBranches(0, 100)
+      .pipe(
+        switchMap((pageResponse) => {
+          this.branches = pageResponse.content || [];
+          this.selectedBranchId = this.selectedBranchId || this.branches[0]?.id || '';
+          return this.selectedBranchId ? this.branchAvailabilityService.getProductAvailabilities(this.selectedBranchId) : of([]);
+        })
+      )
+      .subscribe({
+        next: (items) => this.setAvailabilityMap(items),
+        error: () => this.productAvailabilityMap.clear()
+      });
+  }
+
+  private refreshAvailability(): void {
+    if (!this.selectedBranchId) {
+      this.productAvailabilityMap.clear();
+      return;
+    }
+
+    this.availabilityLoading = true;
+    this.branchAvailabilityService.getProductAvailabilities(this.selectedBranchId)
+      .pipe(finalize(() => (this.availabilityLoading = false)))
+      .subscribe({
+        next: (items) => this.setAvailabilityMap(items),
+        error: () => this.productAvailabilityMap.clear()
+      });
+  }
+
+  private saveProductAvailability(product: Product, available: boolean, soldOutReason: string | null = null): void {
+    if (!this.selectedBranchId || this.isUpdatingAvailability(product.id)) {
+      return;
+    }
+
+    const current = this.getAvailability(product.id);
+    const request: BranchProductAvailabilityRequest = {
+      productId: product.id,
+      available,
+      salePrice: current?.salePrice ?? null,
+      soldOutReason: available ? null : soldOutReason,
+      availableFrom: current?.availableFrom ?? null,
+      availableTo: current?.availableTo ?? null
+    };
+
+    this.updatingAvailabilityIds.add(product.id);
+    const action$ = current?.id
+      ? this.branchAvailabilityService.updateProductAvailability(this.selectedBranchId, current.id, request)
+      : this.branchAvailabilityService.createProductAvailability(this.selectedBranchId, request);
+
+    action$
+      .pipe(finalize(() => this.updatingAvailabilityIds.delete(product.id)))
+      .subscribe({
+        next: (item) => {
+          this.productAvailabilityMap.set(item.productId, item);
+          this.productAvailabilityMap = new Map(this.productAvailabilityMap);
+        },
+        error: () => {
+          this.errorMessage = 'Không cập nhật được trạng thái tồn kho chi nhánh. Vui lòng kiểm tra quyền PERM_BRANCH_UPDATE.';
+        }
+      });
+  }
+
+  private setAvailabilityMap(items: BranchProductAvailability[]): void {
+    this.productAvailabilityMap = new Map(items.map((item) => [item.productId, item]));
   }
 }

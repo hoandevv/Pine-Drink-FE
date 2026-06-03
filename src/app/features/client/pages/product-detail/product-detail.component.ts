@@ -2,12 +2,11 @@ import { Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import {
-  MOCK_CART,
-  MOCK_TOPPINGS,
-  MockCartItem,
-  MockTopping
-} from '../../../../shared/mock-data';
+import { MOCK_CART, MockCartItem, MockTopping } from '../../../../shared/mock-data';
+import { BranchProductAvailability, BranchToppingAvailability } from '../../../branches/models/branch-availability.model';
+import { Branch } from '../../../branches/models/branch.model';
+import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
+import { BranchService } from '../../../branches/services/branch.service';
 import { Product } from '../../../products/models/product.model';
 import { ProductTopping } from '../../../products/models/product-topping.model';
 import { ProductVariant } from '../../../products/models/product-variant.model';
@@ -38,6 +37,12 @@ export class ProductDetailComponent implements OnInit {
   availableToppings: MockTopping[] = [];
   loading = false;
   errorMessage = '';
+
+  branches: Branch[] = [];
+  selectedBranchId = '';
+  branchProductAvailability: BranchProductAvailability | null = null;
+  branchToppingAvailabilities: BranchToppingAvailability[] = [];
+  availabilityLoading = false;
 
   selectedSize = '';
   selectedVariant: ProductVariant | null = null;
@@ -71,15 +76,17 @@ export class ProductDetailComponent implements OnInit {
     private readonly location: Location,
     private readonly productService: ProductService,
     private readonly productToppingService: ProductToppingService,
-    private readonly productVariantService: ProductVariantService
+    private readonly productVariantService: ProductVariantService,
+    private readonly branchService: BranchService,
+    private readonly branchAvailabilityService: BranchAvailabilityService
   ) {}
 
   ngOnInit(): void {
+    this.loadBranches();
     this.route.params.subscribe(params => {
       const productId = params['id'];
       this.loadProduct(productId);
     });
-    this.loadToppings();
   }
 
   loadProduct(productId: string): void {
@@ -112,7 +119,13 @@ export class ProductDetailComponent implements OnInit {
   }
 
   loadToppings(): void {
-    this.availableToppings = MOCK_TOPPINGS.filter(t => t.isAvailable);
+    this.availableToppings = [];
+  }
+
+  selectBranch(branchId: string): void {
+    if (this.selectedBranchId === branchId) { return; }
+    this.selectedBranchId = branchId;
+    this.refreshAvailability();
   }
 
   selectSize(sizeId: string): void {
@@ -159,6 +172,11 @@ export class ProductDetailComponent implements OnInit {
       return this.selectedVariant.finalPrice;
     }
 
+    const branchPrice = this.branchProductAvailability?.salePrice;
+    if (branchPrice !== null && branchPrice !== undefined && Number(branchPrice) > 0) {
+      return Number(branchPrice);
+    }
+
     const sizeOption = this.sizeOptions.find(s => s.id === this.selectedSize);
     return this.product.price + (sizeOption?.priceModifier || 0);
   }
@@ -181,9 +199,8 @@ export class ProductDetailComponent implements OnInit {
     if (this.product.featured) { return 'Nổi bật'; }
     return '';
   }
-
   addToCart(): void {
-    if (!this.product) { return; }
+    if (!this.product || this.isProductUnavailable) { return; }
 
     const newItem: MockCartItem = {
       id: `cart-item-${Date.now()}`,
@@ -214,6 +231,31 @@ export class ProductDetailComponent implements OnInit {
 
   getToppingsByCategory(category: string): MockTopping[] {
     return this.availableToppings.filter(t => t.category === category);
+  }
+
+  get selectedBranch(): Branch | null {
+    return this.branches.find(branch => branch.id === this.selectedBranchId) || null;
+  }
+
+  get isProductUnavailable(): boolean {
+    const availability = this.branchProductAvailability;
+    if (!availability) { return false; }
+    return availability.status !== 'ACTIVE' || !availability.available || !this.isWithinAvailabilityWindow(availability);
+  }
+
+  get availabilityText(): string {
+    if (!this.selectedBranch) { return 'Chọn chi nhánh để kiểm tra tồn hàng.'; }
+    if (!this.branchProductAvailability) { return 'Chi nhánh này chưa có cấu hình riêng, dùng trạng thái mặc định.'; }
+    if (this.isProductUnavailable) {
+      return this.branchProductAvailability.soldOutReason || 'Tạm hết món tại chi nhánh này.';
+    }
+    return 'Sẵn sàng phục vụ tại chi nhánh đã chọn.';
+  }
+
+  get branchSaleHint(): string {
+    const salePrice = this.branchProductAvailability?.salePrice;
+    if (salePrice === null || salePrice === undefined || Number(salePrice) <= 0) { return ''; }
+    return `Giá chi nhánh: ${this.formatPrice(Number(salePrice))}`;
   }
 
   get toppingCategories(): string[] {
@@ -254,7 +296,8 @@ export class ProductDetailComponent implements OnInit {
   private loadProductToppings(productId: string): void {
     this.productToppingService.getActiveProductToppings(productId).subscribe({
       next: productToppings => {
-        this.availableToppings = this.mapProductToppings(productToppings);
+        const mappedToppings = this.mapProductToppings(productToppings);
+        this.availableToppings = this.applyToppingAvailability(mappedToppings);
         this.selectedToppings = this.selectedToppings.filter(topping =>
           this.availableToppings.some(available => available.id === topping.id)
         );
@@ -277,5 +320,83 @@ export class ProductDetailComponent implements OnInit {
         category: item.toppingGroupName || 'Khác',
         image: item.toppingImageUrl || undefined
       }));
+  }
+
+  private loadBranches(): void {
+    this.branchService.getActiveBranches(0, 100).subscribe({
+      next: page => {
+        this.branches = page.content || [];
+        this.selectedBranchId = this.selectedBranchId || this.branches[0]?.id || '';
+        this.refreshAvailability();
+      },
+      error: () => {
+        this.branches = [];
+        this.selectedBranchId = '';
+      }
+    });
+  }
+
+  private refreshAvailability(): void {
+    if (!this.selectedBranchId) { return; }
+    this.loadBranchProductAvailability();
+    if (this.product) {
+      this.loadProductToppings(this.product.id);
+    }
+  }
+
+  private loadBranchProductAvailability(): void {
+    if (!this.selectedBranchId || !this.product) { return; }
+
+    this.availabilityLoading = true;
+    this.branchAvailabilityService.getProductAvailabilities(this.selectedBranchId).subscribe({
+      next: availabilities => {
+        this.branchProductAvailability = availabilities.find(item => item.productId === this.product?.id) || null;
+        this.availabilityLoading = false;
+      },
+      error: () => {
+        this.branchProductAvailability = null;
+        this.availabilityLoading = false;
+      }
+    });
+  }
+
+  private applyToppingAvailability(toppings: MockTopping[]): MockTopping[] {
+    if (!this.selectedBranchId) { return toppings; }
+
+    this.branchAvailabilityService.getToppingAvailabilities(this.selectedBranchId).subscribe({
+      next: availabilities => {
+        this.branchToppingAvailabilities = availabilities;
+        this.availableToppings = this.filterToppingsByAvailability(toppings, availabilities);
+        this.selectedToppings = this.selectedToppings.filter(topping =>
+          this.availableToppings.some(available => available.id === topping.id)
+        );
+      },
+      error: () => {
+        this.branchToppingAvailabilities = [];
+        this.availableToppings = toppings;
+      }
+    });
+
+    return toppings;
+  }
+
+  private filterToppingsByAvailability(
+    toppings: MockTopping[],
+    availabilities: BranchToppingAvailability[]
+  ): MockTopping[] {
+    if (!availabilities.length) { return toppings; }
+
+    return toppings.filter(topping => {
+      const availability = availabilities.find(item => item.toppingId === topping.id);
+      return !availability || (availability.status === 'ACTIVE' && availability.available);
+    });
+  }
+
+  private isWithinAvailabilityWindow(availability: BranchProductAvailability): boolean {
+    const now = Date.now();
+    const from = availability.availableFrom ? new Date(availability.availableFrom).getTime() : null;
+    const to = availability.availableTo ? new Date(availability.availableTo).getTime() : null;
+
+    return (!from || now >= from) && (!to || now <= to);
   }
 }

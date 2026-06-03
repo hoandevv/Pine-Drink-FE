@@ -617,10 +617,11 @@
   font-size: 22px;
 }
 
-@media (max-width: 1040px) {
+@media (max-width: 1024px) {
 
   .admin-shell,
   .admin-shell.sidebar-collapsed,
+  .admin-shell.delivery-mode,
   .admin-shell.delivery-mode.sidebar-collapsed {
     grid-template-columns: 1fr;
   }
@@ -628,8 +629,12 @@
   .admin-sidebar {
     position: fixed;
     left: 0;
+    top: 0;
+    height: 100dvh;
     transform: translateX(-104%);
     width: min(86vw, 292px);
+    max-width: 320px;
+    overflow-y: auto;
     transition: transform 0.24s ease;
   }
 
@@ -656,38 +661,85 @@
 
   .menu-button {
     display: inline-grid;
+    flex: 0 0 44px;
   }
 
   .sidebar-toggle {
     display: none;
   }
-}
 
-@media (max-width: 720px) {
   .admin-topbar {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 14px 16px;
+    min-height: auto;
+    padding: 16px 20px;
   }
 
   .topbar-actions {
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
-  .user-card div,
-  .live-chip {
+  .delivery-quick-stats {
     display: none;
   }
 
+  .admin-content {
+    padding: 22px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-topbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 14px;
+  }
+
+  .topbar-left {
+    gap: 10px;
+  }
+
+  .search-box {
+    padding: 0 12px;
+  }
+
+  .search-box input {
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .topbar-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .user-card {
+    justify-content: flex-end;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .user-card div,
+  .live-chip,
   .client-link span:not(.material-symbols-outlined) {
     display: none;
   }
 
-  .client-link {
-    padding: 10px;
+  .client-link,
+  .icon-button,
+  .user-card {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .admin-sidebar {
+    width: min(88vw, 304px);
+    padding: 16px;
   }
 
   .admin-content {
     padding: 18px 14px;
   }
-}
+}
