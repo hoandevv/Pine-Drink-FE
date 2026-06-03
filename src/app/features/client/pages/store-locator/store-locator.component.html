@@ -85,6 +85,10 @@
             <span class="material-symbols-outlined">location_on</span>
             <p>{{ branch.address || 'Chưa cập nhật địa chỉ' }}</p>
           </div>
+          <div class="info-row hours-row">
+            <span class="material-symbols-outlined">schedule</span>
+            <p>{{ getTodayHoursLabel(branch) }}</p>
+          </div>
           <div class="info-row">
             <span class="material-symbols-outlined">timer</span>
             <p>Chuẩn bị khoảng {{ getPreparationText(branch) }}</p>
@@ -108,6 +112,26 @@
             <span class="material-symbols-outlined">timer</span>
             {{ getPreparationText(branch) }}
           </span>
+        </div>
+
+        <button class="hours-toggle" type="button" (click)="toggleHours(branch, $event)">
+          <span class="material-symbols-outlined">calendar_month</span>
+          {{ isHoursExpanded(branch) ? 'Ẩn giờ mở cửa' : 'Xem giờ mở cửa' }}
+          <span class="material-symbols-outlined chevron" [class.open]="isHoursExpanded(branch)">expand_more</span>
+        </button>
+
+        <div *ngIf="isHoursExpanded(branch)" class="weekly-hours" (click)="$event.stopPropagation()">
+          <div class="weekly-hours-title">Giờ mở cửa tuần này</div>
+          <div
+            *ngFor="let hours of getWeeklyHours(branch)"
+            class="weekly-hours-row"
+            [class.today]="isToday(hours)"
+            [class.closed]="hours.closed"
+          >
+            <span>{{ getDayLabel(hours.dayOfWeek) }}</span>
+            <strong>{{ getHoursRangeLabel(hours) }}</strong>
+          </div>
+          <p *ngIf="getWeeklyHours(branch).length === 0" class="hours-empty">Chi nhánh chưa cập nhật lịch tuần.</p>
         </div>
 
         <button 

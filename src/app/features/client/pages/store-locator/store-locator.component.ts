@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { catchError, forkJoin, finalize, of } from 'rxjs';
 
 import * as L from 'leaflet';
+import { BranchHours } from '../../../branches/models/branch-hours.model';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
 
@@ -16,6 +17,8 @@ export class StoreLocatorComponent implements OnInit {
   filteredBranches: Branch[] = [];
   selectedBranch: Branch | null = null;
   userLocation: L.LatLngLiteral | null = null;
+  branchHoursByBranchId: Record<string, BranchHours[]> = {};
+  expandedHoursBranchId: string | null = null;
 
   loading = false;
   
@@ -83,6 +86,7 @@ export class StoreLocatorComponent implements OnInit {
           this.allBranches = pageData.content;
           this.applyFilters();
           this.selectedBranch = this.filteredBranches[0] || null;
+          this.loadBranchHours(this.allBranches);
         },
         error: () => {
           this.allBranches = [];
@@ -106,7 +110,7 @@ export class StoreLocatorComponent implements OnInit {
     }
 
     if (this.filterOpen) {
-      filtered = filtered.filter((branch) => branch.status === 'ACTIVE');
+      filtered = filtered.filter((branch) => this.getOperatingState(branch).status === 'open');
     }
 
     if (this.filterPickup) {
@@ -200,11 +204,51 @@ export class StoreLocatorComponent implements OnInit {
   }
 
   getStatusClass(branch: Branch): string {
-    return branch.status === 'ACTIVE' ? 'open' : 'closed';
+    return this.getOperatingState(branch).status;
   }
 
   getStatusText(branch: Branch): string {
-    return branch.status === 'ACTIVE' ? 'Đang hoạt động' : 'Tạm ngưng';
+    return this.getOperatingState(branch).label;
+  }
+
+  getTodayHoursLabel(branch: Branch): string {
+    const todayHours = this.getTodayHours(branch);
+
+    if (!todayHours) {
+      return 'Chưa có lịch hôm nay';
+    }
+
+    if (todayHours.closed) {
+      return 'Hôm nay nghỉ';
+    }
+
+    return `Hôm nay: ${this.formatTime(todayHours.openTime)} - ${this.formatTime(todayHours.closeTime)}`;
+  }
+
+  toggleHours(branch: Branch, event: Event): void {
+    event.stopPropagation();
+    this.expandedHoursBranchId = this.expandedHoursBranchId === branch.id ? null : branch.id;
+  }
+
+  isHoursExpanded(branch: Branch): boolean {
+    return this.expandedHoursBranchId === branch.id;
+  }
+
+  getWeeklyHours(branch: Branch): BranchHours[] {
+    return [...(this.branchHoursByBranchId[branch.id] ?? [])].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+  }
+
+  getDayLabel(dayOfWeek: number): string {
+    const labels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    return labels[dayOfWeek] ?? `T${dayOfWeek}`;
+  }
+
+  getHoursRangeLabel(hours: BranchHours): string {
+    return hours.closed ? 'Nghỉ' : `${this.formatTime(hours.openTime)} - ${this.formatTime(hours.closeTime)}`;
+  }
+
+  isToday(hours: BranchHours): boolean {
+    return hours.dayOfWeek === new Date().getDay();
   }
 
   getPreparationText(branch: Branch): string {
@@ -325,12 +369,107 @@ export class StoreLocatorComponent implements OnInit {
     });
   }
 
+  private loadBranchHours(branches: Branch[]): void {
+    if (!branches.length) {
+      this.branchHoursByBranchId = {};
+      return;
+    }
+
+    const requests = branches.map((branch) =>
+      this.branchService.getBranchHours(branch.id).pipe(
+        catchError(() => of([] as BranchHours[]))
+      )
+    );
+
+    forkJoin(requests.length ? requests : [of([] as BranchHours[])]).subscribe({
+      next: (hoursGroups) => {
+        this.branchHoursByBranchId = branches.reduce<Record<string, BranchHours[]>>((acc, branch, index) => {
+          acc[branch.id] = hoursGroups[index] ?? [];
+          return acc;
+        }, {});
+        this.applyFilters();
+      },
+      error: () => {
+        this.branchHoursByBranchId = {};
+      }
+    });
+  }
+
+  private getTodayHours(branch: Branch): BranchHours | null {
+    const today = new Date().getDay();
+    return this.getWeeklyHours(branch).find((hours) => hours.dayOfWeek === today) ?? null;
+  }
+
+  private getOperatingState(branch: Branch): { status: 'open' | 'closing-soon' | 'closed' | 'unknown'; label: string } {
+    if (branch.status !== 'ACTIVE') {
+      return { status: 'closed', label: 'Tạm ngưng' };
+    }
+
+    const todayHours = this.getTodayHours(branch);
+    if (!todayHours) {
+      return { status: 'unknown', label: 'Chưa có lịch' };
+    }
+
+    if (todayHours.closed) {
+      return { status: 'closed', label: this.getNextOpeningLabel(branch) };
+    }
+
+    const now = new Date();
+    const openAt = this.timeToDate(todayHours.openTime, now);
+    const closeAt = this.timeToDate(todayHours.closeTime, now);
+
+    if (now >= openAt && now <= closeAt) {
+      const minutesToClose = Math.round((closeAt.getTime() - now.getTime()) / 60000);
+      if (minutesToClose <= 45) {
+        return { status: 'closing-soon', label: `Sắp đóng · còn ${minutesToClose} phút` };
+      }
+
+      return { status: 'open', label: `Đang mở · đóng lúc ${this.formatTime(todayHours.closeTime)}` };
+    }
+
+    if (now < openAt) {
+      return { status: 'closed', label: `Chưa mở · mở lúc ${this.formatTime(todayHours.openTime)}` };
+    }
+
+    return { status: 'closed', label: this.getNextOpeningLabel(branch) };
+  }
+
+  private getNextOpeningLabel(branch: Branch): string {
+    const weeklyHours = this.getWeeklyHours(branch);
+    const today = new Date().getDay();
+
+    for (let offset = 1; offset <= 7; offset++) {
+      const day = (today + offset) % 7;
+      const nextHours = weeklyHours.find((hours) => hours.dayOfWeek === day && !hours.closed);
+      if (nextHours) {
+        const dayLabel = offset === 1 ? 'mai' : this.getDayLabel(day);
+        return `Đã đóng · mở ${dayLabel} ${this.formatTime(nextHours.openTime)}`;
+      }
+    }
+
+    return 'Đã đóng';
+  }
+
+  private timeToDate(time: string, baseDate: Date): Date {
+    const [hour = 0, minute = 0] = time.split(':').map(Number);
+    const next = new Date(baseDate);
+    next.setHours(hour, minute, 0, 0);
+    return next;
+  }
+
+  private formatTime(time: string): string {
+    return time?.slice(0, 5) || '--:--';
+  }
+
   private branchPopup(branch: Branch): string {
+    const status = this.getOperatingState(branch);
+
     return `
       <div class="pine-popup-card">
         <strong>${branch.name}</strong>
         <p>${branch.address || 'Chưa cập nhật địa chỉ'}</p>
-        <span>${this.getPreparationText(branch)}</span>
+        <span class="popup-status ${status.status}">${status.label}</span>
+        <small>${this.getTodayHoursLabel(branch)}</small>
       </div>
     `;
   }

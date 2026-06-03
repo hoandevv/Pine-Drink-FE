@@ -102,7 +102,7 @@ export class AccessControlService {
   }
 
   isAdminConsoleUser(): boolean {
-    return this.canAny(['ACCOUNT_VIEW', 'BRANCH_VIEW']) || this.hasAnyRole(['ADMIN', 'MANAGER', 'DELIVERY']);
+    return this.hasAnyRole(['ADMIN', 'MANAGER', 'DELIVERY']);
   }
 
   private canByRoleFallback(permission: string): boolean {
