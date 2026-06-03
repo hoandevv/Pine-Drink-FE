@@ -150,8 +150,8 @@
 
     &:focus {
       outline: none;
-      border-color: #FFC928;
-      box-shadow: 0 0 0 4px rgba(255, 201, 40, 0.1);
+      border-color: #164A2F;
+      box-shadow: 0 0 0 3px rgba(22, 74, 47, 0.08);
     }
 
     &.error {
@@ -195,12 +195,7 @@
 }
 
 .map-section {
-  height: 500px;
-  margin: 1rem 0;
-
-  @media (max-width: 768px) {
-    height: 400px;
-  }
+  margin: 1rem 0 2rem;
 }
 
 .info-note {

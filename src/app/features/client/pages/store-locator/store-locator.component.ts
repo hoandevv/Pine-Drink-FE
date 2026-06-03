@@ -15,11 +15,17 @@ export class StoreLocatorComponent implements OnInit {
   allBranches: Branch[] = [];
   filteredBranches: Branch[] = [];
   selectedBranch: Branch | null = null;
+  userLocation: L.LatLngLiteral | null = null;
 
   loading = false;
   
   map!: L.Map;
   markers: L.Marker[] = [];
+  userLocationMarker: L.Marker | null = null;
+  private tileLayers: Record<string, L.TileLayer> = {};
+  private branchIcon!: L.Icon;
+  private selectedBranchIcon!: L.Icon;
+  activeMapMode: 'street' | 'satellite' | 'light' | 'dark' = 'street';
 
   searchQuery = '';
   filterNearby = false;
@@ -39,29 +45,32 @@ export class StoreLocatorComponent implements OnInit {
 
   private initMap(): void {
     this.map = L.map('store-locator-map', {
-      center: [21.028511, 105.804817], // Hanoi
-      zoom: 12
+      center: [21.028511, 105.804817],
+      zoom: 12,
+      zoomControl: false
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(this.map);
+    this.tileLayers = {
+      street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }),
+      satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        attribution: 'Tiles © Esri'
+      }),
+      light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20,
+        attribution: '© OpenStreetMap © CARTO'
+      }),
+      dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 20,
+        attribution: '© OpenStreetMap © CARTO'
+      })
+    };
 
-    const iconRetinaUrl = 'assets/marker-icon-2x.png';
-    const iconUrl = 'assets/marker-icon.png';
-    const shadowUrl = 'assets/marker-shadow.png';
-    const iconDefault = L.icon({
-      iconRetinaUrl,
-      iconUrl,
-      shadowUrl,
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      tooltipAnchor: [16, -28],
-      shadowSize: [41, 41]
-    });
-    L.Marker.prototype.options.icon = iconDefault;
+    this.tileLayers[this.activeMapMode].addTo(this.map);
+    this.configureMarkerIcons();
   }
 
   loadBranches(): void {
@@ -108,6 +117,12 @@ export class StoreLocatorComponent implements OnInit {
       filtered = filtered.filter((branch) => branch.supportsDelivery);
     }
 
+    if (this.filterNearby && this.userLocation) {
+      filtered = filtered
+        .filter((branch) => branch.latitude && branch.longitude)
+        .sort((a, b) => this.distanceToBranch(a) - this.distanceToBranch(b));
+    }
+
     this.filteredBranches = filtered;
     this.updateMapMarkers();
 
@@ -129,9 +144,9 @@ export class StoreLocatorComponent implements OnInit {
 
     this.filteredBranches.forEach(branch => {
       if (branch.latitude && branch.longitude) {
-        const marker = L.marker([branch.latitude, branch.longitude])
+        const marker = L.marker([branch.latitude, branch.longitude], { icon: this.getBranchIcon(branch) })
           .addTo(this.map)
-          .bindPopup(`<b>${branch.name}</b><br>${branch.address || ''}`)
+          .bindPopup(this.branchPopup(branch), { className: 'pine-map-popup' })
           .on('click', () => {
             this.selectBranch(branch);
           });
@@ -153,6 +168,10 @@ export class StoreLocatorComponent implements OnInit {
     switch (filterName) {
       case 'nearby':
         this.filterNearby = !this.filterNearby;
+        if (this.filterNearby && !this.userLocation) {
+          this.locateUser(true);
+          return;
+        }
         break;
       case 'open':
         this.filterOpen = !this.filterOpen;
@@ -191,5 +210,128 @@ export class StoreLocatorComponent implements OnInit {
   getPreparationText(branch: Branch): string {
     const minutes = branch.averagePreparationMinutes || 15;
     return `${minutes} phút`;
+  }
+
+  setMapMode(mode: 'street' | 'satellite' | 'light' | 'dark'): void {
+    if (!this.map || this.activeMapMode === mode) { return; }
+
+    Object.values(this.tileLayers).forEach(layer => this.map.removeLayer(layer));
+    this.tileLayers[mode].addTo(this.map);
+    this.activeMapMode = mode;
+  }
+
+  zoomIn(): void {
+    this.map?.zoomIn();
+  }
+
+  zoomOut(): void {
+    this.map?.zoomOut();
+  }
+
+  resetMapView(): void {
+    this.updateMapMarkers();
+  }
+
+  locateUser(applyNearby = false): void {
+    if (!navigator.geolocation || !this.map) { return; }
+
+    navigator.geolocation.getCurrentPosition(position => {
+      this.userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+      const latLng: L.LatLngExpression = [this.userLocation.lat, this.userLocation.lng];
+
+      if (this.userLocationMarker) {
+        this.map.removeLayer(this.userLocationMarker);
+      }
+
+      this.userLocationMarker = L.marker(latLng, { icon: this.createUserIcon() })
+        .addTo(this.map)
+        .bindPopup('Vị trí của bạn');
+      this.map.setView(latLng, 15, { animate: true });
+
+      if (applyNearby || this.filterNearby) {
+        this.applyFilters();
+      }
+    });
+  }
+
+  distanceLabel(branch: Branch): string {
+    if (!this.userLocation || !branch.latitude || !branch.longitude) {
+      return 'Pine Drink';
+    }
+
+    const distance = this.distanceToBranch(branch);
+    return distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`;
+  }
+
+  private distanceToBranch(branch: Branch): number {
+    if (!this.userLocation || !branch.latitude || !branch.longitude) {
+      return Number.POSITIVE_INFINITY;
+    }
+
+    const earthRadiusKm = 6371;
+    const dLat = this.toRadians(branch.latitude - this.userLocation.lat);
+    const dLng = this.toRadians(branch.longitude - this.userLocation.lng);
+    const userLat = this.toRadians(this.userLocation.lat);
+    const branchLat = this.toRadians(branch.latitude);
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(userLat) * Math.cos(branchLat) * Math.sin(dLng / 2) ** 2;
+
+    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  private toRadians(value: number): number {
+    return value * Math.PI / 180;
+  }
+
+  private configureMarkerIcons(): void {
+    this.branchIcon = L.icon({
+      iconRetinaUrl: 'assets/marker-icon-2x.png',
+      iconUrl: 'assets/marker-icon.png',
+      shadowUrl: 'assets/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      tooltipAnchor: [16, -28],
+      shadowSize: [41, 41]
+    });
+
+    this.selectedBranchIcon = L.icon({
+      iconRetinaUrl: 'assets/marker-icon-2x.png',
+      iconUrl: 'assets/marker-icon.png',
+      shadowUrl: 'assets/marker-shadow.png',
+      iconSize: [30, 49],
+      iconAnchor: [15, 49],
+      popupAnchor: [1, -42],
+      tooltipAnchor: [16, -32],
+      shadowSize: [45, 45]
+    });
+
+    L.Marker.prototype.options.icon = this.branchIcon;
+  }
+
+  private getBranchIcon(branch: Branch): L.Icon {
+    return this.selectedBranch?.id === branch.id ? this.selectedBranchIcon : this.branchIcon;
+  }
+
+  private createUserIcon(): L.DivIcon {
+    return L.divIcon({
+      className: 'pine-user-marker',
+      html: '<span class="material-symbols-outlined">near_me</span>',
+      iconSize: [42, 42],
+      iconAnchor: [21, 21]
+    });
+  }
+
+  private branchPopup(branch: Branch): string {
+    return `
+      <div class="pine-popup-card">
+        <strong>${branch.name}</strong>
+        <p>${branch.address || 'Chưa cập nhật địa chỉ'}</p>
+        <span>${this.getPreparationText(branch)}</span>
+      </div>
+    `;
   }
 }

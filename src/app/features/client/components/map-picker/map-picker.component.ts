@@ -31,12 +31,15 @@ export class MapPickerComponent implements OnInit, OnDestroy {
   isReverseGeocoding = false;
   showResults = false;
   currentLocation: MapPickerResult | null = null;
+  isLocating = false;
+  isPreviewLocating = false;
+  locationError = '';
 
   private searchSubject = new Subject<string>();
   private readonly defaultCenter: L.LatLngExpression = [21.028511, 105.804817]; // Hanoi
   private readonly defaultZoom = 13;
 
-  constructor(private readonly geocodingService: GeocodingService) {}
+  constructor(private readonly geocodingService: GeocodingService) { }
 
   ngOnInit(): void {
     this.initMap();
@@ -117,23 +120,7 @@ export class MapPickerComponent implements OnInit, OnDestroy {
   }
 
   selectResult(result: GeocodingResult): void {
-    // Center map on selected location
-    const latLng: L.LatLngExpression = [result.latitude, result.longitude];
-    this.map.setView(latLng, 16);
-
-    // Remove existing marker if any
-    if (this.marker) {
-      this.map.removeLayer(this.marker);
-    }
-
-    // Add draggable marker
-    this.marker = L.marker(latLng, { draggable: true }).addTo(this.map);
-
-    // Handle marker drag
-    this.marker.on('dragend', () => {
-      const position = this.marker.getLatLng();
-      this.onMarkerDragged(position.lat, position.lng);
-    });
+    this.placeMarker(result.latitude, result.longitude);
 
     // Update current location
     this.currentLocation = {
@@ -153,6 +140,134 @@ export class MapPickerComponent implements OnInit, OnDestroy {
     this.searchQuery = result.displayName;
     this.showResults = false;
     this.searchResults = [];
+  }
+
+  useCurrentLocation(): void {
+    this.locationError = '';
+
+    if (!navigator.geolocation) {
+      this.locationError = 'Trình duyệt không hỗ trợ định vị.';
+      return;
+    }
+
+    this.isLocating = true;
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        this.placeMarker(lat, lng, 17, this.createCurrentLocationIcon());
+        this.resolveCurrentAddress(lat, lng);
+      },
+      () => {
+        this.isLocating = false;
+        this.locationError = 'Không lấy được vị trí. Vui lòng cấp quyền định vị cho trình duyệt.';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000
+      }
+    );
+  }
+
+  showCurrentLocationOnMap(): void {
+    this.locationError = '';
+
+    if (!navigator.geolocation) {
+      this.locationError = 'Trình duyệt không hỗ trợ định vị.';
+      return;
+    }
+
+    this.isPreviewLocating = true;
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        this.isPreviewLocating = false;
+        this.placeMarker(lat, lng, 17, this.createCurrentLocationIcon());
+      },
+      () => {
+        this.isPreviewLocating = false;
+        this.locationError = 'Không lấy được vị trí. Vui lòng cấp quyền định vị cho trình duyệt.';
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000
+      }
+    );
+  }
+
+  private placeMarker(lat: number, lng: number, zoom = 16, icon?: L.Icon | L.DivIcon): void {
+    const latLng: L.LatLngExpression = [lat, lng];
+    this.map.setView(latLng, zoom, { animate: true });
+
+    if (this.marker) {
+      this.map.removeLayer(this.marker);
+    }
+
+    this.marker = L.marker(latLng, { draggable: true, icon }).addTo(this.map);
+    this.marker.on('dragend', () => {
+      const position = this.marker.getLatLng();
+      this.onMarkerDragged(position.lat, position.lng);
+    });
+  }
+
+  private createCurrentLocationIcon(): L.DivIcon {
+    return L.divIcon({
+      className: 'current-location-marker',
+      html: `
+        <span class="current-location-marker__pulse"></span>
+        <span class="current-location-marker__dot">
+          <span class="material-symbols-outlined">my_location</span>
+        </span>
+      `,
+      iconSize: [44, 44],
+      iconAnchor: [22, 22]
+    });
+  }
+
+  private resolveCurrentAddress(lat: number, lng: number): void {
+    this.isReverseGeocoding = true;
+    this.geocodingService
+      .reverseGeocode(lat, lng)
+      .pipe(catchError(() => this.reverseGeocodeWithNominatim(lat, lng)))
+      .subscribe((location) => {
+        this.isLocating = false;
+        this.isReverseGeocoding = false;
+        this.currentLocation = location;
+        this.searchQuery = location.displayName || 'Vị trí hiện tại của tôi';
+        this.locationSelected.emit(location);
+      });
+  }
+
+  private reverseGeocodeWithNominatim(lat: number, lng: number) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=vi&addressdetails=1`;
+
+    return fetch(url)
+      .then(response => response.ok ? response.json() : null)
+      .then(data => this.mapNominatimResult(data, lat, lng))
+      .catch(() => ({ latitude: lat, longitude: lng } as MapPickerResult));
+  }
+
+  private mapNominatimResult(data: any, lat: number, lng: number): MapPickerResult {
+    if (!data) {
+      return { latitude: lat, longitude: lng };
+    }
+
+    const address = data.address || {};
+    const roadParts = [address.house_number, address.road || address.pedestrian || address.neighbourhood]
+      .filter(Boolean);
+
+    return {
+      latitude: lat,
+      longitude: lng,
+      displayName: data.display_name || 'Vị trí hiện tại của tôi',
+      addressLine: roadParts.join(' ') || data.name || data.display_name,
+      ward: address.suburb || address.quarter || address.village || address.ward || null,
+      district: address.city_district || address.district || address.county || null,
+      city: address.city || address.town || address.state || null
+    };
   }
 
   private onMarkerDragged(lat: number, lng: number): void {

@@ -23,6 +23,19 @@
       </span>
     </div>
 
+
+    <button type="button" class="current-location-button" (click)="useCurrentLocation()" [disabled]="isLocating">
+      <span class="material-symbols-outlined" [class.spinning]="isLocating">
+        {{ isLocating ? 'progress_activity' : 'my_location' }}
+      </span>
+      <span>{{ isLocating ? 'Đang lấy vị trí...' : 'Dùng vị trí hiện tại' }}</span>
+    </button>
+
+    <div *ngIf="locationError" class="location-error">
+      <span class="material-symbols-outlined">warning</span>
+      <span>{{ locationError }}</span>
+    </div>
+
     <!-- Search Results Dropdown -->
     <div *ngIf="showResults" class="search-results">
       <div
@@ -41,8 +54,16 @@
     </div>
   </div>
 
-  <!-- Map Container -->
-  <div id="map" class="map-container"></div>
+  <div class="map-frame">
+    <div class="map-toolbox" aria-label="Điều khiển bản đồ">
+      <button type="button" (click)="showCurrentLocationOnMap()" [disabled]="isPreviewLocating" aria-label="Định vị tôi">
+        <span class="material-symbols-outlined" [class.spinning]="isPreviewLocating">
+          {{ isPreviewLocating ? 'progress_activity' : 'my_location' }}
+        </span>
+      </button>
+    </div>
+    <div id="map" class="map-container"></div>
+  </div>
 
   <!-- Status Bar -->
   <div class="status-bar">

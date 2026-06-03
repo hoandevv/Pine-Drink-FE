@@ -23,8 +23,7 @@
         type="button" 
         [class.active]="filterNearby"
         (click)="toggleFilter('nearby')"
-        disabled
-        title="Sắp hỗ trợ khi có định vị người dùng"
+        [title]="userLocation ? 'Sắp xếp chi nhánh gần vị trí của bạn' : 'Bấm để định vị và sắp xếp chi nhánh gần bạn'"
       >
         <span class="material-symbols-outlined">near_me</span>
         Gần tôi
@@ -55,6 +54,14 @@
       </button>
     </div>
 
+    <div *ngIf="filterNearby" class="nearby-insight">
+      <span class="material-symbols-outlined">my_location</span>
+      <div>
+        <strong>Đang ưu tiên chi nhánh gần bạn</strong>
+        <p>{{ userLocation ? 'Danh sách đã được sắp xếp theo khoảng cách.' : 'Cho phép trình duyệt truy cập vị trí để Pine Drink gợi ý chính xác hơn.' }}</p>
+      </div>
+    </div>
+
     <!-- Branch Cards -->
     <div class="branch-cards">
       <article 
@@ -66,7 +73,7 @@
         <div class="branch-header">
           <div>
             <h3>{{ branch.name }}</h3>
-            <span class="distance-badge">Pine Drink</span>
+            <span class="distance-badge" [class.has-distance]="userLocation">{{ distanceLabel(branch) }}</span>
           </div>
           <span class="status-badge" [class]="getStatusClass(branch)">
             {{ getStatusText(branch) }}
@@ -129,26 +136,41 @@
   <!-- Right Panel: Map -->
   <div class="map-panel">
     <div class="map-container">
-      <div id="store-locator-map" class="interactive-map"></div>
-
-      <!-- Selected Branch Info Card -->
-      <div *ngIf="selectedBranch" class="selected-branch-card">
-        <div class="branch-image-fallback">
-          <span class="material-symbols-outlined">storefront</span>
-        </div>
-        <div class="card-content">
-          <h4>{{ selectedBranch.name }}</h4>
-          <p>{{ selectedBranch.address || 'Chưa cập nhật địa chỉ' }}</p>
-          <div class="card-meta">
-            <span>Pine Drink</span>
-            <span>•</span>
-            <span>{{ getPreparationText(selectedBranch) }}</span>
-          </div>
-          <button class="primary-button" (click)="confirmBranch(selectedBranch)">
-            Chọn chi nhánh
-          </button>
-        </div>
+      <div class="map-mode-bar" aria-label="Chế độ bản đồ">
+        <button type="button" [class.active]="activeMapMode === 'street'" (click)="setMapMode('street')">
+          <span class="material-symbols-outlined">map</span>
+          Phố
+        </button>
+        <button type="button" [class.active]="activeMapMode === 'satellite'" (click)="setMapMode('satellite')">
+          <span class="material-symbols-outlined">satellite_alt</span>
+          Vệ tinh
+        </button>
+        <button type="button" [class.active]="activeMapMode === 'light'" (click)="setMapMode('light')">
+          <span class="material-symbols-outlined">light_mode</span>
+          Sáng
+        </button>
+        <button type="button" [class.active]="activeMapMode === 'dark'" (click)="setMapMode('dark')">
+          <span class="material-symbols-outlined">dark_mode</span>
+          Tối
+        </button>
       </div>
+
+      <div class="map-toolbox" aria-label="Điều khiển bản đồ">
+        <button type="button" (click)="zoomIn()" aria-label="Phóng to bản đồ">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+        <button type="button" (click)="zoomOut()" aria-label="Thu nhỏ bản đồ">
+          <span class="material-symbols-outlined">remove</span>
+        </button>
+        <button type="button" (click)="locateUser()" aria-label="Định vị tôi">
+          <span class="material-symbols-outlined">my_location</span>
+        </button>
+        <button type="button" (click)="resetMapView()" aria-label="Xem toàn bộ chi nhánh">
+          <span class="material-symbols-outlined">fullscreen</span>
+        </button>
+      </div>
+
+      <div id="store-locator-map" class="interactive-map"></div>
     </div>
   </div>
 </div>
