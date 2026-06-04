@@ -35,6 +35,11 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
+export interface SetPasswordRequest {
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface FileUploadResponseData {
   fileName: string;
   fileUrl: string;
@@ -84,6 +89,20 @@ export class AuthService {
         map(() => response.data)
       ))
     );
+  }
+
+  googleLogin(idToken: string): Observable<LoginResponseData> {
+    return this.http
+      .post<BaseResponse<LoginResponseData>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.google}`, { idToken })
+      .pipe(
+        tap((response) => {
+          this.tokenService.setTokens(response.data.accessToken, response.data.refreshToken);
+          this.setAuthenticatedUser(response.data.account);
+        }),
+        switchMap((response) => this.loadCurrentPermissions(true).pipe(
+          map(() => response.data)
+        ))
+      );
   }
 
   refreshToken(): Observable<RefreshTokenResponseData> {
@@ -174,6 +193,12 @@ export class AuthService {
   changePassword(request: ChangePasswordRequest): Observable<void> {
     return this.http
       .put<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.password}`, request)
+      .pipe(map((response) => response.data));
+  }
+
+  setPassword(request: SetPasswordRequest): Observable<void> {
+    return this.http
+      .post<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.setPassword}`, request)
       .pipe(map((response) => response.data));
   }
 

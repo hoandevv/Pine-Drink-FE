@@ -13,6 +13,8 @@ export interface AuthUser {
   gender?: string | null;
   avatarUrl?: string | null;
   status?: string | null;
+  authProvider?: 'LOCAL' | 'GOOGLE' | string | null;
+  hasLocalPassword?: boolean | null;
   lastLoginAt?: string | null;
   scope?: ScopeAccess | null;
   roles?: string[];

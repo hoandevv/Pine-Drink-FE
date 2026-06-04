@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
     verifyRegisterOtp: '/auth/register/verify-otp',
     resendRegisterOtp: '/auth/register/resend-otp',
     login: '/auth/login',
+    google: '/auth/google',
     refreshToken: '/auth/refresh-token',
     logout: '/auth/logout',
     me: '/auth/me',
@@ -15,6 +16,7 @@ export const API_ENDPOINTS = {
   profile: {
     base: '/profile',
     password: '/profile/password',
+    setPassword: '/profile/set-password',
     avatar: '/profile/avatar'
   },
   products: '/products',

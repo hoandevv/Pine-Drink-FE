@@ -297,8 +297,8 @@
               <span class="material-symbols-outlined">lock</span>
             </div>
             <div class="setting-info">
-              <h3>{{ 'profile.settings.changePassword' | translate }}</h3>
-              <p>{{ 'profile.settings.changePasswordDesc' | translate }}</p>
+              <h3>{{ passwordActionTitle }}</h3>
+              <p>{{ passwordActionDescription }}</p>
             </div>
             <span class="material-symbols-outlined">chevron_right</span>
           </div>
@@ -378,77 +378,161 @@
     </div>
   </div>
 
-  <!-- Change Password Modal -->
-  <div *ngIf="showChangePasswordModal" class="language-modal" (click)="closeChangePasswordModal()">
-    <div class="language-modal-content" style="max-width: 500px;" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Đổi mật khẩu</h3>
-        <button type="button" class="close-button" (click)="closeChangePasswordModal()">
-          <span class="material-symbols-outlined">close</span>
+ <!-- Change Password Modal -->
+<div *ngIf="showChangePasswordModal" class="language-modal" (click)="closeChangePasswordModal()">
+  <div class="language-modal-content" style="max-width: 420px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3>{{ passwordActionTitle }}</h3>
+        <p class="text-body-sm text-on-surface-variant mt-1">
+          {{ isGoogleOnlyAccount
+            ? 'Thiết lập mật khẩu để có thể đăng nhập bằng email và mật khẩu.'
+            : 'Cập nhật mật khẩu mới cho tài khoản của bạn.' }}
+        </p>
+      </div>
+
+      <button type="button" class="close-button" (click)="closeChangePasswordModal()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div *ngIf="errorMessage" class="p-md bg-error/10 border border-error rounded-xl mb-md">
+      <p class="text-error text-body-sm font-medium">{{ errorMessage }}</p>
+    </div>
+
+    <div *ngIf="successMessage" class="p-md bg-primary/10 border border-primary rounded-xl mb-md">
+      <p class="text-primary text-body-sm font-medium">{{ successMessage }}</p>
+    </div>
+
+    <form [formGroup]="changePasswordForm" (ngSubmit)="submitPasswordChange()" class="space-y-md p-4">
+      
+      <div class="space-y-xs" *ngIf="!isGoogleOnlyAccount">
+        <label class="block font-label-md text-on-surface">Mật khẩu hiện tại</label>
+
+        <div class="relative">
+          <input
+            [type]="passwordVisibility.current ? 'text' : 'password'"
+            formControlName="currentPassword"
+            placeholder="Nhập mật khẩu hiện tại"
+            autocomplete="current-password"
+            class="w-full px-md py-sm pr-11 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+            (click)="togglePasswordVisibility('current')"
+          >
+            <span class="material-symbols-outlined text-[20px]">
+              {{ passwordVisibility.current ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </div>
+
+        <p
+          *ngIf="changePasswordForm.get('currentPassword')?.touched && changePasswordForm.get('currentPassword')?.invalid"
+          class="text-error text-label-sm"
+        >
+          Vui lòng nhập mật khẩu hiện tại.
+        </p>
+      </div>
+
+      <div class="space-y-xs">
+        <label class="block font-label-md text-on-surface">Mật khẩu mới</label>
+
+        <div class="relative">
+          <input
+            [type]="passwordVisibility.new ? 'text' : 'password'"
+            formControlName="newPassword"
+            placeholder="Tối thiểu 8 ký tự"
+            autocomplete="new-password"
+            class="w-full px-md py-sm pr-11 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+            (click)="togglePasswordVisibility('new')"
+          >
+            <span class="material-symbols-outlined text-[20px]">
+              {{ passwordVisibility.new ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </div>
+
+        <p
+          *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('required')"
+          class="text-error text-label-sm"
+        >
+          Vui lòng nhập mật khẩu mới.
+        </p>
+
+        <p
+          *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('minlength')"
+          class="text-error text-label-sm"
+        >
+          Mật khẩu phải có tối thiểu 8 ký tự.
+        </p>
+
+        <p
+          *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('pattern')"
+          class="text-error text-label-sm"
+        >
+          Mật khẩu cần có chữ hoa, chữ thường, số và ký tự đặc biệt.
+        </p>
+      </div>
+
+      <div class="space-y-xs">
+        <label class="block font-label-md text-on-surface">Xác nhận mật khẩu mới</label>
+
+        <div class="relative">
+          <input
+            [type]="passwordVisibility.confirm ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            placeholder="Nhập lại mật khẩu mới"
+            autocomplete="new-password"
+            class="w-full px-md py-sm pr-11 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
+          />
+
+          <button
+            type="button"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
+            (click)="togglePasswordVisibility('confirm')"
+          >
+            <span class="material-symbols-outlined text-[20px]">
+              {{ passwordVisibility.confirm ? 'visibility_off' : 'visibility' }}
+            </span>
+          </button>
+        </div>
+
+        <p
+          *ngIf="changePasswordForm.get('confirmPassword')?.touched && changePasswordForm.hasError('mismatch')"
+          class="text-error text-label-sm"
+        >
+          Mật khẩu xác nhận không khớp.
+        </p>
+      </div>
+
+      <div class="flex gap-3 pt-4">
+        <button
+          type="button"
+          class="flex-1 py-sm border border-outline rounded-xl font-medium text-on-surface hover:bg-surface-container transition-all"
+          (click)="closeChangePasswordModal()"
+        >
+          Hủy
+        </button>
+
+        <button
+          type="submit"
+          class="flex-1 py-sm bg-primary text-white rounded-xl font-medium hover:bg-primary-container hover:text-on-primary-container transition-all disabled:opacity-50"
+          [disabled]="changingPassword || changePasswordForm.invalid"
+        >
+          {{ changingPassword ? 'Đang lưu...' : 'Lưu mật khẩu' }}
         </button>
       </div>
-
-      <div *ngIf="errorMessage" class="p-md bg-error/10 border border-error rounded-xl mb-md">
-        <p class="text-error text-body-sm font-medium">{{ errorMessage }}</p>
-      </div>
-
-      <div *ngIf="successMessage" class="p-md bg-primary/10 border border-primary rounded-xl mb-md">
-        <p class="text-primary text-body-sm font-medium">{{ successMessage }}</p>
-      </div>
-
-      <form [formGroup]="changePasswordForm" (ngSubmit)="submitPasswordChange()" class="space-y-md p-4">
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Mật khẩu hiện tại</label>
-          <input 
-            type="password" 
-            formControlName="currentPassword" 
-            placeholder="Nhập mật khẩu hiện tại" 
-            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-          <p *ngIf="changePasswordForm.get('currentPassword')?.touched && changePasswordForm.get('currentPassword')?.invalid" class="text-error text-label-sm">Vui lòng nhập mật khẩu hiện tại.</p>
-        </div>
-
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Mật khẩu mới</label>
-          <input 
-            type="password" 
-            formControlName="newPassword" 
-            placeholder="Tối thiểu 6 ký tự" 
-            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-          <p *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('minlength')" class="text-error text-label-sm">Mật khẩu phải có tối thiểu 6 ký tự.</p>
-        </div>
-
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Xác nhận mật khẩu mới</label>
-          <input 
-            type="password" 
-            formControlName="confirmPassword" 
-            placeholder="Nhập lại mật khẩu mới" 
-            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-          <p *ngIf="changePasswordForm.get('confirmPassword')?.touched && changePasswordForm.hasError('mismatch')" class="text-error text-label-sm">Mật khẩu xác nhận không khớp.</p>
-        </div>
-
-        <div class="flex gap-3 pt-4">
-          <button 
-            type="button" 
-            (click)="closeChangePasswordModal()" 
-            class="flex-1 py-sm border border-outline rounded-xl font-medium text-on-surface hover:bg-surface-container transition-all"
-          >
-            Hủy
-          </button>
-          <button 
-            type="submit" 
-            class="flex-1 py-sm bg-primary text-white rounded-xl font-medium hover:bg-primary-container hover:text-on-primary-container transition-all disabled:opacity-50"
-            [disabled]="changingPassword || changePasswordForm.invalid"
-          >
-            {{ changingPassword ? 'Đang xử lý...' : 'Đổi mật khẩu' }}
-          </button>
-        </div>
-      </form>
-    </div>
+    </form>
   </div>
+</div>
 
   <!-- Edit Profile Modal -->
   <div *ngIf="showEditProfileModal" class="language-modal" (click)="closeEditProfileModal()">

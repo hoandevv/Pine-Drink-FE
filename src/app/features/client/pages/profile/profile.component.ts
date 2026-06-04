@@ -19,6 +19,8 @@ interface UserProfile {
   avatar: string;
   loyaltyPoints: number;
   memberSince: string;
+  authProvider: string;
+  hasLocalPassword: boolean;
 }
 
 interface Order {
@@ -43,7 +45,9 @@ export class ProfileComponent implements OnInit {
     gender: 'OTHER',
     avatar: '',
     loyaltyPoints: 1250,
-    memberSince: '2024-01-15'
+    memberSince: '2024-01-15',
+    authProvider: 'LOCAL',
+    hasLocalPassword: true
   };
 
   recentOrders: Order[] = [
@@ -87,6 +91,11 @@ export class ProfileComponent implements OnInit {
   addresses: CustomerAddress[] = [];
   loadingAddresses = false;
   showAvatarPreview = false;
+  passwordVisibility = {
+    current: false,
+    new: false,
+    confirm: false
+  };
 
   constructor(
     private readonly router: Router,
@@ -121,7 +130,9 @@ export class ProfileComponent implements OnInit {
       gender: 'OTHER',
       avatar: '',
       loyaltyPoints: 0,
-      memberSince: ''
+      memberSince: '',
+      authProvider: 'LOCAL',
+      hasLocalPassword: true
     };
     this.recentOrders = [];
     this.addresses = [];
@@ -130,8 +141,15 @@ export class ProfileComponent implements OnInit {
   initForms(): void {
     this.changePasswordForm = this.fb.group(
       {
-        currentPassword: ['', Validators.required],
-        newPassword: ['', [Validators.required, Validators.minLength(6)]],
+        currentPassword: [''],
+        newPassword: [
+          '',
+          [
+            Validators.required,
+            Validators.minLength(8),
+            Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+          ]
+        ],
         confirmPassword: ['', Validators.required]
       },
       { validators: this.passwordMatchValidator }
@@ -169,6 +187,9 @@ export class ProfileComponent implements OnInit {
         // Example: http://localhost:9000/pine-drink-public/avatars/uuid.jpg
         // Use the URL directly as provided by the backend
         this.user.avatar = profile.avatarUrl || '';
+        this.user.authProvider = (profile.authProvider || 'LOCAL').toUpperCase();
+        this.user.hasLocalPassword = Boolean(profile.hasLocalPassword);
+        this.syncPasswordFormMode();
         console.log('[Profile] Avatar URL:', this.user.avatar);
       },
       error: (error) => {
@@ -182,6 +203,9 @@ export class ProfileComponent implements OnInit {
           this.user.dateOfBirth = currentUser.dateOfBirth || '';
           this.user.gender = currentUser.gender || 'OTHER';
           this.user.avatar = currentUser.avatarUrl || '';
+          this.user.authProvider = (currentUser.authProvider || 'LOCAL').toUpperCase();
+          this.user.hasLocalPassword = Boolean(currentUser.hasLocalPassword);
+          this.syncPasswordFormMode();
         }
       }
     });
@@ -298,10 +322,53 @@ export class ProfileComponent implements OnInit {
   }
 
   changePassword(): void {
+    this.syncPasswordFormMode();
     this.showChangePasswordModal = true;
     this.changePasswordForm.reset();
+    this.resetPasswordVisibility();
     this.errorMessage = '';
     this.successMessage = '';
+  }
+
+  togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {
+    this.passwordVisibility[field] = !this.passwordVisibility[field];
+  }
+
+  private resetPasswordVisibility(): void {
+    this.passwordVisibility = {
+      current: false,
+      new: false,
+      confirm: false
+    };
+  }
+
+  get isGoogleOnlyAccount(): boolean {
+    return this.user.authProvider?.toUpperCase() === 'GOOGLE' && this.user.hasLocalPassword === false;
+  }
+
+  get passwordActionTitle(): string {
+    return this.isGoogleOnlyAccount ? 'Thiết lập mật khẩu' : 'Đổi mật khẩu';
+  }
+
+  get passwordActionDescription(): string {
+    return this.isGoogleOnlyAccount
+      ? 'Tài khoản Google chưa có mật khẩu cục bộ. Thiết lập để có thể đăng nhập bằng email và mật khẩu.'
+      : 'Cập nhật mật khẩu đăng nhập cho tài khoản của bạn.';
+  }
+
+  private syncPasswordFormMode(): void {
+    const currentPassword = this.changePasswordForm?.get('currentPassword');
+    if (!currentPassword) return;
+
+    if (this.isGoogleOnlyAccount) {
+      currentPassword.clearValidators();
+      currentPassword.disable({ emitEvent: false });
+    } else {
+      currentPassword.enable({ emitEvent: false });
+      currentPassword.setValidators([Validators.required]);
+    }
+
+    currentPassword.updateValueAndValidity({ emitEvent: false });
   }
 
   submitPasswordChange(): void {
@@ -313,19 +380,32 @@ export class ProfileComponent implements OnInit {
     this.changingPassword = true;
     this.errorMessage = '';
 
-    this.authService.changePassword(this.changePasswordForm.value).subscribe({
+    const { currentPassword, newPassword, confirmPassword } = this.changePasswordForm.getRawValue();
+    const wasGoogleOnlyAccount = this.isGoogleOnlyAccount;
+    const request$ = wasGoogleOnlyAccount
+      ? this.authService.setPassword({ newPassword, confirmPassword })
+      : this.authService.changePassword({ currentPassword, newPassword, confirmPassword });
+
+    request$.subscribe({
       next: () => {
         this.changingPassword = false;
-        this.successMessage = 'Đổi mật khẩu thành công!';
+        this.user.hasLocalPassword = true;
+        const storedUser = this.tokenService.getStoredUser();
+        if (storedUser) {
+          storedUser.hasLocalPassword = true;
+          this.tokenService.setCurrentUser(storedUser);
+        }
+        this.successMessage = wasGoogleOnlyAccount ? 'Thiết lập mật khẩu thành công!' : 'Đổi mật khẩu thành công!';
         setTimeout(() => {
           this.showChangePasswordModal = false;
           this.successMessage = '';
           this.changePasswordForm.reset();
+          this.syncPasswordFormMode();
         }, 1500);
       },
       error: (error) => {
         this.changingPassword = false;
-        this.errorMessage = error?.error?.message || 'Không thể đổi mật khẩu. Vui lòng kiểm tra lại.';
+        this.errorMessage = error?.error?.message || 'Không thể xử lý mật khẩu. Vui lòng kiểm tra lại.';
       }
     });
   }
@@ -465,6 +545,7 @@ export class ProfileComponent implements OnInit {
   closeChangePasswordModal(): void {
     this.showChangePasswordModal = false;
     this.changePasswordForm.reset();
+    this.resetPasswordVisibility();
     this.errorMessage = '';
     this.successMessage = '';
   }

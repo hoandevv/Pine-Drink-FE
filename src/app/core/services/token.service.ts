@@ -74,6 +74,8 @@ export class TokenService {
       phone: storedUser?.phone,
       avatarUrl: storedUser?.avatarUrl,
       status: storedUser?.status,
+      authProvider: storedUser?.authProvider,
+      hasLocalPassword: storedUser?.hasLocalPassword,
       lastLoginAt: storedUser?.lastLoginAt,
       scope: storedUser?.scope ?? null,
       roles: payload.roles ?? storedUser?.roles ?? [],
