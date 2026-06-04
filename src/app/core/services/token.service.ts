@@ -68,7 +68,6 @@ export class TokenService {
 
     return {
       id: payload.sub ?? storedUser?.id ?? '',
-      brandId: storedUser?.brandId,
       username: payload.username ?? payload.email ?? storedUser?.username ?? 'User',
       fullName: storedUser?.fullName,
       email: payload.email ?? storedUser?.email ?? '',
@@ -76,6 +75,7 @@ export class TokenService {
       avatarUrl: storedUser?.avatarUrl,
       status: storedUser?.status,
       lastLoginAt: storedUser?.lastLoginAt,
+      scope: storedUser?.scope ?? null,
       roles: payload.roles ?? storedUser?.roles ?? [],
       permissions: payload.permissions ?? storedUser?.permissions ?? []
     };

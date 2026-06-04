@@ -1,5 +1,10 @@
-<div class="admin-shell" [class.sidebar-open]="sidebarOpen" [class.delivery-mode]="isDeliveryOnly">
+<div class="admin-shell" [class.sidebar-open]="sidebarOpen" [class.sidebar-collapsed]="sidebarCollapsed" [class.delivery-mode]="isDeliveryOnly">
   <aside class="admin-sidebar">
+    <button type="button" class="sidebar-toggle" [attr.aria-label]="sidebarCollapsed ? 'Hiện sidebar' : 'Ẩn sidebar'"
+      (click)="toggleSidebarCollapse()">
+      <span class="material-symbols-outlined">{{ sidebarCollapsed ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</span>
+    </button>
+
     <div class="brand-card">
       <a routerLink="/admin/dashboard" class="brand-logo" aria-label="Pine Drink Admin">
         <span class="brand-logo__mark">🍍</span>
@@ -20,16 +25,15 @@
     </div>
 
     <nav class="module-nav" aria-label="Admin modules">
-      <a
-        *ngFor="let item of visibleNavItems"
-        [routerLink]="item.route"
-        class="module-link"
-        [class.is-active]="isActive(item.route)"
-      >
-        <span class="material-symbols-outlined module-link__icon">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-        <em *ngIf="item.badge">{{ item.badge }}</em>
-      </a>
+      <section *ngFor="let section of visibleNavSections" class="module-group">
+        <h3 class="module-group__title">{{ section.title }}</h3>
+        <a *ngFor="let item of section.items" [routerLink]="item.route" class="module-link"
+          [class.is-active]="isActive(item.route)" [class.module-link--compact]="item.compact">
+          <span class="material-symbols-outlined module-link__icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+          <em *ngIf="item.badge">{{ item.badge }}</em>
+        </a>
+      </section>
     </nav>
 
     <button type="button" class="logout-button" (click)="logout()">
@@ -48,7 +52,8 @@
         </button>
         <div class="search-box">
           <span class="material-symbols-outlined">search</span>
-          <input type="text" [placeholder]="isDeliveryOnly ? 'Tìm mã đơn, khách hàng, số điện thoại...' : 'Tìm đơn hàng, sản phẩm, khách hàng...'" />
+          <input type="text"
+            [placeholder]="isDeliveryOnly ? 'Tìm mã đơn, khách hàng, số điện thoại...' : 'Tìm đơn hàng, sản phẩm, khách hàng...'" />
         </div>
       </div>
 

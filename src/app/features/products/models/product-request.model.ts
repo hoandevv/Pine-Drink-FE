@@ -1,19 +1,15 @@
-import { ProductStatus } from './product.model';
-
 export interface ProductCreateRequest {
-  code: string;
   name: string;
   description?: string;
-  price: number;
+  price?: number;
+  basePrice?: number;
   imageUrl?: string;
   categoryId: string;
+  preparationMinutes?: number;
+  featured?: boolean;
+  bestSeller?: boolean;
+  availableIceLevels?: string;
+  availableSugarLevels?: string;
 }
 
-export interface ProductUpdateRequest {
-  name?: string;
-  description?: string;
-  price?: number;
-  imageUrl?: string;
-  categoryId?: string;
-  status?: ProductStatus;
-}
+export type ProductUpdateRequest = Partial<ProductCreateRequest>;

@@ -97,7 +97,7 @@ export interface MockCartItem {
   productImage: string;
   quantity: number;
   price: number;
-  size: 'S' | 'M' | 'L';
+  size: string;
   iceLevel: number;
   sugarLevel: number;
   toppings: MockTopping[];

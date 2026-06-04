@@ -717,3 +717,228 @@ app-reset-password-page {
 }
 
 
+/* Mobile-first responsive safeguards. Desktop >1024px stays source-of-truth. */
+img,
+picture,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+  object-fit: cover;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+:where(.admin-content, .client-page, main, section, article, div) {
+  min-width: 0;
+}
+
+:where(h1, h2, h3, h4, p, a, span, strong, small, td, th, label) {
+  overflow-wrap: anywhere;
+}
+
+:where(table) {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+:where(.table-shell, .table-wrapper, .data-table, .orders-table, .accounts-table, .customers-table, .permissions-table, .product-table, .admin-table, .responsive-table) {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(.table-shell, .table-wrapper, .data-table, .orders-table, .accounts-table, .customers-table, .permissions-table, .product-table, .admin-table, .responsive-table) table {
+  min-width: 720px;
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --responsive-page-gutter: 20px;
+  }
+
+  .section-block {
+    padding: 3rem var(--responsive-page-gutter);
+  }
+
+  .section-heading {
+    gap: 1rem;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .client-nav {
+    padding-inline: var(--responsive-page-gutter);
+    gap: 1rem;
+  }
+
+  .client-nav .nav-links {
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  :where(.grid, .product-grid, .products-grid, .admin-grid, .card-grid, .stats-grid, .metric-grid, .voucher-grid, .report-kpis, .variant-grid, .topping-grid, .categories-grid, .branches-grid, .customer-grid, .account-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  :where(.hero-actions, .page-actions, .card-actions, .drawer-actions, .toolbar-actions, .form-actions, .modal-actions, .pagination-bar, .board-toolbar, .toolbar-filters, .filters-row, .control-grid, .hero-metrics) {
+    flex-wrap: wrap;
+  }
+
+  :where(.form-grid, .fields-grid, .profile-grid, .detail-grid, .settings-grid, form.two-column, .two-column-form) {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  :where(.drawer, .variant-drawer, .topping-drawer, .modal, .modal-panel, .dialog, .dialog-panel) {
+    max-width: min(94vw, 560px);
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --responsive-page-gutter: 14px;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .client-nav {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 0.875rem var(--responsive-page-gutter);
+  }
+
+  .client-nav .brand {
+    font-size: 1.15rem;
+  }
+
+  .client-nav .brand .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  .client-nav .nav-links,
+  .client-nav .nav-actions {
+    width: 100%;
+    gap: 0.75rem;
+  }
+
+  .section-block {
+    padding: 2.25rem var(--responsive-page-gutter);
+  }
+
+  .section-heading h2 {
+    font-size: clamp(1.45rem, 8vw, 2rem);
+  }
+
+  .client-footer {
+    padding: 3rem var(--responsive-page-gutter) 0;
+  }
+
+  :where(.grid, .product-grid, .products-grid, .admin-grid, .card-grid, .stats-grid, .metric-grid, .voucher-grid, .report-kpis, .variant-grid, .topping-grid, .categories-grid, .branches-grid, .customer-grid, .account-grid) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :where(.form-grid, .fields-grid, .profile-grid, .detail-grid, .settings-grid, form.two-column, .two-column-form, .control-grid) {
+    grid-template-columns: 1fr !important;
+  }
+
+  :where(.hero-actions, .page-actions, .card-actions, .drawer-actions, .toolbar-actions, .form-actions, .modal-actions, .pagination-bar, .board-toolbar, .toolbar-filters, .filters-row, .topbar-actions) {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :where(.hero-actions button, .hero-actions a, .page-actions button, .card-actions button, .drawer-actions button, .toolbar-actions button, .toolbar-actions a, .form-actions button, .modal-actions button) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  :where(input, select, textarea) {
+    width: 100%;
+  }
+
+  :where(.drawer, .variant-drawer, .topping-drawer) {
+    inset: 0 0 0 auto;
+    width: min(100vw, 420px) !important;
+    max-width: 100vw;
+    padding: 18px !important;
+  }
+
+  :where(.modal, .modal-panel, .dialog, .dialog-panel) {
+    width: calc(100vw - 28px) !important;
+    max-width: calc(100vw - 28px);
+    max-height: calc(100vh - 28px);
+    overflow-y: auto;
+  }
+
+  :where(.table-shell, .table-wrapper, .data-table, .orders-table, .accounts-table, .customers-table, .permissions-table, .product-table, .admin-table, .responsive-table) {
+    margin-inline: calc(var(--responsive-page-gutter) * -1);
+    padding-inline: var(--responsive-page-gutter);
+  }
+
+  :where(button, .btn, a[role='button'], input, select, textarea) {
+    min-height: 44px;
+  }
+
+  :where(iframe, map, .map, .map-container, .leaflet-container, video) {
+    max-width: 100%;
+  }
+
+  :where(iframe, .map-container, .leaflet-container) {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --responsive-page-gutter: 12px;
+  }
+
+  :where(.section-block, .admin-content, .client-page) {
+    padding-inline: var(--responsive-page-gutter);
+  }
+
+  :where(h1, .page-title, .hero-title) {
+    font-size: clamp(1.55rem, 9vw, 2.15rem);
+    line-height: 1.12;
+  }
+
+  :where(h2, .section-heading h2) {
+    font-size: clamp(1.35rem, 8vw, 1.9rem);
+  }
+
+  :where(.toolbar, .page-toolbar, .filters, .filter-panel, .summary-card, .stat-card, .product-card, .admin-card, .panel, .card) {
+    border-radius: 18px;
+  }
+
+  :where(.table-shell, .table-wrapper, .data-table, .orders-table, .accounts-table, .customers-table, .permissions-table, .product-table, .admin-table, .responsive-table) table {
+    min-width: 640px;
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --responsive-page-gutter: 10px;
+  }
+
+  :where(.section-block) {
+    padding-block: 1.75rem;
+  }
+
+  :where(.hero-actions, .page-actions, .card-actions, .drawer-actions, .toolbar-actions, .form-actions, .modal-actions) {
+    gap: 0.6rem;
+  }
+}
+

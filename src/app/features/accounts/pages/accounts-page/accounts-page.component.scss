@@ -4,7 +4,7 @@
 
 .account-toolbar {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) auto auto;
+  grid-template-columns: minmax(280px, 1fr) minmax(210px, 260px) auto auto;
   gap: 12px;
   margin: 14px 0 14px;
   padding: 12px;
@@ -16,7 +16,8 @@
   box-shadow: 0 16px 38px rgba(15, 47, 28, 0.06);
 }
 
-.search-box {
+.search-box,
+.branch-filter {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -28,18 +29,29 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 
   .material-symbols-outlined {
+    flex: 0 0 auto;
     color: #719064;
   }
+}
 
-  input {
-    width: 100%;
-    border: 0;
-    outline: none;
-    background: transparent;
-    color: #102018;
-    font-size: 13px;
-    font-weight: 800;
-  }
+.search-box input,
+.branch-filter select {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #102018;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.branch-filter select {
+  cursor: pointer;
+}
+
+.branch-filter select:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .create-account-btn {
@@ -225,7 +237,7 @@
   gap: 12px;
   min-width: 0;
 
-  > .material-symbols-outlined {
+  >.material-symbols-outlined {
     width: 42px;
     height: 42px;
     display: grid;
@@ -603,7 +615,12 @@
     }
 
     .material-symbols-outlined {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
       font-size: 28px;
+      line-height: 1;
     }
   }
 
@@ -632,6 +649,85 @@
       color: #53635a;
       font-size: 12px;
       font-weight: 800;
+    }
+  }
+
+  .scope-card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    gap: 9px;
+    padding: 10px 11px;
+    border-radius: 16px;
+    background:
+      radial-gradient(circle at top right, rgba(142, 230, 168, 0.32), transparent 34%),
+      linear-gradient(135deg, rgba(15, 74, 42, 0.08), rgba(255, 230, 109, 0.2));
+    border: 1px solid rgba(15, 74, 42, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+
+    &.system-scope {
+      background:
+        radial-gradient(circle at top right, rgba(255, 230, 109, 0.36), transparent 34%),
+        linear-gradient(135deg, rgba(15, 51, 32, 0.92), rgba(47, 107, 70, 0.9));
+
+      .scope-card-head span,
+      .scope-card-head strong,
+      .scope-card-head small {
+        color: #fffdf4;
+      }
+    }
+  }
+
+  .scope-card-head {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 8px;
+    align-items: center;
+
+    >span {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 13px;
+      color: #102018;
+      background: linear-gradient(135deg, #ffe66d, #8ee6a8);
+      box-shadow: 0 8px 16px rgba(31, 147, 80, 0.12);
+      font-size: 19px;
+    }
+
+    strong,
+    small {
+      display: block;
+    }
+
+    strong {
+      color: #102018;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    small {
+      margin-top: 2px;
+      color: #53635a;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.28;
+    }
+  }
+
+  .branch-picker {
+    padding-top: 8px;
+    border-top: 1px solid rgba(15, 74, 42, 0.1);
+  }
+
+  .field-hint {
+    color: #6b776f;
+    font-size: 10px;
+    font-weight: 800;
+
+    &.warning {
+      color: #a16207;
     }
   }
 }
@@ -671,7 +767,176 @@
   box-shadow: 0 12px 24px rgba(31, 147, 80, 0.14);
 }
 
+.detail-drawer {
+  .account-detail-card {
+    display: grid;
+    gap: 14px;
+  }
+
+  .detail-profile {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(15, 51, 32, 0.92), rgba(47, 107, 70, 0.9));
+    color: #fffdf4;
+
+    .avatar-preview {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    strong,
+    small {
+      display: block;
+    }
+
+    strong {
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    small {
+      margin-top: 3px;
+      color: rgba(255, 253, 244, 0.7);
+      font-size: 11px;
+      font-weight: 800;
+      word-break: break-all;
+    }
+
+    em {
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 950;
+    }
+  }
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+
+  div {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(15, 74, 42, 0.06);
+    border: 1px solid rgba(15, 74, 42, 0.08);
+  }
+
+  span,
+  strong {
+    display: block;
+  }
+
+  span {
+    color: #6b776f;
+    font-size: 10px;
+    font-weight: 850;
+  }
+
+  strong {
+    margin-top: 4px;
+    color: #102018;
+    font-size: 12px;
+    font-weight: 950;
+    word-break: break-word;
+  }
+}
+
+.role-assignment-list {
+  display: grid;
+  gap: 9px;
+}
+
+.section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #102018;
+  font-size: 12px;
+  font-weight: 950;
+
+  span {
+    color: #2f6b46;
+    font-size: 18px;
+  }
+}
+
+.assignment-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 11px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(255, 230, 109, 0.2), rgba(142, 230, 168, 0.16));
+  border: 1px solid rgba(15, 74, 42, 0.1);
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: #102018;
+    font-size: 12px;
+    font-weight: 950;
+  }
+
+  small {
+    margin-top: 3px;
+    color: #53635a;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  em {
+    padding: 5px 8px;
+    border-radius: 999px;
+    color: #1f6f3f;
+    background: rgba(31, 147, 80, 0.12);
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 950;
+  }
+}
+
+.detail-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  color: #2f6b46;
+  background: rgba(142, 230, 168, 0.16);
+  font-size: 12px;
+  font-weight: 900;
+
+  &.compact {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  span {
+    font-size: 18px;
+  }
+}
+
+.scope-card.compact {
+  padding: 9px 10px;
+}
+
 @media (max-width: 1100px) {
+
   .account-toolbar,
   .account-summary {
     grid-template-columns: 1fr;

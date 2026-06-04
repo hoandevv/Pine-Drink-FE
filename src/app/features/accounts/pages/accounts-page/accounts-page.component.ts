@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest } from 'src/app/core/services/account.service';
+import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest, AccountDetailResponse, AccountRoleAssignmentResponse } from 'src/app/core/services/account.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { finalize } from 'rxjs';
 import { AccessControlService } from 'src/app/core/services/access-control.service';
+import { BranchService } from 'src/app/features/branches/services/branch.service';
+import { Branch } from 'src/app/features/branches/models/branch.model';
 
 interface AccountRow extends AccountListItemResponse {
   displayName: string;
@@ -22,14 +24,18 @@ interface AccountRow extends AccountListItemResponse {
 export class AccountsPageComponent implements OnInit {
   searchTerm = '';
   selectedRole = 'All';
+  selectedBranchId = 'All';
   isLoading = false;
   isDrawerOpen = false;
   isEditDrawerOpen = false;
+  isDetailDrawerOpen = false;
   isCreating = false;
   isUpdating = false;
+  isLoadingDetail = false;
   isUploadingAvatar = false;
   showCreatePassword = false;
   editingAccount: AccountRow | null = null;
+  selectedAccountDetail: AccountDetailResponse | null = null;
   accounts: AccountRow[] = [];
   adminCount = 0;
   lockedCount = 0;
@@ -44,15 +50,19 @@ export class AccountsPageComponent implements OnInit {
   updateForm: UpdateAccountRequest = this.getEmptyUpdateForm();
   readonly internalRoles = ['ADMIN', 'MANAGER', 'DELIVERY'];
   readonly roles = ['All', ...this.internalRoles];
+  availableBranches: Branch[] = [];
+  isLoadingBranches = false;
 
   constructor(
     private accountService: AccountService,
     private authService: AuthService,
-    public readonly accessControl: AccessControlService
+    public readonly accessControl: AccessControlService,
+    private readonly branchService: BranchService
   ) {}
 
   ngOnInit(): void {
     this.loadAccounts();
+    this.loadBranchesForScope();
   }
 
   loadAccounts(): void {
@@ -60,6 +70,7 @@ export class AccountsPageComponent implements OnInit {
     this.accountService.searchAccounts({
       keyword: this.searchTerm.trim() || undefined,
       roleCode: this.selectedRole === 'All' ? undefined : this.selectedRole,
+      branchId: this.selectedBranchId === 'All' ? undefined : this.selectedBranchId,
       page: this.currentPage,
       size: this.pageSize
     }).pipe(
@@ -100,6 +111,12 @@ export class AccountsPageComponent implements OnInit {
     this.loadAccounts();
   }
 
+  filterByBranch(branchId: string): void {
+    this.selectedBranchId = branchId;
+    this.currentPage = 0;
+    this.loadAccounts();
+  }
+
   changePage(page: number): void {
     if (page < 0 || page >= this.totalPages || page === this.currentPage) {
       return;
@@ -121,6 +138,7 @@ export class AccountsPageComponent implements OnInit {
     }
 
     this.createForm = this.getEmptyForm();
+    this.applyRoleScopeDefaults();
     this.showCreatePassword = false;
     this.isDrawerOpen = true;
   }
@@ -137,16 +155,24 @@ export class AccountsPageComponent implements OnInit {
     this.showCreatePassword = !this.showCreatePassword;
   }
 
+  viewAccount(account: AccountRow): void {
+    this.isDetailDrawerOpen = true;
+    this.loadAccountDetail(account.id);
+  }
+
+  closeDetailDrawer(): void {
+    if (this.isLoadingDetail) {
+      return;
+    }
+
+    this.isDetailDrawerOpen = false;
+    this.selectedAccountDetail = null;
+  }
+
   editAccount(account: AccountRow): void {
     this.editingAccount = account;
-    this.updateForm = {
-      fullName: account.fullName || account.displayName,
-      email: account.email || '',
-      phone: account.phone || '',
-      avatarUrl: account.avatarUrl || ''
-      // brandId reserved for future multi-brand assignment flow.
-    };
     this.isEditDrawerOpen = true;
+    this.loadAccountDetail(account.id, true);
   }
 
   closeEditDrawer(): void {
@@ -156,6 +182,7 @@ export class AccountsPageComponent implements OnInit {
 
     this.isEditDrawerOpen = false;
     this.editingAccount = null;
+    this.selectedAccountDetail = null;
   }
 
   updateAccount(): void {
@@ -168,7 +195,6 @@ export class AccountsPageComponent implements OnInit {
       email: this.updateForm.email?.trim() || undefined,
       phone: this.updateForm.phone?.trim() || undefined,
       avatarUrl: this.updateForm.avatarUrl?.trim() || undefined
-      // brandId reserved for future multi-brand assignment flow.
     };
 
     this.isUpdating = true;
@@ -251,15 +277,18 @@ export class AccountsPageComponent implements OnInit {
     const payload: CreateAccountRequest = {
       ...this.createForm,
       username: this.createForm.username.trim(),
+      password: this.createForm.password.trim(),
       fullName: this.createForm.fullName.trim(),
       email: this.createForm.email?.trim() || undefined,
       phone: this.createForm.phone?.trim() || undefined,
       status: 'ACTIVE',
-      scopeType: 'SYSTEM'
+      scopeType: this.createForm.scopeType || 'BRANCH',
+      scopeBranchId: this.createForm.scopeBranchId?.trim() || undefined
     };
 
-    if (!payload.username || !payload.password || !payload.fullName || !payload.roleCode) {
-      window.alert('Vui lòng nhập đủ username, mật khẩu, họ tên và vai trò.');
+    const validationMessage = this.getCreateValidationMessage(payload);
+    if (validationMessage) {
+      window.alert(validationMessage);
       return;
     }
 
@@ -274,10 +303,58 @@ export class AccountsPageComponent implements OnInit {
         this.isDrawerOpen = false;
         this.loadAccounts();
       },
-      error: () => {
-        window.alert('Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.');
+      error: (error) => {
+        window.alert(this.getAccountErrorMessage(error, 'Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.'));
       }
     });
+  }
+
+  private getCreateValidationMessage(payload: CreateAccountRequest): string | null {
+    if (!payload.username || !payload.password || !payload.fullName || !payload.roleCode) {
+      return 'Vui lòng nhập đủ username, mật khẩu, họ tên và vai trò.';
+    }
+
+    if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+      return 'Email chưa đúng định dạng.';
+    }
+
+    if (payload.password.length < 8) {
+      return 'Mật khẩu phải có ít nhất 8 ký tự.';
+    }
+
+    if (!/[A-Z]/.test(payload.password) || !/[a-z]/.test(payload.password) || !/\d/.test(payload.password)) {
+      return 'Mật khẩu cần có chữ hoa, chữ thường và số.';
+    }
+
+    if (payload.phone && !/^(0|\+84)\d{9,10}$/.test(payload.phone)) {
+      return 'Số điện thoại chưa đúng định dạng.';
+    }
+
+    if (payload.scopeType === 'BRANCH' && !payload.scopeBranchId) {
+      return 'Vui lòng chọn chi nhánh cho Manager/Delivery.';
+    }
+
+    return null;
+  }
+
+  private getAccountErrorMessage(error: { errorCode?: string; message?: string; fieldErrors?: { field: string; message: string }[] }, fallback: string): string {
+    const errorMessages: Record<string, string> = {
+      AUTH_010: 'Mật khẩu chưa đủ mạnh. Vui lòng dùng ít nhất 8 ký tự gồm chữ hoa, chữ thường và số.',
+      AUTH_013: 'Tên đăng nhập này đã được sử dụng.',
+      AUTH_014: 'Email này đã được sử dụng.',
+      AUTH_015: 'Số điện thoại này đã được sử dụng.',
+      AUTH_021: 'Tài khoản chưa được gán vào chi nhánh phù hợp.'
+    };
+
+    if (error?.fieldErrors?.length) {
+      return error.fieldErrors.map((fieldError) => `${fieldError.field}: ${fieldError.message}`).join('\n');
+    }
+
+    if (error?.errorCode && errorMessages[error.errorCode]) {
+      return errorMessages[error.errorCode];
+    }
+
+    return error?.message || fallback;
   }
 
   private getEmptyForm(): CreateAccountRequest {
@@ -289,8 +366,55 @@ export class AccountsPageComponent implements OnInit {
       phone: '',
       roleCode: 'DELIVERY',
       status: 'ACTIVE',
-      scopeType: 'SYSTEM'
+      scopeType: 'BRANCH',
+      scopeBranchId: ''
     };
+  }
+
+  onCreateRoleChange(roleCode: string): void {
+    this.createForm.roleCode = roleCode;
+    this.applyRoleScopeDefaults();
+  }
+
+  private applyRoleScopeDefaults(): void {
+    if (this.createForm.roleCode === 'ADMIN') {
+      this.createForm.scopeType = 'SYSTEM';
+      this.createForm.scopeBranchId = undefined;
+      return;
+    }
+
+    this.createForm.scopeType = 'BRANCH';
+    if (!this.createForm.scopeBranchId && this.availableBranches.length === 1) {
+      this.createForm.scopeBranchId = this.availableBranches[0].id;
+    }
+  }
+
+  private loadBranchesForScope(): void {
+    this.isLoadingBranches = true;
+    this.branchService.getActiveBranches(0, 200).pipe(
+      finalize(() => {
+        this.isLoadingBranches = false;
+      })
+    ).subscribe({
+      next: (page) => {
+        const branches = page.content || [];
+        this.availableBranches = this.filterBranchesByCurrentScope(branches);
+        this.applyRoleScopeDefaults();
+      },
+      error: () => {
+        this.availableBranches = [];
+      }
+    });
+  }
+
+  private filterBranchesByCurrentScope(branches: Branch[]): Branch[] {
+    const scope = this.authService.getCurrentUser()?.scope;
+    if (!scope || scope.type === 'SYSTEM') {
+      return branches;
+    }
+
+    const allowedIds = new Set(scope.branchIds || []);
+    return branches.filter((branch) => allowedIds.has(branch.id));
   }
 
   private getEmptyUpdateForm(): UpdateAccountRequest {
@@ -299,8 +423,64 @@ export class AccountsPageComponent implements OnInit {
       email: '',
       phone: '',
       avatarUrl: ''
-      // brandId reserved for future multi-brand assignment flow.
     };
+  }
+
+  private loadAccountDetail(accountId: string, forEdit = false): void {
+    this.isLoadingDetail = true;
+    this.accountService.getAccountDetail(accountId).pipe(
+      finalize(() => {
+        this.isLoadingDetail = false;
+      })
+    ).subscribe({
+      next: (res) => {
+        const detail = res.data;
+        if (!detail) {
+          return;
+        }
+
+        this.selectedAccountDetail = detail;
+        if (forEdit) {
+          this.patchUpdateForm(detail);
+        }
+      },
+      error: () => {
+        window.alert('Không thể tải đầy đủ thông tin tài khoản.');
+      }
+    });
+  }
+
+  private patchUpdateForm(detail: AccountDetailResponse): void {
+    this.updateForm = {
+      fullName: detail.fullName || '',
+      email: detail.email || '',
+      phone: detail.phone || '',
+      avatarUrl: detail.avatarUrl || ''
+    };
+  }
+
+  getDetailPrimaryRole(): AccountRoleAssignmentResponse | null {
+    return this.selectedAccountDetail?.roleAssignments?.[0] || null;
+  }
+
+  getRoleAssignments(detail: AccountDetailResponse | null): AccountRoleAssignmentResponse[] {
+    return detail?.roleAssignments || [];
+  }
+
+  getBranchName(branchId?: string | null): string {
+    if (!branchId) {
+      return 'Toàn hệ thống';
+    }
+
+    return this.availableBranches.find((branch) => branch.id === branchId)?.name || branchId;
+  }
+
+  formatDateTime(value?: string | null): string {
+    if (!value) {
+      return 'Chưa có';
+    }
+
+    return new Date(value).toLocaleString('vi-VN');
   }
 
   private getPrimaryRole(account: AccountListItemResponse): string {

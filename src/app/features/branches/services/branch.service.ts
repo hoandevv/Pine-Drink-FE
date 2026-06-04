@@ -4,18 +4,17 @@ import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
-import { TokenService } from '../../../core/services/token.service';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
-import { BranchCreateRequest, BranchUpdateRequest, BranchStatusUpdateRequest } from '../models/branch-request.model';
+import { BranchCreateRequest, BranchStatusUpdateRequest, BranchUpdateRequest } from '../models/branch-request.model';
+import { BranchHours, BranchHoursRequest } from '../models/branch-hours.model';
 import { Branch } from '../models/branch.model';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class BranchService {
   private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.branches}`;
-  private readonly defaultBrandId = '00000000-0000-0000-0000-000000000001';
 
-  constructor(private readonly http: HttpClient, private readonly tokenService: TokenService) {}
+  constructor(private readonly http: HttpClient) {}
 
   getBranches(page: number, size: number, keyword?: string, status?: string): Observable<PageResponse<Branch>> {
     let params = new HttpParams().set('page', page).set('size', size);
@@ -24,13 +23,14 @@ export class BranchService {
     if (status) { params = params.set('status', status); }
 
     return this.http
-      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(this.getBrandBranchesUrl(), { params })
+      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(this.apiUrl, { params })
       .pipe(map((response) => this.normalizePageResponse(response.data, page, size)));
   }
 
   getActiveBranches(page = 0, size = 100): Observable<PageResponse<Branch>> {
+    const params = new HttpParams().set('page', page).set('size', size);
     return this.http
-      .get<BaseResponse<Branch[]>>(`${this.apiUrl}/brand/${this.getBrandId()}/active`)
+      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(`${this.apiUrl}/active`, { params })
       .pipe(map((response) => this.normalizePageResponse(response.data, page, size)));
   }
 
@@ -64,7 +64,7 @@ export class BranchService {
   }
 
   createBranch(request: BranchCreateRequest): Observable<Branch> {
-    return this.http.post<BaseResponse<Branch>>(this.apiUrl, this.withBrandId(request)).pipe(map((response) => response.data));
+    return this.http.post<BaseResponse<Branch>>(this.apiUrl, request).pipe(map((response) => response.data));
   }
 
   updateBranch(id: string, request: BranchUpdateRequest): Observable<Branch> {
@@ -83,19 +83,27 @@ export class BranchService {
     return this.updateBranchStatus(id, { status: 'ACTIVE' });
   }
 
-  private getBrandBranchesUrl(): string {
-    const brandId = this.getBrandId();
-    return brandId ? `${this.apiUrl}/brand/${brandId}` : this.apiUrl;
+  getBranchHours(branchId: string): Observable<BranchHours[]> {
+    return this.http
+      .get<BaseResponse<BranchHours[]>>(`${this.apiUrl}/${branchId}/hours`)
+      .pipe(map((response) => response.data || []));
   }
 
-  private withBrandId(request: BranchCreateRequest): BranchCreateRequest {
-    return {
-      ...request,
-      brandId: request.brandId || this.getBrandId()
-    };
+  createBranchHours(branchId: string, request: BranchHoursRequest): Observable<BranchHours> {
+    return this.http
+      .post<BaseResponse<BranchHours>>(`${this.apiUrl}/${branchId}/hours`, request)
+      .pipe(map((response) => response.data));
   }
 
-  private getBrandId(): string {
-    return this.tokenService.getStoredUser()?.brandId || this.defaultBrandId;
+  updateBranchHours(branchId: string, hoursId: string, request: BranchHoursRequest): Observable<BranchHours> {
+    return this.http
+      .put<BaseResponse<BranchHours>>(`${this.apiUrl}/${branchId}/hours/${hoursId}`, request)
+      .pipe(map((response) => response.data));
+  }
+
+  deleteBranchHours(branchId: string, hoursId: string): Observable<void> {
+    return this.http
+      .delete<BaseResponse<void>>(`${this.apiUrl}/${branchId}/hours/${hoursId}`)
+      .pipe(map((response) => response.data));
   }
 }

@@ -18,6 +18,8 @@ export const API_ENDPOINTS = {
     avatar: '/profile/avatar'
   },
   products: '/products',
+  toppings: '/toppings',
+  categories: '/categories',
   branches: '/branches',
   orders: '/orders',
   customerAddress: {

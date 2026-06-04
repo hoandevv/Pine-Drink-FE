@@ -9,8 +9,6 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { CreateAddressRequest, CustomerAddress, UpdateAddressRequest } from '../../../../shared/models/customer-address.model';
 import { MapPickerResult } from '../../components/map-picker/map-picker.component';
 
-type InputMode = 'manual' | 'map';
-
 @Component({
   selector: 'app-address-form',
   templateUrl: './address-form.component.html',
@@ -18,7 +16,6 @@ type InputMode = 'manual' | 'map';
 })
 export class AddressFormComponent implements OnInit {
   addressForm!: FormGroup;
-  inputMode: InputMode = 'manual';
   isEditMode = false;
   addressId: string | null = null;
   isSubmitting = false;
@@ -91,24 +88,8 @@ export class AddressFormComponent implements OnInit {
       longitude: address.longitude,
       isDefault: address.isDefault
     });
-
-    // Set input mode based on whether coordinates exist
-    if (address.latitude && address.longitude) {
-      this.inputMode = 'map';
-    }
   }
 
-  switchMode(mode: InputMode): void {
-    this.inputMode = mode;
-
-    // Clear coordinates when switching to manual mode
-    if (mode === 'manual') {
-      this.addressForm.patchValue({
-        latitude: null,
-        longitude: null
-      });
-    }
-  }
 
   onLocationSelected(location: MapPickerResult): void {
     this.addressForm.patchValue({
@@ -128,13 +109,10 @@ export class AddressFormComponent implements OnInit {
       return;
     }
 
-    // Validate coordinates for map mode
-    if (this.inputMode === 'map') {
-      const { latitude, longitude } = this.addressForm.value;
-      if (!latitude || !longitude) {
-        this.toastService.error('Vui lòng chọn vị trí trên bản đồ');
-        return;
-      }
+    const { latitude, longitude } = this.addressForm.value;
+    if (!latitude || !longitude) {
+      this.toastService.error('Vui lòng chọn vị trí trên bản đồ');
+      return;
     }
 
     this.isSubmitting = true;

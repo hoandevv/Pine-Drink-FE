@@ -11,8 +11,6 @@ export interface Branch {
   supportsPickup?: boolean;
   supportsDelivery?: boolean;
   averagePreparationMinutes?: number;
-  brandId?: string;
-  brandName?: string;
   status: BranchStatus;
   createdAt?: string;
   updatedAt?: string;

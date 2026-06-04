@@ -1,114 +1,201 @@
 <div class="menu-page">
-  <!-- Info Bar -->
-  <div class="info-bar" *ngIf="selectedBranch">
-    <div class="branch-info">
-      <span class="material-symbols-outlined">location_on</span>
-      <strong>{{ selectedBranch.name }}</strong>
-      <small>{{ selectedBranch.distance }} - {{ selectedBranch.estimatedTime }}</small>
-    </div>
-    <button class="ghost-button" (click)="changeBranch()">{{ 'menu.changeBranch' | translate }}</button>
-  </div>
+  <section class="menu-hero">
+    <div class="hero-top">
+      <div class="hero-copy">
+        <span class="eyebrow"><i></i> Pine Drink</span>
+        <h1>Chọn món nhanh, uống thật fresh.</h1>
+        <p>Menu đang bán được cập nhật trực tiếp từ hệ thống.</p>
+      </div>
 
-  <!-- Search & Filter Bar -->
-  <div class="search-filter-bar">
-    <div class="search-box">
-      <span class="material-symbols-outlined">search</span>
-      <input 
-        type="text" 
-        [placeholder]="'menu.search' | translate" 
-        [(ngModel)]="searchQuery"
-        (input)="onSearchChange()"
-      />
+      <div class="hero-card" *ngIf="selectedBranch">
+        <span class="material-symbols-outlined">location_on</span>
+        <div>
+          <small>Chi nhánh đang chọn</small>
+          <strong>{{ selectedBranch.name }}</strong>
+          <div class="branch-meta">
+            <span class="address-line">{{ selectedBranch.address || 'Chưa cập nhật địa chỉ' }}</span>
+            <span class="time-pill">
+              <span class="material-symbols-outlined">schedule</span>
+              {{ selectedBranch.averagePreparationMinutes || 15 }} phút
+            </span>
+          </div>
+        </div>
+        <button id="client-change-branch-button" type="button" (click)="changeBranch()">Đổi</button>
+      </div>
     </div>
-    <div class="sort-buttons">
-      <button 
-        type="button" 
-        [class.active]="sortBy === 'best-seller'"
-        (click)="selectSort('best-seller')"
-      >
-        {{ 'menu.bestSeller' | translate }}
-      </button>
-      <button 
-        type="button" 
-        [class.active]="sortBy === 'newest'"
-        (click)="selectSort('newest')"
-      >
-        {{ 'menu.newest' | translate }}
-      </button>
-      <button 
-        type="button" 
-        [class.active]="sortBy === 'price-low'"
-        (click)="selectSort('price-low')"
-      >
-        {{ 'menu.priceLow' | translate }}
-      </button>
-    </div>
-  </div>
 
-  <!-- Category Tabs -->
-  <div class="category-tabs">
-    <button 
-      *ngFor="let category of categories" 
+    <div class="menu-toolbar" aria-label="Tìm kiếm và lọc menu">
+      <label class="search-box" for="client-menu-search-input">
+        <span class="material-symbols-outlined">search</span>
+        <input
+          id="client-menu-search-input"
+          type="text"
+          placeholder="Tìm matcha, trà, cà phê..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchChange()"
+        />
+      </label>
+
+      <div class="sort-buttons" aria-label="Sắp xếp sản phẩm">
+        <button id="sort-best-seller-button" type="button" [class.active]="sortBy === 'best-seller'" (click)="selectSort('best-seller')">
+          Best seller
+        </button>
+        <button id="sort-newest-button" type="button" [class.active]="sortBy === 'newest'" (click)="selectSort('newest')">
+          Mới nhất
+        </button>
+        <button id="sort-price-low-button" type="button" [class.active]="sortBy === 'price-low'" (click)="selectSort('price-low')">
+          Giá thấp
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="category-strip" aria-label="Danh mục sản phẩm">
+    <button
+      *ngFor="let category of categories"
       type="button"
       [class.active]="selectedCategoryId === category.id"
       (click)="selectCategory(category.id)"
     >
-      <span class="material-symbols-outlined">{{ category.icon }}</span>
-      {{ category.name }}
+      <span class="category-icon material-symbols-outlined">{{ category.icon }}</span>
+      <span>{{ category.name }}</span>
+      <em>{{ category.count }}</em>
     </button>
+  </section>
+
+  <div class="menu-alert" *ngIf="errorMessage">
+    <span class="material-symbols-outlined">error</span>
+    <p>{{ errorMessage }}</p>
+    <button type="button" (click)="loadData()">Thử lại</button>
   </div>
 
-  <!-- Main Content -->
-  <div class="menu-content">
-    <!-- Product Grid -->
-    <div class="product-grid-section">
-      <div class="product-grid">
-        <article *ngFor="let product of filteredProducts" class="product-card">
-          <div class="product-image" (click)="addToCart(product)" style="cursor: pointer;">
-            <img [src]="product.image" [alt]="product.name" />
-            <span *ngIf="product.badge" class="badge">{{ product.badge }}</span>
-          </div>
+  <section class="loading-grid" *ngIf="loading" aria-label="Đang tải menu">
+    <article *ngFor="let item of [1, 2, 3, 4, 5, 6]" class="skeleton-card"></article>
+  </section>
+
+  <div class="menu-content" *ngIf="!loading">
+    <section class="product-grid-section">
+      <div class="section-heading">
+        <div>
+          <span>{{ filteredProducts.length }} món đang hiển thị</span>
+          <h2>{{ selectedCategoryId === 'all' ? 'Tất cả đồ uống' : 'Đồ uống theo danh mục' }}</h2>
+        </div>
+      </div>
+
+      <div class="product-grid" *ngIf="filteredProducts.length > 0; else emptyMenu">
+        <article
+          *ngFor="let product of pagedProducts"
+          class="product-card"
+          [class.featured]="product.featured"
+          [class.sold-out]="isProductSoldOut(product)"
+        >
+          <button
+            class="product-image"
+            type="button"
+            (click)="addToCart(product)"
+            [disabled]="isProductSoldOut(product)"
+            [attr.aria-label]="'Xem ' + product.name"
+          >
+            <img *ngIf="product.imageUrl; else productFallback" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+            <ng-template #productFallback>
+              <div class="image-fallback">
+                <span class="material-symbols-outlined">local_cafe</span>
+              </div>
+            </ng-template>
+            <span *ngIf="productBadge(product)" class="badge" [class.sold-out-badge]="isProductSoldOut(product)">{{ productBadge(product) }}</span>
+            <span *ngIf="isProductSoldOut(product)" class="sold-out-overlay">
+              <span class="material-symbols-outlined">inventory_2</span>
+              Tạm hết tại chi nhánh
+            </span>
+          </button>
+
           <div class="product-body">
             <div class="product-meta">
-              <span>{{ product.categoryName }}</span>
-              <span class="rating">
-                <span class="material-symbols-outlined">star</span>
-                {{ product.rating }}
+              <span>{{ product.categoryName || 'Pine Drink' }}</span>
+              <span *ngIf="product.preparationMinutes" class="prep-time">
+                <span class="material-symbols-outlined">schedule</span>
+                {{ product.preparationMinutes }} phút
               </span>
             </div>
-            <h3 (click)="addToCart(product)" style="cursor: pointer;">{{ product.name }}</h3>
-            <p>{{ product.description }}</p>
+
+            <h3 (click)="addToCart(product)">{{ product.name }}</h3>
+            <p>{{ product.description || 'Món Pine Drink đang chờ cập nhật mô tả chi tiết.' }}</p>
+
             <div class="product-footer">
-              <strong>{{ formatPrice(product.price) }}</strong>
-              <button type="button" class="add-button" (click)="addToCart(product)">
-                <span class="material-symbols-outlined">add</span>
+              <strong>{{ formatPrice(productDisplayPrice(product)) }}</strong>
+              <button
+                type="button"
+                class="add-button"
+                (click)="addToCart(product)"
+                [disabled]="isProductSoldOut(product)"
+                [attr.aria-label]="'Thêm ' + product.name"
+              >
+                <span class="material-symbols-outlined">{{ isProductSoldOut(product) ? 'block' : 'add' }}</span>
               </button>
             </div>
           </div>
         </article>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="filteredProducts.length === 0" class="empty-state">
-        <span class="material-symbols-outlined">search_off</span>
-        <h3>{{ 'menu.emptyTitle' | translate }}</h3>
-        <p>{{ 'menu.emptyDesc' | translate }}</p>
-      </div>
-    </div>
+      <nav class="menu-pagination" *ngIf="filteredProducts.length > 0" aria-label="Phân trang sản phẩm">
+        <div class="pagination-info">
+          Hiển thị {{ paginationStart }}-{{ paginationEnd }} / {{ filteredProducts.length }} món
+        </div>
 
-    <!-- Sticky Cart Sidebar (Desktop) -->
+        <div class="pagination-actions">
+          <button
+            id="menu-prev-page-button"
+            type="button"
+            class="page-nav"
+            [disabled]="currentPage === 1"
+            (click)="previousPage()"
+          >
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+
+          <button
+            *ngFor="let page of pageNumbers"
+            type="button"
+            class="page-number"
+            [class.active]="page === currentPage"
+            (click)="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            id="menu-next-page-button"
+            type="button"
+            class="page-nav"
+            [disabled]="currentPage === totalPages"
+            (click)="nextPage()"
+          >
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </nav>
+
+      <ng-template #emptyMenu>
+        <div class="empty-state">
+          <span class="material-symbols-outlined">search_off</span>
+          <h3>Chưa có sản phẩm phù hợp</h3>
+          <p>Thử đổi danh mục, từ khóa hoặc kiểm tra sản phẩm đang bật trong trang admin.</p>
+        </div>
+      </ng-template>
+    </section>
+
     <aside class="cart-sidebar" *ngIf="cartItems.length > 0">
       <div class="cart-header">
-        <h3>{{ 'menu.cart.title' | translate }}</h3>
-        <span class="cart-count">{{ cartCount }} {{ 'menu.cart.items' | translate }}</span>
+        <h3>Giỏ hàng</h3>
+        <span class="cart-count">{{ cartCount }} món</span>
       </div>
-      
+
       <div class="cart-items">
         <div *ngFor="let item of cartItems" class="cart-item">
           <img [src]="item.productImage" [alt]="item.productName" />
           <div class="cart-item-info">
             <h4>{{ item.productName }}</h4>
-            <p>Size {{ item.size }} - Đá {{ item.iceLevel }}% - Đường {{ item.sugarLevel }}%</p>
+            <p>Size {{ item.size }} • Đá {{ item.iceLevel }}% • Đường {{ item.sugarLevel }}%</p>
             <div class="cart-item-footer">
               <span class="quantity">x{{ item.quantity }}</span>
               <strong>{{ formatPrice(item.price * item.quantity) }}</strong>
@@ -119,32 +206,16 @@
 
       <div class="cart-summary">
         <div class="summary-row">
-          <span>{{ 'menu.cart.subtotal' | translate }}</span>
+          <span>Tạm tính</span>
           <strong>{{ formatPrice(cartTotal) }}</strong>
         </div>
-        <button class="primary-button full-width" (click)="viewCart()">
-          {{ 'menu.cart.viewCart' | translate }}
-        </button>
-      </div>
-
-      <div class="voucher-banner">
-        <span class="material-symbols-outlined">local_offer</span>
-        <div>
-          <strong>GIAM20K</strong>
-          <p>Giảm 20K cho đơn từ 100K</p>
-        </div>
+        <button class="primary-button full-width" type="button" (click)="viewCart()">Xem giỏ hàng</button>
       </div>
     </aside>
   </div>
 
-  <!-- Mobile Floating Cart -->
-  <button 
-    *ngIf="cartItems.length > 0" 
-    class="mobile-cart" 
-    type="button"
-    (click)="viewCart()"
-  >
+  <button *ngIf="cartItems.length > 0" class="mobile-cart" type="button" (click)="viewCart()">
     <span class="material-symbols-outlined">shopping_basket</span>
-    {{ cartCount }} {{ 'menu.cart.items' | translate }} - {{ formatPrice(cartTotal) }}
+    {{ cartCount }} món • {{ formatPrice(cartTotal) }}
   </button>
 </div>

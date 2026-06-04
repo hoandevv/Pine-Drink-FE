@@ -12,8 +12,18 @@
     <!-- Product Image Section -->
     <section class="product-image-section">
       <div class="image-wrapper">
-        <img [src]="product.image" [alt]="product.name" class="product-image">
-        <span *ngIf="product.badge" class="product-badge">{{ product.badge }}</span>
+        <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" class="product-image">
+        <div *ngIf="!product.imageUrl" class="product-image image-fallback">
+          <span class="material-symbols-outlined">local_cafe</span>
+        </div>
+        <span *ngIf="productBadge" class="product-badge">{{ productBadge }}</span>
+        <div class="stock-overlay" *ngIf="selectedBranchId" [class.is-unavailable]="isProductUnavailable">
+          <span class="material-symbols-outlined">{{ isProductUnavailable ? 'block' : 'verified' }}</span>
+          <div>
+            <strong>{{ availabilityLoading ? 'Đang kiểm tra' : (isProductUnavailable ? 'Tạm hết tại chi nhánh' : 'Còn hàng') }}</strong>
+            <small>{{ selectedBranch?.name }}</small>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -25,19 +35,22 @@
           <h2 class="product-name">{{ product.name }}</h2>
           <p class="product-category">{{ product.categoryName }}</p>
         </div>
-        <div class="product-rating">
-          <span class="material-symbols-outlined">star</span>
-          <span class="rating-value">{{ product.rating }}</span>
+        <div class="product-rating" *ngIf="product.preparationMinutes">
+          <span class="material-symbols-outlined">schedule</span>
+          <span class="rating-value">{{ product.preparationMinutes }} phút</span>
         </div>
       </div>
 
       <p class="product-description">{{ product.description }}</p>
 
+
+
       <!-- Size Selection -->
       <div class="customization-group">
         <h3 class="group-title">
           <span class="material-symbols-outlined">straighten</span>
-          {{ 'product.size' | translate }}
+          Chọn size
+          <span class="optional-label" *ngIf="sizeOptions.length">{{ sizeOptions.length }} lựa chọn</span>
         </h3>
         <div class="size-options">
           <button
@@ -48,11 +61,19 @@
             (click)="selectSize(size.id)"
           >
             <span class="size-label">{{ size.label }}</span>
+            <span class="size-name" *ngIf="size.variant?.variantName">{{ size.variant?.variantName }}</span>
             <span class="size-price" *ngIf="size.priceModifier !== 0">
               {{ size.priceModifier > 0 ? '+' : '' }}{{ formatPrice(size.priceModifier) }}
             </span>
+            <span class="size-price is-included" *ngIf="size.priceModifier === 0">Giá gốc</span>
           </button>
         </div>
+        <p class="variant-hint" *ngIf="selectedVariant">
+          {{ selectedVariant.variantName }} · Giá size {{ formatPrice(basePrice) }}
+        </p>
+        <p class="variant-hint" *ngIf="!selectedVariant && sizeOptions.length === 1">
+          Sản phẩm chưa có size riêng, dùng giá mặc định.
+        </p>
       </div>
 
       <!-- Ice Level -->
@@ -164,15 +185,15 @@
       </div>
     </div>
 
-    <button type="button" class="add-to-cart-button" (click)="addToCart()">
-      <span class="material-symbols-outlined">shopping_cart</span>
-      {{ 'product.addToCart' | translate }}
+    <button type="button" class="add-to-cart-button" [disabled]="isProductUnavailable" (click)="addToCart()">
+      <span class="material-symbols-outlined">{{ isProductUnavailable ? 'block' : 'shopping_cart' }}</span>
+      {{ isProductUnavailable ? 'Tạm hết tại chi nhánh' : ('product.addToCart' | translate) }}
     </button>
   </div>
 </div>
 
 <!-- Loading/Error State -->
 <div class="empty-state" *ngIf="!product">
-  <span class="material-symbols-outlined">error</span>
-  <p>{{ 'product.notFound' | translate }}</p>
+  <span class="material-symbols-outlined">{{ loading ? 'hourglass_empty' : 'error' }}</span>
+  <p>{{ loading ? 'Đang tải chi tiết sản phẩm...' : (errorMessage || ('product.notFound' | translate)) }}</p>
 </div>

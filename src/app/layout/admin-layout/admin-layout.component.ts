@@ -15,6 +15,12 @@ interface NavItem {
   permissions?: string[];
   roles?: string[];
   badge?: string;
+  compact?: boolean;
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
 }
 
 @Component({
@@ -23,26 +29,61 @@ interface NavItem {
   styleUrls: ['./admin-layout.component.scss']
 })
 export class AdminLayoutComponent {
-  readonly navItems: NavItem[] = [
-    { label: 'Delivery Hub', icon: 'local_shipping', route: '/admin/dashboard', roles: ['DELIVERY'] },
-    { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard', roles: ['ADMIN', 'MANAGER'] },
-    { label: 'Products', icon: 'local_cafe', route: '/admin/products', roles: ['ADMIN', 'MANAGER'] },
-    { label: 'Branches', icon: 'storefront', route: '/admin/branches', permission: 'BRANCH_VIEW' },
-    { label: 'Categories', icon: 'category', route: '/admin/categories', roles: ['ADMIN', 'MANAGER'] },
-    { label: 'Toppings', icon: 'icecream', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] },
-    { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', roles: ['ADMIN', 'MANAGER', 'DELIVERY'], badge: '18' },
-    { label: 'Customers', icon: 'groups', route: '/admin/customers', roles: ['ADMIN', 'MANAGER'] },
-    { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts', permission: 'ACCOUNT_VIEW' },
-    { label: 'Permissions', icon: 'verified_user', route: '/admin/permissions', permission: 'ROLE_PERMISSION_VIEW' },
-    { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers', roles: ['ADMIN', 'MANAGER'] },
-    { label: 'Reports', icon: 'monitoring', route: '/admin/reports', roles: ['ADMIN', 'MANAGER'] }
+  readonly navSections: NavSection[] = [
+    {
+      title: 'Tổng quan',
+      items: [
+        { label: 'Delivery Hub', icon: 'local_shipping', route: '/admin/dashboard', roles: ['DELIVERY'] },
+        { label: 'Dashboard', icon: 'dashboard', route: '/admin/dashboard', roles: ['ADMIN', 'MANAGER'] }
+      ]
+    },
+    {
+      title: 'Vận hành',
+      items: [
+        { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', roles: ['ADMIN', 'MANAGER', 'DELIVERY'], badge: '18' },
+        { label: 'Branches', icon: 'storefront', route: '/admin/branches', permission: 'BRANCH_VIEW' }
+      ]
+    },
+    {
+      title: 'Menu',
+      items: [
+        { label: 'Products', icon: 'local_cafe', route: '/admin/products', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Categories', icon: 'category', route: '/admin/categories', roles: ['ADMIN', 'MANAGER'] }
+      ]
+    },
+    {
+      title: 'Cấu hình sản phẩm',
+      items: [
+        { label: 'Variants', icon: 'tune', route: '/admin/products/variants', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Product Toppings', icon: 'icecream', route: '/admin/products/toppings', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Topping Master', icon: 'bakery_dining', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] }
+      ]
+    },
+    {
+      title: 'Người dùng & quyền',
+      items: [
+        { label: 'Customers', icon: 'groups', route: '/admin/customers', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Accounts', icon: 'admin_panel_settings', route: '/admin/accounts', permission: 'ACCOUNT_VIEW' },
+        { label: 'Permissions', icon: 'verified_user', route: '/admin/permissions', permission: 'ROLE_PERMISSION_VIEW' }
+      ]
+    },
+    {
+      title: 'Kinh doanh',
+      items: [
+        { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Reports', icon: 'monitoring', route: '/admin/reports', roles: ['ADMIN', 'MANAGER'] }
+      ]
+    }
   ];
 
-  get visibleNavItems(): NavItem[] {
-    return this.navItems.filter((item) => this.canViewNavItem(item));
+  get visibleNavSections(): NavSection[] {
+    return this.navSections
+      .map((section) => ({ ...section, items: section.items.filter((item) => this.canViewNavItem(item)) }))
+      .filter((section) => section.items.length > 0);
   }
 
   sidebarOpen = false;
+  sidebarCollapsed = false;
   currentUser: AuthUser | null = null;
 
   constructor(
@@ -78,6 +119,10 @@ export class AdminLayoutComponent {
 
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
+  }
+
+  toggleSidebarCollapse(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
   isActive(route: string): boolean {
