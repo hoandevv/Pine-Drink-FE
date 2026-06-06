@@ -85,6 +85,11 @@ const routes: Routes = [
         loadChildren: () => import('./features/vouchers/vouchers.module').then((m) => m.VouchersModule)
       },
       {
+        path: 'chat-realtime',
+        data: { roles: ['ADMIN', 'MANAGER', 'DELIVERY'] },
+        loadChildren: () => import('./features/chat-realtime/chat-realtime.module').then((m) => m.ChatRealtimeModule)
+      },
+      {
         path: 'reports',
         data: { roles: ['ADMIN', 'MANAGER'] },
         loadChildren: () => import('./features/reports/reports.module').then((m) => m.ReportsModule)

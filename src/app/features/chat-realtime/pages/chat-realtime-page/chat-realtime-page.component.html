@@ -1,0 +1,97 @@
+<section class="chat-shell">
+  <header class="chat-hero">
+    <div>
+      <p class="eyebrow">Realtime lab</p>
+      <h1>Chat Operations</h1>
+      <p class="subtitle">Test nhanh WebSocket/STOMP: room history, live subscribe, gửi message realtime.</p>
+    </div>
+    <div class="status-pill" [class.online]="connected">
+      <span></span>
+      {{ connected ? 'Connected' : 'Offline / Connecting' }}
+    </div>
+  </header>
+
+  <div class="manual-card">
+    <label for="manual-room-id">Room ID test nhanh</label>
+    <div class="manual-row">
+      <input id="manual-room-id" type="text" [(ngModel)]="manualRoomId" placeholder="Paste roomId nếu list chưa có" />
+      <button id="connect-manual-room" type="button" (click)="connectManualRoom()">Connect</button>
+      <button id="reload-chat-rooms" type="button" class="ghost" (click)="loadRooms()">Reload rooms</button>
+    </div>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </div>
+
+  <div class="chat-grid">
+    <aside class="rooms-panel">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Inbox</p>
+          <h2>Rooms</h2>
+        </div>
+        <span>{{ rooms.length }}</span>
+      </div>
+
+      <div class="loading" *ngIf="loadingRooms">Đang tải rooms...</div>
+      <button
+        *ngFor="let room of rooms; trackBy: trackByRoom"
+        type="button"
+        class="room-card"
+        [class.active]="activeRoom?.id === room.id"
+        (click)="selectRoom(room)"
+      >
+        <div class="avatar">{{ (room.customerName || room.title || room.roomCode || 'R').charAt(0) }}</div>
+        <div class="room-info">
+          <strong>{{ room.title || room.customerName || room.roomCode || room.id }}</strong>
+          <small>{{ room.lastMessagePreview || 'No messages yet' }}</small>
+        </div>
+        <time>{{ room.lastMessageAt | date: 'HH:mm' }}</time>
+      </button>
+
+      <div class="empty" *ngIf="!loadingRooms && !rooms.length">
+        Chưa có room. Paste roomId để test manual bro.
+      </div>
+    </aside>
+
+    <main class="conversation-panel">
+      <div class="conversation-head">
+        <div>
+          <p class="eyebrow">Active room</p>
+          <h2>{{ activeRoom?.title || activeRoom?.customerName || activeRoom?.roomCode || activeRoom?.id || 'Chọn room' }}</h2>
+          <small>{{ activeRoom?.id || 'Room id sẽ hiển thị tại đây' }}</small>
+        </div>
+        <span class="type-chip">{{ activeRoom?.roomType || 'N/A' }}</span>
+      </div>
+
+      <div class="messages" id="chat-message-list">
+        <div class="loading" *ngIf="loadingMessages">Đang tải messages...</div>
+        <article
+          *ngFor="let message of messages; trackBy: trackByMessage"
+          class="message-bubble"
+          [class.mine]="isMine(message)"
+        >
+          <div class="message-meta">
+            <strong>{{ message.senderName || message.senderAccountId }}</strong>
+            <time>{{ message.createdAt | date: 'dd/MM HH:mm:ss' }}</time>
+          </div>
+          <p>{{ message.content }}</p>
+        </article>
+        <div class="empty conversation-empty" *ngIf="!loadingMessages && !messages.length">
+          Chưa có message. Gửi thử bên dưới để test realtime.
+        </div>
+      </div>
+
+      <form class="composer" (ngSubmit)="sendMessage()">
+        <input
+          id="chat-message-input"
+          name="messageContent"
+          type="text"
+          [(ngModel)]="messageContent"
+          [disabled]="!activeRoom"
+          placeholder="Nhập tin nhắn test..."
+          autocomplete="off"
+        />
+        <button id="send-chat-message" type="submit" [disabled]="!activeRoom || !messageContent.trim()">Send</button>
+      </form>
+    </main>
+  </div>
+</section>
