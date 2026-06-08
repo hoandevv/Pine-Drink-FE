@@ -1,9 +1,9 @@
 <section class="chat-shell">
   <header class="chat-hero">
     <div>
-      <p class="eyebrow">Realtime lab</p>
+      <p class="eyebrow">Realtime chat</p>
       <h1>Chat Operations</h1>
-      <p class="subtitle">Test nhanh WebSocket/STOMP: room history, live subscribe, gửi message realtime.</p>
+      <p class="subtitle">Quản lý hội thoại từ API chat: danh sách phòng, lịch sử tin nhắn, realtime WebSocket/STOMP.</p>
     </div>
     <div class="status-pill" [class.online]="connected">
       <span></span>
@@ -11,15 +11,15 @@
     </div>
   </header>
 
-  <div class="manual-card">
-    <label for="manual-room-id">Room ID test nhanh</label>
-    <div class="manual-row">
-      <input id="manual-room-id" type="text" [(ngModel)]="manualRoomId" placeholder="Paste roomId nếu list chưa có" />
-      <button id="connect-manual-room" type="button" (click)="connectManualRoom()">Connect</button>
-      <button id="reload-chat-rooms" type="button" class="ghost" (click)="loadRooms()">Reload rooms</button>
+  <div class="toolbar-card">
+    <div>
+      <p class="eyebrow">Chat API</p>
+      <h2>Inbox đồng bộ từ hệ thống</h2>
+      <p>Rooms được tải trực tiếp từ backend. Chọn phòng để xem lịch sử và gửi tin nhắn realtime.</p>
     </div>
-    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <button id="reload-chat-rooms" type="button" class="ghost" (click)="loadRooms()">Reload rooms</button>
   </div>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
   <div class="chat-grid">
     <aside class="rooms-panel">
@@ -31,7 +31,7 @@
         <span>{{ rooms.length }}</span>
       </div>
 
-      <div class="loading" *ngIf="loadingRooms">Đang tải rooms...</div>
+      <div class="loading" *ngIf="loadingRooms">Đang tải phòng chat...</div>
       <button
         *ngFor="let room of rooms; trackBy: trackByRoom"
         type="button"
@@ -42,13 +42,13 @@
         <div class="avatar">{{ (room.customerName || room.title || room.roomCode || 'R').charAt(0) }}</div>
         <div class="room-info">
           <strong>{{ room.title || room.customerName || room.roomCode || room.id }}</strong>
-          <small>{{ room.lastMessagePreview || 'No messages yet' }}</small>
+          <small>{{ room.lastMessagePreview || 'Chưa có tin nhắn' }}</small>
         </div>
         <time>{{ room.lastMessageAt | date: 'HH:mm' }}</time>
       </button>
 
       <div class="empty" *ngIf="!loadingRooms && !rooms.length">
-        Chưa có room. Paste roomId để test manual bro.
+        Chưa có phòng chat từ API.
       </div>
     </aside>
 
@@ -56,14 +56,14 @@
       <div class="conversation-head">
         <div>
           <p class="eyebrow">Active room</p>
-          <h2>{{ activeRoom?.title || activeRoom?.customerName || activeRoom?.roomCode || activeRoom?.id || 'Chọn room' }}</h2>
-          <small>{{ activeRoom?.id || 'Room id sẽ hiển thị tại đây' }}</small>
+          <h2>{{ activeRoom?.title || activeRoom?.customerName || activeRoom?.roomCode || activeRoom?.id || 'Chọn phòng chat' }}</h2>
+          <small>{{ activeRoom?.id || 'Phòng chat sẽ hiển thị tại đây' }}</small>
         </div>
         <span class="type-chip">{{ activeRoom?.roomType || 'N/A' }}</span>
       </div>
 
       <div class="messages" id="chat-message-list">
-        <div class="loading" *ngIf="loadingMessages">Đang tải messages...</div>
+        <div class="loading" *ngIf="loadingMessages">Đang tải tin nhắn...</div>
         <article
           *ngFor="let message of messages; trackBy: trackByMessage"
           class="message-bubble"
@@ -76,7 +76,7 @@
           <p>{{ message.content }}</p>
         </article>
         <div class="empty conversation-empty" *ngIf="!loadingMessages && !messages.length">
-          Chưa có message. Gửi thử bên dưới để test realtime.
+          Chưa có tin nhắn trong phòng này.
         </div>
       </div>
 
@@ -87,7 +87,7 @@
           type="text"
           [(ngModel)]="messageContent"
           [disabled]="!activeRoom"
-          placeholder="Nhập tin nhắn test..."
+          placeholder="Nhập tin nhắn..."
           autocomplete="off"
         />
         <button id="send-chat-message" type="submit" [disabled]="!activeRoom || !messageContent.trim()">Send</button>

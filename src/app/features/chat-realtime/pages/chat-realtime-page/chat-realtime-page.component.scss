@@ -15,7 +15,7 @@
 }
 
 .chat-hero,
-.manual-card,
+.toolbar-card,
 .rooms-panel,
 .conversation-panel {
   border: 1px solid rgba(148, 163, 184, 0.2);
@@ -106,23 +106,23 @@ h2 {
   box-shadow: 0 0 18px #22c55e;
 }
 
-.manual-card {
+.toolbar-card {
   margin-top: 18px;
   padding: 18px;
   border-radius: 22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
 }
 
-.manual-card label {
-  display: block;
-  color: #cffafe;
-  font-weight: 800;
-  margin-bottom: 10px;
+.toolbar-card p:not(.eyebrow) {
+  margin-top: 6px;
+  color: #a7f3d0;
 }
 
-.manual-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 12px;
+.toolbar-card .ghost {
+  flex-shrink: 0;
 }
 
 input {
@@ -329,8 +329,9 @@ time,
     grid-template-columns: 1fr;
   }
 
-  .manual-row,
+  .toolbar-card,
   .composer {
+    display: grid;
     grid-template-columns: 1fr;
   }
 

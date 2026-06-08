@@ -12,7 +12,6 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
   rooms: ChatRoomResponse[] = [];
   messages: ChatMessageResponse[] = [];
   activeRoom?: ChatRoomResponse;
-  manualRoomId = '';
   messageContent = '';
   loadingRooms = false;
   loadingMessages = false;
@@ -27,6 +26,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.currentUserId = this.tokenService.getCurrentUserFromToken()?.id;
     this.bindRealtime();
+    this.chatRealtime.connect();
     this.loadRooms();
   }
 
@@ -37,6 +37,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
 
   loadRooms(): void {
     this.loadingRooms = true;
+    this.errorMessage = '';
     this.chatRealtime.getRooms().subscribe({
       next: (response) => {
         this.rooms = response.data?.content || [];
@@ -46,7 +47,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
         }
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Không tải được rooms';
+        this.errorMessage = error?.error?.message || 'Không tải được danh sách phòng chat';
         this.loadingRooms = false;
       }
     });
@@ -54,34 +55,14 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
 
   selectRoom(room: ChatRoomResponse): void {
     this.activeRoom = room;
-    this.manualRoomId = room.id;
     this.messages = [];
     this.loadMessages(room.id);
-    this.chatRealtime.connect(room.id);
-  }
-
-  connectManualRoom(): void {
-    const roomId = this.manualRoomId.trim();
-    if (!roomId) {
-      this.errorMessage = 'Nhập roomId trước bro';
-      return;
-    }
-
-    this.activeRoom = this.rooms.find((room) => room.id === roomId) || {
-      id: roomId,
-      roomCode: roomId,
-      roomType: 'MANUAL',
-      status: 'ACTIVE',
-      title: 'Manual test room'
-    };
-    this.messages = [];
-    this.loadMessages(roomId);
-    this.chatRealtime.connect(roomId);
+    this.chatRealtime.subscribeRoom(room.id);
   }
 
   sendMessage(): void {
     const content = this.messageContent.trim();
-    const roomId = this.activeRoom?.id || this.manualRoomId.trim();
+    const roomId = this.activeRoom?.id;
     if (!content || !roomId) {
       return;
     }
@@ -107,7 +88,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
     this.subscriptions.add(this.chatRealtime.errors$.subscribe((message) => (this.errorMessage = message)));
     this.subscriptions.add(
       this.chatRealtime.messages$.subscribe((message) => {
-        if (message.roomId !== (this.activeRoom?.id || this.manualRoomId)) {
+        if (message.roomId !== this.activeRoom?.id) {
           this.bumpRoomPreview(message);
           return;
         }
@@ -122,13 +103,14 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy {
 
   private loadMessages(roomId: string): void {
     this.loadingMessages = true;
+    this.errorMessage = '';
     this.chatRealtime.getMessages(roomId).subscribe({
       next: (response) => {
         this.messages = (response.data?.content || []).sort((a, b) => this.toTime(a.createdAt) - this.toTime(b.createdAt));
         this.loadingMessages = false;
       },
       error: (error) => {
-        this.errorMessage = error?.error?.message || 'Không tải được messages';
+        this.errorMessage = error?.error?.message || 'Không tải được tin nhắn';
         this.loadingMessages = false;
       }
     });
