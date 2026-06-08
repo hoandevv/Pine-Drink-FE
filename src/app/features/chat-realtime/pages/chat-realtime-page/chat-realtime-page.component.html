@@ -1,69 +1,112 @@
 <section class="chat-shell">
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
   <header class="chat-hero">
-    <div>
-      <p class="eyebrow">Realtime chat</p>
-      <h1>Chat Operations</h1>
-      <p class="subtitle">Quản lý hội thoại từ API chat: danh sách phòng, lịch sử tin nhắn, realtime WebSocket/STOMP.</p>
+    <div class="hero-copy">
+      <p class="eyebrow">Pine Drink Support Desk</p>
+      <h1>Realtime Chat Operations</h1>
+      <p class="subtitle">Điều phối hội thoại khách hàng, theo dõi phòng chat và phản hồi realtime qua WebSocket/STOMP.</p>
     </div>
-    <div class="status-pill" [class.online]="connected">
-      <span></span>
-      {{ connected ? 'Connected' : 'Offline / Connecting' }}
+
+    <div class="hero-actions">
+      <div class="status-pill" [class.online]="connected">
+        <span></span>
+        {{ connected ? 'Realtime online' : 'Connecting...' }}
+      </div>
+      <button id="reload-chat-rooms" type="button" class="ghost" (click)="loadRooms()">
+        <span>↻</span>
+        Reload rooms
+      </button>
     </div>
   </header>
 
-  <div class="toolbar-card">
-    <div>
-      <p class="eyebrow">Chat API</p>
-      <h2>Inbox đồng bộ từ hệ thống</h2>
-      <p>Rooms được tải trực tiếp từ backend. Chọn phòng để xem lịch sử và gửi tin nhắn realtime.</p>
-    </div>
-    <button id="reload-chat-rooms" type="button" class="ghost" (click)="loadRooms()">Reload rooms</button>
-  </div>
   <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
+  <div class="insight-row" aria-label="Chat metrics">
+    <article class="insight-card">
+      <span class="metric-icon">✦</span>
+      <div>
+        <small>Total rooms</small>
+        <strong>{{ rooms.length }}</strong>
+      </div>
+    </article>
+    <article class="insight-card">
+      <span class="metric-icon online">●</span>
+      <div>
+        <small>Connection</small>
+        <strong>{{ connected ? 'Live' : 'Standby' }}</strong>
+      </div>
+    </article>
+    <article class="insight-card wide">
+      <span class="metric-icon">☕</span>
+      <div>
+        <small>Active workspace</small>
+        <strong>{{ activeRoom?.roomCode || activeRoom?.id || 'Select a room' }}</strong>
+      </div>
+    </article>
+  </div>
+
   <div class="chat-grid">
-    <aside class="rooms-panel">
+    <aside class="rooms-panel" aria-label="Chat rooms">
       <div class="panel-head">
         <div>
           <p class="eyebrow">Inbox</p>
-          <h2>Rooms</h2>
+          <h2>Customer rooms</h2>
         </div>
-        <span>{{ rooms.length }}</span>
+        <span class="count-badge">{{ rooms.length }}</span>
+      </div>
+
+      <div class="room-search">
+        <span>⌕</span>
+        <p>Live API room stream</p>
       </div>
 
       <div class="loading" *ngIf="loadingRooms">Đang tải phòng chat...</div>
-      <button
-        *ngFor="let room of rooms; trackBy: trackByRoom"
-        type="button"
-        class="room-card"
-        [class.active]="activeRoom?.id === room.id"
-        (click)="selectRoom(room)"
-      >
-        <div class="avatar">{{ (room.customerName || room.title || room.roomCode || 'R').charAt(0) }}</div>
-        <div class="room-info">
-          <strong>{{ room.title || room.customerName || room.roomCode || room.id }}</strong>
-          <small>{{ room.lastMessagePreview || 'Chưa có tin nhắn' }}</small>
-        </div>
-        <time>{{ room.lastMessageAt | date: 'HH:mm' }}</time>
-      </button>
+
+      <div class="room-list">
+        <button
+          *ngFor="let room of rooms; trackBy: trackByRoom"
+          type="button"
+          class="room-card"
+          [class.active]="activeRoom?.id === room.id"
+          (click)="selectRoom(room)"
+        >
+          <div class="avatar">{{ (room.customerName || room.title || room.roomCode || 'R').charAt(0) }}</div>
+          <div class="room-info">
+            <strong>{{ room.title || room.customerName || room.roomCode || room.id }}</strong>
+            <small>{{ room.lastMessagePreview || 'Chưa có tin nhắn' }}</small>
+          </div>
+          <div class="room-meta">
+            <time>{{ room.lastMessageAt | date: 'HH:mm' }}</time>
+            <i></i>
+          </div>
+        </button>
+      </div>
 
       <div class="empty" *ngIf="!loadingRooms && !rooms.length">
-        Chưa có phòng chat từ API.
+        <strong>Inbox trống</strong>
+        <span>Chưa có phòng chat từ API.</span>
       </div>
     </aside>
 
-    <main class="conversation-panel">
+    <main class="conversation-panel" aria-label="Conversation">
       <div class="conversation-head">
-        <div>
-          <p class="eyebrow">Active room</p>
-          <h2>{{ activeRoom?.title || activeRoom?.customerName || activeRoom?.roomCode || activeRoom?.id || 'Chọn phòng chat' }}</h2>
-          <small>{{ activeRoom?.id || 'Phòng chat sẽ hiển thị tại đây' }}</small>
+        <div class="active-person">
+          <div class="avatar large">{{ (activeRoom?.customerName || activeRoom?.title || activeRoom?.roomCode || 'P').charAt(0) }}</div>
+          <div>
+            <p class="eyebrow">Active room</p>
+            <h2>{{ activeRoom?.title || activeRoom?.customerName || activeRoom?.roomCode || activeRoom?.id || 'Chọn phòng chat' }}</h2>
+            <small>{{ activeRoom?.id || 'Phòng chat sẽ hiển thị tại đây' }}</small>
+          </div>
         </div>
         <span class="type-chip">{{ activeRoom?.roomType || 'N/A' }}</span>
       </div>
 
       <div class="messages" id="chat-message-list">
+        <div class="date-divider"><span>Today</span></div>
         <div class="loading" *ngIf="loadingMessages">Đang tải tin nhắn...</div>
+
         <article
           *ngFor="let message of messages; trackBy: trackByMessage"
           class="message-bubble"
@@ -75,22 +118,34 @@
           </div>
           <p>{{ message.content }}</p>
         </article>
+
         <div class="empty conversation-empty" *ngIf="!loadingMessages && !messages.length">
-          Chưa có tin nhắn trong phòng này.
+          <strong>Chưa có tin nhắn</strong>
+          <span>Chọn phòng hoặc chờ khách hàng gửi tin mới.</span>
         </div>
       </div>
 
+      <div class="quick-replies" *ngIf="activeRoom">
+        <button type="button" (click)="messageContent = 'Pine Drink đang kiểm tra đơn hàng cho bạn ạ.'">Kiểm tra đơn</button>
+        <button type="button" (click)="messageContent = 'Bạn cho Pine Drink xin mã đơn hàng nhé.'">Xin mã đơn</button>
+        <button type="button" (click)="messageContent = 'Cảm ơn bạn đã liên hệ Pine Drink.'">Cảm ơn</button>
+      </div>
+
       <form class="composer" (ngSubmit)="sendMessage()">
+        <button class="attach-button" type="button" [disabled]="!activeRoom" aria-label="Attach file">＋</button>
         <input
           id="chat-message-input"
           name="messageContent"
           type="text"
           [(ngModel)]="messageContent"
           [disabled]="!activeRoom"
-          placeholder="Nhập tin nhắn..."
+          placeholder="Nhập phản hồi cho khách hàng..."
           autocomplete="off"
         />
-        <button id="send-chat-message" type="submit" [disabled]="!activeRoom || !messageContent.trim()">Send</button>
+        <button id="send-chat-message" class="send-button" type="submit" [disabled]="!activeRoom || !messageContent.trim()">
+          Send
+          <span>➜</span>
+        </button>
       </form>
     </main>
   </div>
