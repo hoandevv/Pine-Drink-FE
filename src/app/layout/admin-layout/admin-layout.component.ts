@@ -41,6 +41,7 @@ export class AdminLayoutComponent {
       title: 'Vận hành',
       items: [
         { label: 'Orders', icon: 'receipt_long', route: '/admin/orders', roles: ['ADMIN', 'MANAGER', 'DELIVERY'] },
+        { label: 'Chat Realtime', icon: 'forum', route: '/admin/chat-realtime', roles: ['ADMIN', 'MANAGER', 'DELIVERY'] },
         { label: 'Branches', icon: 'storefront', route: '/admin/branches', permission: 'BRANCH_VIEW' }
       ]
     },

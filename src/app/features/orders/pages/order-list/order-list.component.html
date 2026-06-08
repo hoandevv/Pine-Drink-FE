@@ -1,54 +1,100 @@
-<app-page-header title="Orders" description="Theo dõi đơn hàng realtime, payment status và chuyển trạng thái xử lý.">
-  <button type="button" class="btn btn-primary">+ Tạo đơn nhanh</button>
-</app-page-header>
-
-<section class="order-kanban">
-  <article *ngFor="let status of statusOptions" class="status-column">
-    <header>
-      <span>{{ status }}</span>
-      <b>{{ orders.length }}</b>
-    </header>
-    <div class="status-line"></div>
-  </article>
-</section>
-
-<section class="filters card-surface">
-  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filters-form">
-    <select formControlName="status">
-      <option value="">Tất cả status</option>
-      <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-    </select>
-    <button type="submit" class="btn btn-primary">Filter</button>
-  </form>
-</section>
-
-<section class="order-list" *ngIf="orders.length > 0; else ordersEmpty">
-  <article class="order-card" *ngFor="let order of orders">
-    <div class="order-code">
-      <span class="material-symbols-outlined">receipt_long</span>
-      <div>
-        <h3>#{{ order.orderCode }}</h3>
-        <p>{{ order.createdAt || '-' }}</p>
+<div class="admin-orders-container">
+  <!-- Header Section -->
+  <header class="page-header-saas">
+    <div class="header-main">
+      <div class="title-group">
+        <div class="title-row">
+          <h1>Orders</h1>
+          <div class="live-status">
+            <span class="pulse-dot"></span>
+            <span class="status-text">LIVE</span>
+            <span class="last-update">Updated 2m ago</span>
+          </div>
+        </div>
+        <p class="subtitle">Realtime order operations, payment tracking and fulfillment workflow.</p>
+      </div>
+      
+      <div class="header-actions">
+        <button class="btn-secondary" (click)="refreshData()">
+          <span class="material-symbols-outlined">refresh</span>
+          Refresh
+        </button>
+        <button class="btn-secondary">
+          <span class="material-symbols-outlined">ios_share</span>
+          Export
+        </button>
+        <button class="btn-primary">
+          <span class="material-symbols-outlined">add_circle</span>
+          Create Order
+        </button>
       </div>
     </div>
+  </header>
 
-    <div class="customer">
-      <strong>{{ order.customerName || 'Walk-in' }}</strong>
-      <span>{{ order.customerPhone || 'Không có số điện thoại' }}</span>
+  <!-- KPI Stats -->
+  <app-order-stats [stats]="stats"></app-order-stats>
+
+  <!-- View Controls & Tabs -->
+  <div class="view-controls-row">
+    <nav class="order-tabs">
+      <button *ngFor="let tab of tabs" 
+              class="tab-btn" 
+              [class.active]="activeTab === tab.value"
+              (click)="onTabChange(tab.value)">
+        {{ tab.label }}
+        <span class="count-badge">{{ tab.count }}</span>
+      </button>
+    </nav>
+
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'table'" (click)="toggleView('table')" title="Table View">
+        <span class="material-symbols-outlined">table_chart</span>
+      </button>
+      <button [class.active]="viewMode === 'kanban'" (click)="toggleView('kanban')" title="Kanban View">
+        <span class="material-symbols-outlined">view_kanban</span>
+      </button>
     </div>
+  </div>
 
-    <strong class="amount">{{ order.totalAmount | number }} VND</strong>
+  <!-- Advanced Filters -->
+  <app-order-filter-bar (filterChange)="onFilterChange($event)"></app-order-filter-bar>
 
-    <select [value]="order.status" (change)="onStatusChange(order, $event)" class="status-select">
-      <option *ngFor="let status of statusOptions" [value]="status">{{ status }}</option>
-    </select>
+  <!-- Main Content Area -->
+  <main class="orders-main-content">
+    <ng-container [ngSwitch]="viewMode">
+      <!-- Table View -->
+      <app-order-table 
+        *ngSwitchCase="'table'"
+        [orders]="orders"
+        (rowClick)="openDetail($event)"
+        (actionClick)="openDetail($event.order)">
+      </app-order-table>
 
-    <em [class.paid]="order.paymentStatus === 'PAID'">{{ order.paymentStatus || 'UNPAID' }}</em>
-  </article>
-</section>
+      <!-- Kanban View -->
+      <app-order-kanban
+        *ngSwitchCase="'kanban'"
+        [orders]="orders"
+        (cardClick)="openDetail($event)"
+        (statusChange)="onStatusChange($event)">
+      </app-order-kanban>
+    </ng-container>
 
-<ng-template #ordersEmpty>
-  <app-empty-state title="Chưa có orders" description="Khi backend trả danh sách đơn hàng, màn hình này sẽ hiển thị ngay."></app-empty-state>
-</ng-template>
+    <!-- Pagination -->
+    <div class="pagination-footer">
+      <app-pagination 
+        [page]="pageData.page" 
+        [size]="pageData.size" 
+        [totalPages]="pageData.totalPages" 
+        [totalElements]="pageData.totalElements">
+      </app-pagination>
+    </div>
+  </main>
+</div>
 
-<app-pagination [page]="pageData.page" [size]="pageData.size" [totalPages]="pageData.totalPages" [totalElements]="pageData.totalElements" (pageChange)="onPageChange($event)"></app-pagination>
+<!-- Detail Drawer -->
+<app-order-detail-drawer
+  [order]="selectedOrder"
+  [isOpen]="isDrawerOpen"
+  (close)="closeDrawer()"
+  (statusChange)="onStatusChange($event)">
+</app-order-detail-drawer>
