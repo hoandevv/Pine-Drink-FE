@@ -6,6 +6,7 @@
     <a routerLink="/promotions" routerLinkActive="active">Khuyến mãi</a>
     <a routerLink="/track-order" routerLinkActive="active">Theo dõi đơn</a>
     <a routerLink="/stores" routerLinkActive="active">Cửa hàng</a>
+    <a routerLink="/chat" routerLinkActive="active">Nhắn tin</a>
     <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị">
       <span class="material-symbols-outlined">admin_panel_settings</span>
       <span>Quản trị</span>
@@ -20,6 +21,10 @@
       <div class="user-chip" routerLink="/profile" style="cursor: pointer;">
         <span class="material-symbols-outlined">account_circle</span>{{ displayName }}
       </div>
+      <button class="ghost-button chat-entry-button" type="button" routerLink="/chat">
+        <span class="material-symbols-outlined">forum</span>
+        Chat
+      </button>
       <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
     </ng-container>
     <ng-template #guestActions>
@@ -110,6 +115,11 @@
     <p>© 2024 Pine Drink F&B Startup. All rights reserved.</p>
   </div>
 </footer>
+
+<a class="client-chat-fab" routerLink="/chat" aria-label="Nhắn tin với Pine Drink">
+  <span class="material-symbols-outlined">forum</span>
+  <strong>Nhắn tin</strong>
+</a>
 
 <button class="mobile-cart" type="button" routerLink="/cart"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>
 

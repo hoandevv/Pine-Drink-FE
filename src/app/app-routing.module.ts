@@ -14,6 +14,11 @@ const routes: Routes = [
       {
         path: '',
         loadChildren: () => import('./features/client/client.module').then((m) => m.ClientModule)
+      },
+      {
+        path: 'chat',
+        canActivate: [AuthGuard],
+        loadChildren: () => import('./features/chat-realtime/chat-realtime.module').then((m) => m.ChatRealtimeModule)
       }
     ]
   },
