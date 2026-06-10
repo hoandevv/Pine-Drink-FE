@@ -15,6 +15,8 @@ export interface ChatRoomResponse {
   customerAccountId?: string | null;
   customerName?: string | null;
   customerPhone?: string | null;
+  customerAvatarUrl?: string | null;
+  avatarUrl?: string | null;
   customerId?: string | null;
   customerAddress?: string | null;
   assignedStaffAccountId?: string | null;
@@ -34,6 +36,7 @@ export interface ChatMessageResponse {
   id: string;
   roomId: string;
   senderAccountId: string;
+  senderType?: 'CUSTOMER' | 'STAFF' | 'ADMIN' | 'BOT' | 'SYSTEM' | string | null;
   senderName?: string | null;
   messageType: string;
   content?: string | null;
@@ -70,8 +73,11 @@ interface ChatMessagePayload {
   id?: string;
   senderId?: string;
   senderAccountId?: string;
+  senderType?: string | null;
   senderName?: string | null;
+  messageType?: string;
   content?: string | null;
+  metadata?: string | null;
   sentAt?: string;
   createdAt?: string;
 }
@@ -122,6 +128,11 @@ export class ChatRealtimeService implements OnDestroy {
     return this.getStaffRooms(branchId, page, size);
   }
 
+  getMyRooms(page = 0, size = 20): Observable<BaseResponse<PageResponse<ChatRoomResponse>>> {
+    const params = new HttpParams().set('page', page).set('size', size);
+    return this.http.get<BaseResponse<PageResponse<ChatRoomResponse>>>(this.apiUrl, { params });
+  }
+
   getStaffRooms(branchId?: string, page = 0, size = 20): Observable<BaseResponse<PageResponse<ChatRoomResponse>>> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (branchId) {
@@ -134,9 +145,6 @@ export class ChatRealtimeService implements OnDestroy {
     return this.http.get<BaseResponse<ChatRoomResponse>>(`${this.apiUrl}/${roomId}`);
   }
 
-  assignRoom(roomId: string): Observable<BaseResponse<ChatRoomResponse>> {
-    return this.http.patch<BaseResponse<ChatRoomResponse>>(`${this.apiUrl}/${roomId}/assign`, {});
-  }
 
   getMessages(roomId: string, page = 0, size = 30): Observable<BaseResponse<PageResponse<ChatMessageResponse>>> {
     const params = new HttpParams().set('page', page).set('size', size);
@@ -321,10 +329,11 @@ export class ChatRealtimeService implements OnDestroy {
       id: payload.id || payload.messageId || `${payload.roomId}-${payload.sentAt || Date.now()}`,
       roomId: payload.roomId,
       senderAccountId: payload.senderAccountId || payload.senderId || '',
+      senderType: payload.senderType ?? null,
       senderName: payload.senderName ?? null,
-      messageType: 'TEXT',
+      messageType: payload.messageType || 'TEXT',
       content: payload.content ?? null,
-      metadata: null,
+      metadata: payload.metadata ?? null,
       status: 'ACTIVE',
       createdAt: payload.createdAt || payload.sentAt || new Date().toISOString()
     };

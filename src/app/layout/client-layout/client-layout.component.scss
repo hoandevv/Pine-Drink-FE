@@ -19,21 +19,21 @@
   align-items: center;
   gap: 0;
   padding: 0.8rem;
-  
+
   // Premium Gradient Background
   background: linear-gradient(135deg, rgba(46, 125, 50, 0.85), rgba(27, 94, 32, 0.95));
   color: #fff;
   border-radius: 3rem;
   text-decoration: none;
-  
+
   // Advanced Effects
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
     inset 0 0 15px rgba(255, 255, 255, 0.1);
-  
+
   transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   overflow: hidden;
 
@@ -42,10 +42,10 @@
     gap: 0.75rem;
     transform: scale(1.05) translateY(-5px);
     background: linear-gradient(135deg, #2e7d32, #1b5e20);
-    box-shadow: 
+    box-shadow:
       0 12px 40px rgba(46, 125, 50, 0.4),
       0 0 20px rgba(46, 125, 50, 0.2);
-    
+
     .btn-text {
       max-width: 200px;
       opacity: 1;
@@ -85,12 +85,10 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-      45deg,
-      transparent,
-      rgba(255, 255, 255, 0.1),
-      transparent
-    );
+    background: linear-gradient(45deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent);
     transform: rotate(45deg);
     transition: 0.8s;
     pointer-events: none;
@@ -169,11 +167,11 @@
   .admin-floating-btn {
     bottom: 1.5rem;
     right: 1.5rem;
-    
+
     &:hover {
       padding: 0.8rem;
     }
-    
+
     .btn-text {
       display: none;
     }

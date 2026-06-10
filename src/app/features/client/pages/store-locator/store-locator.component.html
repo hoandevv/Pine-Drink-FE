@@ -75,9 +75,14 @@
             <h3>{{ branch.name }}</h3>
             <span class="distance-badge" [class.has-distance]="userLocation">{{ distanceLabel(branch) }}</span>
           </div>
-          <span class="status-badge" [class]="getStatusClass(branch)">
-            {{ getStatusText(branch) }}
-          </span>
+          <div class="branch-actions-top">
+            <span class="status-badge" [class]="getStatusClass(branch)">
+              {{ getStatusText(branch) }}
+            </span>
+            <button type="button" class="branch-chat-btn" (click)="openBranchChat(branch, $event)" aria-label="Chat với chi nhánh">
+              <span class="material-symbols-outlined">support_agent</span>
+            </button>
+          </div>
         </div>
 
         <div class="branch-info">
