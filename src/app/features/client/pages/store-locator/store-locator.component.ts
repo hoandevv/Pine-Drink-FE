@@ -203,6 +203,13 @@ export class StoreLocatorComponent implements OnInit {
     this.router.navigate(['/menu']);
   }
 
+  openBranchChat(branch: Branch, event: Event): void {
+    event.stopPropagation();
+    sessionStorage.setItem('selectedBranchId', branch.id);
+    sessionStorage.setItem('selectedBranchName', branch.name);
+    this.router.navigate(['/chat'], { queryParams: { branchId: branch.id } });
+  }
+
   getStatusClass(branch: Branch): string {
     return this.getOperatingState(branch).status;
   }

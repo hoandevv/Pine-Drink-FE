@@ -1,5 +1,5 @@
 <header class="client-nav">
-  <a routerLink="/" class="brand"><span class="brand-mark">P</span><span>Pine Drink</span></a>
+  <a routerLink="/" class="brand"><span>Pine Drink</span></a>
   <nav class="nav-links">
     <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Trang chủ</a>
     <a routerLink="/menu" routerLinkActive="active">Menu</a>
@@ -18,7 +18,8 @@
     </button>
     <ng-container *ngIf="isLoggedIn; else guestActions">
       <div class="user-chip" routerLink="/profile" style="cursor: pointer;">
-        <span class="material-symbols-outlined">account_circle</span>{{ displayName }}
+        <span class="material-symbols-outlined">account_circle</span>
+        <span>Tài khoản</span>
       </div>
       <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
     </ng-container>
@@ -111,5 +112,8 @@
   </div>
 </footer>
 
-<button class="mobile-cart" type="button" routerLink="/cart"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>
+<a *ngIf="!isChatPage" class="client-chat-fab" [routerLink]="['/chat']" [queryParams]="chatQueryParams" aria-label="Nhắn tin với Pine Drink">
+  <span class="material-symbols-outlined">support_agent</span>
+</a>
 
+<button class="mobile-cart" type="button" routerLink="/cart"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>

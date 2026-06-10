@@ -1,97 +1,253 @@
-<section class="chat-shell">
-  <header class="chat-hero">
-    <div>
-      <p class="eyebrow">Realtime chat</p>
-      <h1>Chat Operations</h1>
-      <p class="subtitle">Quản lý hội thoại từ API chat: danh sách phòng, lịch sử tin nhắn, realtime WebSocket/STOMP.</p>
+<section class="support-chat-shell">
+  <!-- Compact header -->
+  <header class="chat-topbar">
+    <div class="brand-section">
+      <div class="brand-icon">
+        <span class="material-symbols-outlined">forum</span>
+      </div>
+      <div class="brand-text">
+        <h1>Hộp thư hỗ trợ</h1>
+        <span>Quản lý hội thoại realtime theo chi nhánh</span>
+      </div>
     </div>
-    <div class="status-pill" [class.online]="connected">
-      <span></span>
-      {{ connected ? 'Connected' : 'Offline / Connecting' }}
+
+    <div class="topbar-actions">
+      <div class="connection-status" [class.online]="connected">
+        <span class="status-dot"></span>
+        {{ connected ? 'Online' : 'Reconnecting' }}
+      </div>
+      <button type="button" class="icon-btn" (click)="loadRooms()" title="Refresh rooms">
+        <span class="material-symbols-outlined">sync</span>
+      </button>
     </div>
   </header>
 
-  <div class="toolbar-card">
-    <div>
-      <p class="eyebrow">Chat API</p>
-      <h2>Inbox đồng bộ từ hệ thống</h2>
-      <p>Rooms được tải trực tiếp từ backend. Chọn phòng để xem lịch sử và gửi tin nhắn realtime.</p>
-    </div>
-    <button id="reload-chat-rooms" type="button" class="ghost" (click)="loadRooms()">Reload rooms</button>
-  </div>
-  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="error-banner" *ngIf="errorMessage">
+    <span class="material-symbols-outlined">error</span>{{ errorMessage }}
+  </p>
 
-  <div class="chat-grid">
-    <aside class="rooms-panel">
-      <div class="panel-head">
-        <div>
-          <p class="eyebrow">Inbox</p>
-          <h2>Rooms</h2>
+  <div class="support-layout">
+    <aside class="inbox-column" aria-label="Danh sách hội thoại">
+      <!-- Branch selector integrated into header -->
+      <div class="inbox-header">
+        <div class="branch-selector">
+          <label for="chat-branch-filter">
+            <span class="material-symbols-outlined">storefront</span>
+            Chi nhánh
+          </label>
+          <select id="chat-branch-filter" [(ngModel)]="branchId" (change)="onBranchChanged()"
+            [disabled]="loadingBranches || !branches.length">
+            <option value="" disabled>{{ loadingBranches ? 'Loading...' : 'Chọn chi nhánh' }}</option>
+            <option *ngFor="let branch of branches" [value]="branch.id">
+              {{ branch.name }}
+            </option>
+          </select>
         </div>
-        <span>{{ rooms.length }}</span>
       </div>
 
-      <div class="loading" *ngIf="loadingRooms">Đang tải phòng chat...</div>
-      <button
-        *ngFor="let room of rooms; trackBy: trackByRoom"
-        type="button"
-        class="room-card"
-        [class.active]="activeRoom?.id === room.id"
-        (click)="selectRoom(room)"
-      >
-        <div class="avatar">{{ (room.customerName || room.title || room.roomCode || 'R').charAt(0) }}</div>
-        <div class="room-info">
-          <strong>{{ room.title || room.customerName || room.roomCode || room.id }}</strong>
-          <small>{{ room.lastMessagePreview || 'Chưa có tin nhắn' }}</small>
-        </div>
-        <time>{{ room.lastMessageAt | date: 'HH:mm' }}</time>
-      </button>
+      <div class="search-box">
+        <span class="material-symbols-outlined">search</span>
+        <input id="room-search" type="search" [(ngModel)]="searchText" placeholder="Search conversations..." />
+      </div>
 
-      <div class="empty" *ngIf="!loadingRooms && !rooms.length">
-        Chưa có phòng chat từ API.
+      <div class="filter-tabs" role="tablist">
+        <button type="button" [class.active]="selectedFilter === 'all'" (click)="selectedFilter = 'all'">All</button>
+        <button type="button" [class.active]="selectedFilter === 'unread'" (click)="selectedFilter = 'unread'">Unread</button>
+        <button type="button" [class.active]="selectedFilter === 'processing'" (click)="selectedFilter = 'processing'">Active</button>
+        <button type="button" [class.active]="selectedFilter === 'closed'" (click)="selectedFilter = 'closed'">Closed</button>
+      </div>
+
+      <div class="room-list">
+        <ng-container *ngIf="loadingRooms">
+          <div class="room-skeleton" *ngFor="let item of [1,2,3,4,5]"><span></span><div><i></i><i></i></div></div>
+        </ng-container>
+
+        <button *ngFor="let room of filteredRooms; trackBy: trackByRoom" type="button" class="room-item"
+          [class.active]="activeRoom?.id === room.id" [class.unread]="(room.unreadCount || 0) > 0" (click)="selectRoom(room)">
+          <div class="room-avatar">
+            <img *ngIf="hasRoomAvatar(room); else roomInitial" [src]="getRoomAvatarUrl(room)" [alt]="getRoomName(room)" />
+            <ng-template #roomInitial>{{ getRoomInitial(room) }}</ng-template>
+            <span [class.online]="room.isCustomerOnline"></span>
+          </div>
+          <div class="room-main">
+            <div class="room-title-line">
+              <strong>{{ getRoomListTitle(room) }}</strong>
+              <time>{{ (room.lastMessageAt || room.createdAt) | date:'HH:mm' }}</time>
+            </div>
+            <div class="room-preview-line">
+              <span>{{ room.lastMessagePreview || 'Chưa có tin nhắn' }}</span>
+              <b *ngIf="(room.unreadCount || 0) > 0">{{ room.unreadCount }}</b>
+            </div>
+            <div class="room-meta-line">
+              <small *ngIf="!isClientChat">{{ room.assignedStaffName ? 'Lead: ' + room.assignedStaffName : getRoomDisplayName(room) }}</small>
+              <em *ngIf="room.orderId">#{{ room.orderId }}</em>
+            </div>
+          </div>
+        </button>
+
+        <div class="empty-state inbox-empty" *ngIf="!loadingRooms && !filteredRooms.length">
+          <button *ngIf="isClientChat; else staffInboxEmpty" type="button" class="start-chat-card" (click)="openSelectedBranchChat()" [disabled]="creatingRoom || !branchId">
+            <span class="material-symbols-outlined">support_agent</span>
+            <strong>{{ creatingRoom ? 'Đang nối máy...' : 'Chat với CSKH' }}</strong>
+            <small>{{ branchId ? getBranchLabel(branchId) : 'Chọn chi nhánh trước' }}</small>
+          </button>
+          <ng-template #staffInboxEmpty>
+            <span class="material-symbols-outlined">forum</span>
+            <strong>Inbox trống</strong>
+            <p>Tin nhắn realtime từ chi nhánh sẽ xuất hiện ở đây.</p>
+          </ng-template>
+        </div>
       </div>
     </aside>
 
-    <main class="conversation-panel">
-      <div class="conversation-head">
-        <div>
-          <p class="eyebrow">Active room</p>
-          <h2>{{ activeRoom?.title || activeRoom?.customerName || activeRoom?.roomCode || activeRoom?.id || 'Chọn phòng chat' }}</h2>
-          <small>{{ activeRoom?.id || 'Phòng chat sẽ hiển thị tại đây' }}</small>
-        </div>
-        <span class="type-chip">{{ activeRoom?.roomType || 'N/A' }}</span>
-      </div>
-
-      <div class="messages" id="chat-message-list">
-        <div class="loading" *ngIf="loadingMessages">Đang tải tin nhắn...</div>
-        <article
-          *ngFor="let message of messages; trackBy: trackByMessage"
-          class="message-bubble"
-          [class.mine]="isMine(message)"
-        >
-          <div class="message-meta">
-            <strong>{{ message.senderName || message.senderAccountId }}</strong>
-            <time>{{ message.createdAt | date: 'dd/MM HH:mm:ss' }}</time>
+    <main class="chat-column" aria-label="Khung hội thoại">
+      <ng-container *ngIf="activeRoom; else noConversation">
+        <header class="conversation-header">
+          <div class="customer-summary">
+            <div class="room-avatar large">
+              <img *ngIf="hasRoomAvatar(activeRoom); else activeRoomInitial" [src]="getRoomAvatarUrl(activeRoom)" [alt]="getRoomName(activeRoom)" />
+              <ng-template #activeRoomInitial>{{ getRoomInitial(activeRoom) }}</ng-template>
+              <span [class.online]="activeRoom.isCustomerOnline"></span>
+            </div>
+            <div>
+              <h2>{{ getConversationTitle(activeRoom) }}</h2>
+              <p *ngIf="messages.length > 0">
+                <span class="store-logo-mark" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M4.4 9.2 5.6 4h12.8l1.2 5.2H4.4Z" />
+                    <path d="M5.2 10.3v8.1c0 .9.7 1.6 1.6 1.6h10.4c.9 0 1.6-.7 1.6-1.6v-8.1" />
+                    <path d="M8.1 20v-5.3h3.1V20" />
+                    <path d="M14 14.7h2.3" />
+                    <path d="M4.2 9.1c.4 1 1.3 1.7 2.4 1.7 1 0 1.9-.6 2.4-1.5.4.9 1.3 1.5 2.4 1.5s2-.6 2.4-1.5c.4.9 1.3 1.5 2.4 1.5 1.1 0 2-.7 2.4-1.7" />
+                  </svg>
+                </span>
+                {{ getRoomDisplayName(activeRoom) }}
+                <ng-container *ngIf="activeRoom.orderId"> · #{{ activeRoom.orderId }}</ng-container>
+              </p>
+              <p *ngIf="messages.length === 0" class="no-messages-hint">
+                <span class="material-symbols-outlined">chat_bubble_outline</span>
+                Chưa có tin nhắn
+              </p>
+            </div>
           </div>
-          <p>{{ message.content }}</p>
-        </article>
-        <div class="empty conversation-empty" *ngIf="!loadingMessages && !messages.length">
-          Chưa có tin nhắn trong phòng này.
-        </div>
-      </div>
 
-      <form class="composer" (ngSubmit)="sendMessage()">
-        <input
-          id="chat-message-input"
-          name="messageContent"
-          type="text"
-          [(ngModel)]="messageContent"
-          [disabled]="!activeRoom"
-          placeholder="Nhập tin nhắn..."
-          autocomplete="off"
-        />
-        <button id="send-chat-message" type="submit" [disabled]="!activeRoom || !messageContent.trim()">Send</button>
-      </form>
+          <div class="conversation-actions" *ngIf="activeRoom.assignedStaffName">
+            <span class="owner-chip">
+              <span class="material-symbols-outlined">badge</span>
+              {{ activeRoom.assignedStaffName }}
+            </span>
+          </div>
+        </header>
+
+        <section class="message-area" #messageList id="chat-message-list">
+          <div class="date-separator"><span>Conversation history</span></div>
+
+          <ng-container *ngIf="loadingMessages">
+            <div class="message-skeleton left"></div><div class="message-skeleton right"></div><div class="message-skeleton left short"></div>
+          </ng-container>
+
+          <article *ngFor="let message of messages; trackBy: trackByMessage" class="message-row"
+            [class.mine]="isMine(message)" [class.customer]="getSenderType(message) === 'CUSTOMER'">
+            <div class="message-bubble">
+              <p>{{ message.content }}</p>
+              <time>{{ message.createdAt | date:'HH:mm' }}</time>
+            </div>
+          </article>
+
+          <div class="empty-state conversation-empty" *ngIf="!loadingMessages && !messages.length">
+            <span class="material-symbols-outlined">support_agent</span>
+            <strong>Chat với CSKH</strong>
+            <p>{{ branchId ? getBranchLabel(branchId) : 'Pine Drink Đại Kim' }}</p>
+          </div>
+        </section>
+
+        <!-- Quick replies bar -->
+        <div class="quick-actions-bar" *ngIf="activeRoom">
+          <button type="button" class="quick-btn" (click)="messageContent = 'Pine Drink đang kiểm tra thông tin cho bạn ạ.'">
+            <span class="material-symbols-outlined">bolt</span>
+            Đang kiểm tra
+          </button>
+          <button type="button" class="quick-btn" (click)="messageContent = 'Bạn cho Pine Drink xin mã đơn hàng để hỗ trợ nhanh hơn nhé.'">
+            <span class="material-symbols-outlined">receipt</span>
+            Xin mã đơn
+          </button>
+          <button type="button" class="quick-btn" (click)="messageContent = 'Cảm ơn bạn đã liên hệ Pine Drink!'">
+            <span class="material-symbols-outlined">favorite</span>
+            Cảm ơn
+          </button>
+        </div>
+
+        <!-- Simplified composer -->
+        <form class="message-composer" (ngSubmit)="sendMessage()" *ngIf="activeRoom">
+          <div class="composer-wrapper">
+            <div class="composer-icon" aria-hidden="true">
+              <span class="material-symbols-outlined">chat</span>
+            </div>
+            <input id="chat-message-input" 
+              type="text" 
+              [(ngModel)]="messageContent"
+              name="messageContent"
+              placeholder="Nhập tin nhắn cho khách hàng..."
+              autocomplete="off"
+              [disabled]="!activeRoom" />
+            <button type="submit" 
+              class="send-btn" 
+              [disabled]="!activeRoom || !messageContent.trim()"
+              title="Gửi tin nhắn">
+              <span class="material-symbols-outlined">arrow_upward</span>
+            </button>
+          </div>
+        </form>
+      </ng-container>
+
+      <ng-template #noConversation>
+        <div class="empty-state no-conversation">
+          <span class="material-symbols-outlined">support_agent</span>
+          <strong>Chat với CSKH</strong>
+          <p>{{ branchId ? getBranchLabel(branchId) : 'Pine Drink Đại Kim' }}</p>
+        </div>
+      </ng-template>
     </main>
+
+    <aside class="info-column" aria-label="Thông tin hội thoại">
+      <ng-container *ngIf="activeRoom; else noInfo">
+        <section class="info-card spotlight-card" *ngIf="messages.length > 0; else noCustomerYet">
+          <div class="room-avatar xl">
+            <img *ngIf="hasRoomAvatar(activeRoom); else spotlightInitial" [src]="getRoomAvatarUrl(activeRoom)" [alt]="getRoomName(activeRoom)" />
+            <ng-template #spotlightInitial>{{ getRoomInitial(activeRoom) }}</ng-template>
+          </div>
+          <h3>{{ getConversationTitle(activeRoom) }}</h3>
+          <p>{{ activeRoom.customerPhone || 'Chưa có số điện thoại' }}</p>
+        </section>
+
+        <ng-template #noCustomerYet>
+          <div class="info-card spotlight-card empty-customer">
+            <span class="material-symbols-outlined">person_off</span>
+            <h3>Chưa có tin nhắn</h3>
+            <p>Thông tin khách hàng sẽ hiện khi có tin nhắn đầu tiên.</p>
+          </div>
+        </ng-template>
+
+        <section class="info-card">
+          <div class="section-title"><span class="material-symbols-outlined">receipt_long</span><h3>Order context</h3></div>
+          <div class="order-context" *ngIf="activeRoom.orderId; else emptyOrder">
+            <strong>#{{ activeRoom.orderId }}</strong>
+            <span>Ngữ cảnh bổ sung</span>
+            <p>Không tạo room mới; dùng lại conversation active của khách tại chi nhánh.</p>
+          </div>
+          <ng-template #emptyOrder>
+            <div class="mini-empty"><span class="material-symbols-outlined">receipt</span><p>Chưa gắn order context.</p></div>
+          </ng-template>
+        </section>
+      </ng-container>
+
+      <ng-template #noInfo>
+        <div class="empty-state info-empty">
+          <span class="material-symbols-outlined">badge</span>
+          <strong>Conversation metadata</strong>
+          <p>Chọn hội thoại để xem branch/order/lead.</p>
+        </div>
+      </ng-template>
+    </aside>
   </div>
 </section>
