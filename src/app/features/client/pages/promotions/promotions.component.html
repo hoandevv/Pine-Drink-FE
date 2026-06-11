@@ -1,135 +1,96 @@
 <div class="promotions-page">
-  <!-- Header -->
-  <header class="page-header">
-    <div class="header-content">
-      <div>
-        <h1 class="page-title">Khuyến mãi & Ưu đãi</h1>
-        <p class="page-subtitle">Săn voucher giảm giá hấp dẫn cho đơn hàng của bạn</p>
-      </div>
-      <div class="header-stats">
-        <div class="stat-item">
-          <span class="stat-value">{{ allVouchers.length }}</span>
-          <span class="stat-label">Ưu đãi</span>
-        </div>
-      </div>
+  <section class="promo-header">
+    <div>
+      <span class="eyebrow">Pine Drink rewards</span>
+      <h1>Ưu đãi độc quyền</h1>
+      <p>Lưu voucher và áp dụng khi đặt đồ uống tại Pine Drink.</p>
     </div>
-  </header>
+    <div class="promo-summary">
+      <strong>{{ allVouchers.length }}</strong>
+      <span>mã đang mở</span>
+    </div>
+  </section>
 
-  <!-- Filter Tabs -->
-  <div class="filter-tabs">
-    <button 
-      type="button"
-      class="filter-tab"
-      [class.active]="selectedFilter === 'all'"
-      (click)="filterVouchers('all')">
-      <span class="material-symbols-outlined">apps</span>
-      Tất cả
+  <nav class="promo-tabs" aria-label="Bộ lọc ưu đãi">
+    <button type="button" [class.active]="selectedFilter === 'all'" (click)="filterVouchers('all')">
+      <span class="material-symbols-outlined">apps</span>Tất cả
     </button>
-    <button 
-      type="button"
-      class="filter-tab"
-      [class.active]="selectedFilter === 'percentage'"
-      (click)="filterVouchers('percentage')">
-      <span class="material-symbols-outlined">percent</span>
-      Giảm %
+    <button type="button" [class.active]="selectedFilter === 'shipping'" (click)="filterVouchers('shipping')">
+      <span class="material-symbols-outlined">local_shipping</span>Freeship
     </button>
-    <button 
-      type="button"
-      class="filter-tab"
-      [class.active]="selectedFilter === 'fixed'"
-      (click)="filterVouchers('fixed')">
-      <span class="material-symbols-outlined">payments</span>
-      Giảm tiền
+    <button type="button" [class.active]="selectedFilter === 'percentage'" (click)="filterVouchers('percentage')">
+      <span class="material-symbols-outlined">percent</span>Giảm giá
     </button>
-    <button 
-      type="button"
-      class="filter-tab"
-      [class.active]="selectedFilter === 'shipping'"
-      (click)="filterVouchers('shipping')">
-      <span class="material-symbols-outlined">local_shipping</span>
-      Freeship
+    <button type="button" [class.active]="selectedFilter === 'expiring'" (click)="filterVouchers('expiring')">
+      <span class="material-symbols-outlined">timer</span>Sắp hết hạn
     </button>
+    <button type="button" [class.active]="selectedFilter === 'saved'" (click)="filterVouchers('saved')">
+      <span class="material-symbols-outlined">bookmark</span>Đã lưu
+    </button>
+  </nav>
+
+  <div class="toast-copy" *ngIf="copiedVoucherId">
+    <span class="material-symbols-outlined">check_circle</span>
+    Đã copy mã voucher
   </div>
 
-  <!-- Vouchers Grid -->
-  <div class="vouchers-container">
-    <div class="vouchers-grid">
-      <article *ngFor="let voucher of filteredVouchers" class="voucher-card" [class]="'tone-' + voucher.tone">
-        <!-- Expiring Soon Badge -->
-        <div class="expiring-badge" *ngIf="isExpiringSoon(voucher)">
-          <span class="material-symbols-outlined">schedule</span>
-          Sắp hết hạn
+  <section class="voucher-skeleton-grid" *ngIf="loading" aria-label="Đang tải ưu đãi">
+    <article class="voucher-skeleton" *ngFor="let item of [1,2,3,4,5,6]"></article>
+  </section>
+
+  <section class="voucher-grid" *ngIf="!loading && filteredVouchers.length">
+    <article class="voucher-card" *ngFor="let voucher of filteredVouchers" [class.saved]="isSaved(voucher)" [class.expiring]="isExpiringSoon(voucher)">
+      <div class="voucher-topline">
+        <span class="voucher-code">{{ voucher.code }}</span>
+        <span class="status-chip saved-chip" *ngIf="isSaved(voucher)">Đã lưu</span>
+        <span class="status-chip warn-chip" *ngIf="!isSaved(voucher) && isExpiringSoon(voucher)">Sắp hết hạn</span>
+        <span class="status-chip ok-chip" *ngIf="!isSaved(voucher) && !isExpiringSoon(voucher)">Còn {{ remainingCount(voucher) }} lượt</span>
+      </div>
+
+      <div class="voucher-main">
+        <div class="discount-mark">{{ getDiscountText(voucher) }}</div>
+        <div>
+          <h2>{{ voucher.name }}</h2>
+          <p>{{ voucher.description }}</p>
         </div>
+      </div>
 
-        <!-- Voucher Header -->
-        <div class="voucher-header">
-          <div class="discount-badge">
-            <span class="discount-value">{{ getDiscountText(voucher) }}</span>
-          </div>
-          <div class="voucher-image" [style.background-image]="'url(' + voucher.image + ')'"></div>
+      <div class="voucher-meta">
+        <div>
+          <span class="material-symbols-outlined">shopping_bag</span>
+          Đơn từ {{ formatPrice(voucher.minOrderAmount) }}
         </div>
-
-        <!-- Voucher Body -->
-        <div class="voucher-body">
-          <div class="voucher-code-section">
-            <div class="code-label">Mã giảm giá</div>
-            <div class="code-display">
-              <span class="code-text">{{ voucher.code }}</span>
-              <button 
-                type="button" 
-                class="copy-button"
-                [class.copied]="copiedVoucherId === voucher.id"
-                (click)="copyVoucherCode(voucher)">
-                <span class="material-symbols-outlined" *ngIf="copiedVoucherId !== voucher.id">content_copy</span>
-                <span class="material-symbols-outlined" *ngIf="copiedVoucherId === voucher.id">check</span>
-              </button>
-            </div>
-          </div>
-
-          <h3 class="voucher-title">{{ voucher.title }}</h3>
-          <p class="voucher-description">{{ voucher.description }}</p>
-
-          <!-- Voucher Details -->
-          <div class="voucher-details">
-            <div class="detail-item">
-              <span class="material-symbols-outlined">shopping_cart</span>
-              <span>Đơn tối thiểu: {{ formatPrice(voucher.minOrderAmount) }}</span>
-            </div>
-            <div class="detail-item" *ngIf="voucher.maxDiscountAmount">
-              <span class="material-symbols-outlined">savings</span>
-              <span>Giảm tối đa: {{ formatPrice(voucher.maxDiscountAmount) }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="material-symbols-outlined">event</span>
-              <span>HSD: {{ formatDate(voucher.endDate) }}</span>
-            </div>
-          </div>
-
-          <!-- Usage Progress -->
-          <div class="usage-section">
-            <div class="usage-header">
-              <span class="usage-label">Đã dùng</span>
-              <span class="usage-count">{{ voucher.usedCount }}/{{ voucher.usageLimit }}</span>
-            </div>
-            <div class="usage-progress">
-              <div class="progress-bar" [style.width.%]="getUsagePercentage(voucher)"></div>
-            </div>
-          </div>
-
-          <!-- Action Button -->
-          <button type="button" class="use-voucher-button" (click)="copyVoucherCode(voucher)">
-            <span class="material-symbols-outlined">redeem</span>
-            {{ copiedVoucherId === voucher.id ? 'Đã sao chép!' : 'Sử dụng ngay' }}
-          </button>
+        <div *ngIf="voucher.maxDiscountAmount">
+          <span class="material-symbols-outlined">savings</span>
+          Tối đa {{ formatPrice(voucher.maxDiscountAmount) }}
         </div>
-      </article>
-    </div>
+        <div>
+          <span class="material-symbols-outlined">event</span>
+          HSD {{ formatDate(voucher.endAt) }}
+        </div>
+      </div>
 
-    <!-- Empty State -->
-    <div class="empty-state" *ngIf="filteredVouchers.length === 0">
-      <span class="material-symbols-outlined">local_offer</span>
-      <h3>Không có ưu đãi nào</h3>
-      <p>Thử chọn bộ lọc khác để xem các ưu đãi khác</p>
-    </div>
+      <div class="usage-row">
+        <span>{{ voucher.usedCount }}/{{ voucher.usageLimit }} đã dùng</span>
+        <div class="usage-track"><i [style.width.%]="getUsagePercentage(voucher)"></i></div>
+      </div>
+
+      <div class="voucher-actions">
+        <button type="button" class="secondary-btn" (click)="copyVoucherCode(voucher)">
+          <span class="material-symbols-outlined">content_copy</span>
+          Copy mã
+        </button>
+        <button type="button" class="primary-btn" (click)="isSaved(voucher) ? copyVoucherCode(voucher) : saveVoucher(voucher)">
+          <span class="material-symbols-outlined">{{ isSaved(voucher) ? 'shopping_cart' : 'bookmark_add' }}</span>
+          {{ isSaved(voucher) ? 'Dùng ngay' : 'Lưu mã' }}
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <div class="empty-state" *ngIf="!loading && filteredVouchers.length === 0">
+    <span class="material-symbols-outlined">local_offer</span>
+    <h3>Chưa có ưu đãi phù hợp</h3>
+    <p>Thử chọn bộ lọc khác hoặc quay lại sau để nhận voucher mới.</p>
   </div>
 </div>

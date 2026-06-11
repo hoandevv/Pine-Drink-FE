@@ -6,7 +6,7 @@ import { ProductService } from '../../../products/services/product.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchHours } from '../../../branches/models/branch-hours.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { MOCK_VOUCHERS, MockVoucher } from '../../../../shared/mock-data';
+import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
 
 @Component({
   selector: 'app-home',
@@ -15,7 +15,7 @@ import { MOCK_VOUCHERS, MockVoucher } from '../../../../shared/mock-data';
 })
 export class HomeComponent implements OnInit {
   bestSellerProducts: Product[] = [];
-  vouchers: MockVoucher[] = [];
+  vouchers: VoucherResponse[] = [];
   nearbyBranches: Branch[] = [];
   selectedBranch: Branch | null = null;
   loadingProducts = false;
@@ -26,7 +26,8 @@ export class HomeComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private readonly productService: ProductService,
-    private readonly branchService: BranchService
+    private readonly branchService: BranchService,
+    private readonly voucherService: VoucherService
   ) {}
 
   ngOnInit(): void {
@@ -37,9 +38,7 @@ export class HomeComponent implements OnInit {
     this.loadProducts();
     this.loadBranches();
 
-    this.vouchers = MOCK_VOUCHERS
-      .filter(voucher => voucher.isActive)
-      .slice(0, 3);
+    this.loadVouchers();
   }
 
   loadProducts(): void {
@@ -78,7 +77,15 @@ export class HomeComponent implements OnInit {
   }
 
   applyVoucher(voucherCode: string): void {
-    console.log('Applying voucher:', voucherCode);
+    navigator.clipboard?.writeText(voucherCode);
+    this.router.navigate(['/promotions']);
+  }
+
+  private loadVouchers(): void {
+    this.voucherService.search({ status: 'ACTIVE', page: 0, size: 3, sort: 'createdAt,desc' }).subscribe({
+      next: res => this.vouchers = res.data.content || [],
+      error: () => this.vouchers = []
+    });
   }
 
   addToCart(product: Product): void {

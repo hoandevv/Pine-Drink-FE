@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { MOCK_VOUCHERS, MockVoucher } from '../../../../shared/mock-data';
+import { finalize } from 'rxjs';
+import { ToastService } from 'src/app/core/services/toast.service';
+import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
+
+type VoucherFilter = 'all' | 'shipping' | 'percentage' | 'expiring' | 'saved';
 
 @Component({
   selector: 'app-promotions',
@@ -7,74 +11,119 @@ import { MOCK_VOUCHERS, MockVoucher } from '../../../../shared/mock-data';
   styleUrls: ['./promotions.component.scss']
 })
 export class PromotionsComponent implements OnInit {
-  allVouchers: MockVoucher[] = [];
-  filteredVouchers: MockVoucher[] = [];
-  selectedFilter: 'all' | 'percentage' | 'fixed' | 'shipping' = 'all';
+  allVouchers: VoucherResponse[] = [];
+  filteredVouchers: VoucherResponse[] = [];
+  selectedFilter: VoucherFilter = 'all';
   copiedVoucherId: string | null = null;
+  savedVoucherIds = new Set<string>();
+  loading = true;
 
-  constructor() {}
+  constructor(
+    private readonly voucherService: VoucherService,
+    private readonly toast: ToastService
+  ) {}
 
   ngOnInit(): void {
+    this.savedVoucherIds = new Set(JSON.parse(localStorage.getItem('pine_saved_vouchers') || '[]'));
     this.loadVouchers();
   }
 
   loadVouchers(): void {
-    this.allVouchers = MOCK_VOUCHERS.filter(v => v.isActive);
-    this.filteredVouchers = [...this.allVouchers];
-  }
-
-  filterVouchers(type: 'all' | 'percentage' | 'fixed' | 'shipping'): void {
-    this.selectedFilter = type;
-    
-    if (type === 'all') {
-      this.filteredVouchers = [...this.allVouchers];
-    } else {
-      const typeMap = {
-        'percentage': 'PERCENTAGE',
-        'fixed': 'FIXED_AMOUNT',
-        'shipping': 'FREE_SHIPPING'
-      };
-      this.filteredVouchers = this.allVouchers.filter(v => v.discountType === typeMap[type]);
-    }
-  }
-
-  copyVoucherCode(voucher: MockVoucher): void {
-    navigator.clipboard.writeText(voucher.code).then(() => {
-      this.copiedVoucherId = voucher.id;
-      setTimeout(() => {
-        this.copiedVoucherId = null;
-      }, 2000);
+    this.loading = true;
+    this.voucherService.search({
+      status: 'ACTIVE',
+      page: 0,
+      size: 100,
+      sort: 'createdAt,desc'
+    }).pipe(finalize(() => (this.loading = false))).subscribe({
+      next: res => {
+        this.allVouchers = res.data.content || [];
+        this.applyFilter();
+      },
+      error: () => {
+        this.allVouchers = [];
+        this.filteredVouchers = [];
+        this.toast.error('Không tải được ưu đãi');
+      }
     });
   }
 
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+  filterVouchers(type: VoucherFilter): void {
+    this.selectedFilter = type;
+    this.applyFilter();
+  }
+
+  applyFilter(): void {
+    if (this.selectedFilter === 'all') {
+      this.filteredVouchers = [...this.allVouchers];
+      return;
+    }
+    if (this.selectedFilter === 'saved') {
+      this.filteredVouchers = this.allVouchers.filter(v => this.savedVoucherIds.has(v.id));
+      return;
+    }
+    if (this.selectedFilter === 'expiring') {
+      this.filteredVouchers = this.allVouchers.filter(v => this.isExpiringSoon(v));
+      return;
+    }
+    if (this.selectedFilter === 'percentage') {
+      this.filteredVouchers = this.allVouchers.filter(v => v.discountType === 'PERCENTAGE' || v.discountType === 'FIXED_AMOUNT');
+      return;
+    }
+    if (this.selectedFilter === 'shipping') {
+      this.filteredVouchers = this.allVouchers.filter(v => v.discountType === 'FREE_SHIPPING');
+    }
+  }
+
+  saveVoucher(voucher: VoucherResponse): void {
+    this.savedVoucherIds.add(voucher.id);
+    localStorage.setItem('pine_saved_vouchers', JSON.stringify([...this.savedVoucherIds]));
+    this.copyVoucherCode(voucher);
+    this.applyFilter();
+  }
+
+  isSaved(voucher: VoucherResponse): boolean {
+    return this.savedVoucherIds.has(voucher.id);
+  }
+
+  copyVoucherCode(voucher: VoucherResponse): void {
+    navigator.clipboard.writeText(voucher.code).then(() => {
+      this.copiedVoucherId = voucher.id;
+      this.toast.success(`Đã copy mã ${voucher.code}`);
+      setTimeout(() => this.copiedVoucherId = null, 2000);
+    });
+  }
+
+  formatPrice(price?: number | null): string {
+    return new Intl.NumberFormat('vi-VN').format(price || 0) + 'đ';
   }
 
   formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
   }
 
-  getDiscountText(voucher: MockVoucher): string {
+  getDiscountText(voucher: VoucherResponse): string {
     switch (voucher.discountType) {
-      case 'PERCENTAGE':
-        return `Giảm ${voucher.discountValue}%`;
-      case 'FIXED_AMOUNT':
-        return `Giảm ${this.formatPrice(voucher.discountValue)}`;
-      case 'FREE_SHIPPING':
-        return 'Miễn phí ship';
-      default:
-        return '';
+      case 'PERCENTAGE': return `-${voucher.discountValue}%`;
+      case 'FIXED_AMOUNT': return `-${this.formatPrice(voucher.discountValue)}`;
+      case 'FREE_SHIPPING': return 'Freeship';
+      default: return `-${this.formatPrice(voucher.discountValue)}`;
     }
   }
 
-  getUsagePercentage(voucher: MockVoucher): number {
-    return (voucher.usedCount / voucher.usageLimit) * 100;
+  getUsagePercentage(voucher: VoucherResponse): number {
+    if (!voucher.usageLimit) return 0;
+    return Math.min(100, (voucher.usedCount / voucher.usageLimit) * 100);
   }
 
-  isExpiringSoon(voucher: MockVoucher): boolean {
-    const endDate = new Date(voucher.endDate);
+  remainingCount(voucher: VoucherResponse): number {
+    if (!voucher.usageLimit) return 999;
+    return Math.max(0, voucher.usageLimit - voucher.usedCount);
+  }
+
+  isExpiringSoon(voucher: VoucherResponse): boolean {
+    const endDate = new Date(voucher.endAt);
     const today = new Date();
     const daysUntilExpiry = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return daysUntilExpiry <= 7 && daysUntilExpiry > 0;

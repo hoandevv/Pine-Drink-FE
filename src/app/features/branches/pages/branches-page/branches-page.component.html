@@ -11,32 +11,18 @@
   </div>
 </app-page-header>
 
-<section class="branch-hero" aria-label="Branch overview">
-  <article class="overview-card featured">
-    <div class="overview-copy">
-      <span class="overview-kicker">Branch network</span>
-      <h2>{{ pageData.totalElements }} chi nhánh</h2>
-      <p>Quản lý cửa hàng, bản đồ và trạng thái vận hành trong một bảng điều khiển.</p>
-    </div>
-    <div class="overview-orb">
-      <span class="material-symbols-outlined">storefront</span>
-    </div>
+<section class="branch-stats-row" aria-label="Thống kê chi nhánh">
+  <article class="branch-stat-card total">
+    <span class="material-symbols-outlined">storefront</span>
+    <div><small>Tổng chi nhánh</small><strong>{{ pageData.totalElements }}</strong></div>
   </article>
-
-  <article class="overview-card mini active">
+  <article class="branch-stat-card active">
     <span class="material-symbols-outlined">verified</span>
-    <div>
-      <small>Đang hoạt động</small>
-      <strong>{{ activeCount }}</strong>
-    </div>
+    <div><small>Đang hoạt động</small><strong>{{ activeCount }}</strong></div>
   </article>
-
-  <article class="overview-card mini maintenance">
+  <article class="branch-stat-card maintenance">
     <span class="material-symbols-outlined">engineering</span>
-    <div>
-      <small>Bảo trì</small>
-      <strong>{{ maintenanceCount }}</strong>
-    </div>
+    <div><small>Bảo trì / tạm ngưng</small><strong>{{ maintenanceCount }}</strong></div>
   </article>
 </section>
 

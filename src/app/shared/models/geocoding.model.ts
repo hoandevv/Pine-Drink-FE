@@ -4,14 +4,15 @@ export interface GeocodingSearchRequest {
 }
 
 export interface GeocodingResult {
-  displayName: string;
-  addressLine: string;
+  displayName?: string;
+  addressLine?: string;
+  formattedAddress?: string;
   ward: string | null;
   district: string | null;
   city: string | null;
   country: string | null;
-  latitude: number;
-  longitude: number;
+  latitude: number | string;
+  longitude: number | string;
   confidence: number;
   provider: string;
 }
