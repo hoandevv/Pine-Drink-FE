@@ -371,16 +371,19 @@
 .category-drawer {
   position: fixed;
   z-index: 41;
-  top: 0;
-  right: 0;
-  width: min(460px, 92vw);
-  height: 100vh;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: min(460px, calc(92vw - 16px));
+  height: auto;
   padding: 24px;
   background: rgba(255, 253, 246, 0.96);
-  border-left: 1px solid rgba(15, 74, 42, 0.12);
+  border: 1px solid rgba(15, 74, 42, 0.12);
+  border-radius: 28px;
   box-shadow: -24px 0 70px rgba(10, 31, 19, 0.18);
-  transform: translateX(105%);
+  transform: translateX(calc(100% + 32px));
   transition: transform 240ms ease;
+  overflow: hidden;
 }
 
 .category-drawer.open {
@@ -389,9 +392,19 @@
 
 .category-drawer form {
   height: 100%;
+  max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 6px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-drawer form::-webkit-scrollbar {
+  display: none;
 }
 
 .drawer-head {

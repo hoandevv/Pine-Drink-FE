@@ -99,9 +99,9 @@
     </div>
   </div>
   <div class="promo-row">
-    <article *ngFor="let promo of vouchers" class="promo-card" [class.primary]="promo.tone === 'primary'">
+    <article *ngFor="let promo of vouchers; let i = index" class="promo-card" [class.primary]="i === 0">
       <span>{{ promo.code }}</span>
-      <h3>{{ promo.title }}</h3>
+      <h3>{{ promo.name }}</h3>
       <p>{{ promo.description }}</p>
       <button type="button" (click)="applyVoucher(promo.code)">{{ 'home.promos.getOffer' | translate }}</button>
     </article>

@@ -120,7 +120,7 @@ h3 { margin: 4px 0 10px; color: #10251a; font-size: 20px; }
 .page-actions button:disabled { opacity: .45; cursor: not-allowed; }
 
 .drawer-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,.32); backdrop-filter: blur(4px); z-index: 40; }
-.topping-drawer { position: fixed; top: 0; right: 0; z-index: 50; width: min(450px, 94vw); height: 100vh; padding: 22px; background: linear-gradient(180deg, #fbfef8, #f0fdf4); box-shadow: -20px 0 60px rgba(15,23,42,.18); transform: translateX(105%); transition: transform .25s ease; overflow-y: auto; }
+.topping-drawer { position: fixed; top: 16px; right: 16px; bottom: 16px; z-index: 50; width: min(450px, calc(94vw - 16px)); height: auto; padding: 22px; border: 1px solid rgba(20,83,45,.1); border-radius: 28px; background: linear-gradient(180deg, #fbfef8, #f0fdf4); box-shadow: -20px 0 60px rgba(15,23,42,.18); transform: translateX(calc(100% + 32px)); transition: transform .25s ease; overflow-y: auto; overflow-x: hidden; }
 .topping-drawer.open { transform: translateX(0); }
 .drawer-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .drawer-head h2 { margin: 3px 0 0; color: #052e16; }

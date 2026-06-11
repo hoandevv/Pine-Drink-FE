@@ -1,4 +1,5 @@
 .map-picker {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -54,9 +55,10 @@
 
 .search-container {
   position: relative;
-  z-index: 20;
+  z-index: 10000;
   display: grid;
   gap: 0.75rem;
+  overflow: visible;
 }
 
 .current-location-button {
@@ -92,6 +94,7 @@
 
 .map-frame {
   position: relative;
+  z-index: 1;
   overflow: hidden;
   border-radius: 12px;
   border: 2px solid #E8DDC3;
@@ -152,6 +155,7 @@
 
 .search-input-wrapper {
   position: relative;
+  z-index: 10002;
   display: flex;
   align-items: center;
   background: white;
@@ -218,7 +222,7 @@
 
 .search-results {
   position: absolute;
-  top: calc(100% + 0.5rem);
+  top: calc(100% + 8px);
   left: 0;
   right: 0;
   background: white;
@@ -227,24 +231,35 @@
   box-shadow: 0 8px 24px rgba(22, 74, 47, 0.15);
   max-height: 300px;
   overflow-y: auto;
-  z-index: 30;
+  z-index: 10003;
+  pointer-events: auto;
 }
 
 .search-result-item {
+  width: 100%;
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  border: 0;
   border-bottom: 1px solid #F5F5F0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  transition: all 0.2s;
 
   &:last-child {
     border-bottom: none;
   }
 
-  &:hover {
+  &:hover,
+  &:focus-visible {
     background: #FFF8E7;
+    outline: none;
   }
 
   .material-symbols-outlined {
@@ -274,7 +289,7 @@
 
 .map-container {
   position: relative;
-  z-index: 0;
+  z-index: 1;
   isolation: isolate;
   height: 380px;
 

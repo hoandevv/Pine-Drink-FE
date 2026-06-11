@@ -3,26 +3,35 @@
   <div class="search-container">
     <div class="search-input-wrapper">
       <span class="material-symbols-outlined search-icon">search</span>
-      <input
-        type="text"
-        class="search-input"
-        [value]="searchQuery"
-        (input)="onSearchInput($event)"
-        placeholder="{{ 'address.searchPlaceholder' | translate }}"
-      />
-      <button
-        *ngIf="searchQuery"
-        class="clear-button"
-        (click)="clearSearch()"
-        type="button"
-      >
+      <input type="text" class="search-input" [value]="searchQuery" (input)="onSearchInput($event)"
+        placeholder="{{ 'address.searchPlaceholder' | translate }}" />
+      <button *ngIf="searchQuery" class="clear-button" (click)="clearSearch()" type="button">
         <span class="material-symbols-outlined">close</span>
       </button>
       <span *ngIf="isSearching" class="loading-spinner">
         <span class="material-symbols-outlined spinning">progress_activity</span>
       </span>
-    </div>
 
+      <!-- Search Results Dropdown -->
+      <div *ngIf="showResults" class="search-results">
+        <button
+          *ngFor="let result of searchResults"
+          type="button"
+          class="search-result-item"
+          (pointerdown)="selectResult(result); $event.stopPropagation()"
+        >
+          <span class="material-symbols-outlined">location_on</span>
+          <div class="result-info">
+            <div class="result-name">
+              {{ result.displayName || result.formattedAddress || result.addressLine }}
+            </div>
+            <div class="result-confidence" *ngIf="result.confidence !== null && result.confidence !== undefined">
+              {{ 'address.confidence' | translate }}: {{ (result.confidence * 100).toFixed(0) }}%
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
 
     <button type="button" class="current-location-button" (click)="useCurrentLocation()" [disabled]="isLocating">
       <span class="material-symbols-outlined" [class.spinning]="isLocating">
@@ -35,28 +44,12 @@
       <span class="material-symbols-outlined">warning</span>
       <span>{{ locationError }}</span>
     </div>
-
-    <!-- Search Results Dropdown -->
-    <div *ngIf="showResults" class="search-results">
-      <div
-        *ngFor="let result of searchResults"
-        class="search-result-item"
-        (click)="selectResult(result)"
-      >
-        <span class="material-symbols-outlined">location_on</span>
-        <div class="result-info">
-          <div class="result-name">{{ result.displayName }}</div>
-          <div class="result-confidence">
-            {{ 'address.confidence' | translate }}: {{ (result.confidence * 100).toFixed(0) }}%
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="map-frame">
     <div class="map-toolbox" aria-label="Điều khiển bản đồ">
-      <button type="button" (click)="showCurrentLocationOnMap()" [disabled]="isPreviewLocating" aria-label="Định vị tôi">
+      <button type="button" (click)="showCurrentLocationOnMap()" [disabled]="isPreviewLocating"
+        aria-label="Định vị tôi">
         <span class="material-symbols-outlined" [class.spinning]="isPreviewLocating">
           {{ isPreviewLocating ? 'progress_activity' : 'my_location' }}
         </span>

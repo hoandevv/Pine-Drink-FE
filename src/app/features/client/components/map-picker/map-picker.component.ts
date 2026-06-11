@@ -120,26 +120,72 @@ export class MapPickerComponent implements OnInit, OnDestroy {
   }
 
   selectResult(result: GeocodingResult): void {
-    this.placeMarker(result.latitude, result.longitude);
+    const rawResult = result as any;
 
-    // Update current location
+    const latitude = Number(
+      rawResult.latitude ??
+      rawResult.lat ??
+      rawResult.location?.latitude ??
+      rawResult.location?.lat ??
+      rawResult.coordinates?.latitude ??
+      rawResult.coordinates?.lat
+    );
+
+    const longitude = Number(
+      rawResult.longitude ??
+      rawResult.lng ??
+      rawResult.lon ??
+      rawResult.location?.longitude ??
+      rawResult.location?.lng ??
+      rawResult.location?.lon ??
+      rawResult.coordinates?.longitude ??
+      rawResult.coordinates?.lng ??
+      rawResult.coordinates?.lon
+    );
+
+    console.log('SELECTED GEOCODING RESULT:', rawResult);
+    console.log('PARSED LAT/LNG:', latitude, longitude);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      this.locationError = 'Không đọc được tọa độ từ địa chỉ đã chọn.';
+      return;
+    }
+
+    const displayName =
+      rawResult.displayName ||
+      rawResult.display_name ||
+      rawResult.formattedAddress ||
+      rawResult.formatted_address ||
+      rawResult.addressLine ||
+      rawResult.address_line ||
+      rawResult.name ||
+      this.searchQuery;
+
+    const addressLine =
+      rawResult.addressLine ||
+      rawResult.address_line ||
+      rawResult.formattedAddress ||
+      rawResult.formatted_address ||
+      displayName;
+
+    this.placeMarker(latitude, longitude);
+
     this.currentLocation = {
-      latitude: result.latitude,
-      longitude: result.longitude,
-      displayName: result.displayName,
-      addressLine: result.addressLine,
-      ward: result.ward,
-      district: result.district,
-      city: result.city
+      latitude,
+      longitude,
+      displayName,
+      addressLine,
+      ward: rawResult.ward ?? rawResult.address?.suburb ?? rawResult.address?.quarter ?? null,
+      district: rawResult.district ?? rawResult.address?.city_district ?? rawResult.address?.district ?? null,
+      city: rawResult.city ?? rawResult.address?.city ?? rawResult.address?.state ?? null
     };
 
-    // Emit location
     this.locationSelected.emit(this.currentLocation);
 
-    // Clear search
-    this.searchQuery = result.displayName;
+    this.searchQuery = displayName;
     this.showResults = false;
     this.searchResults = [];
+    this.locationError = '';
   }
 
   useCurrentLocation(): void {
