@@ -1,56 +1,18 @@
-<section class="master-shell">
-  <header class="master-hero" aria-label="Topping Master overview">
-    <div class="hero-content">
-      <div class="hero-badge">
-        <span class="material-symbols-outlined">bakery_dining</span>
-        <span>Topping Master</span>
-      </div>
+<section class="topping-page">
+  <header class="page-header" aria-label="Topping Master header">
+    <div class="title-block">
+      <span class="eyebrow">Topping Master</span>
       <h1>Kho topping</h1>
       <p>Quản lý topping gốc dùng để gắn vào sản phẩm.</p>
     </div>
 
-    <div class="hero-panel">
-      <article>
-        <span>Tổng</span>
-        <strong>{{ pageData.totalElements }}</strong>
-      </article>
-      <article>
-        <span>Đang bán</span>
-        <strong>{{ activeCount }}</strong>
-      </article>
-      <article>
-        <span>Tạm ẩn</span>
-        <strong>{{ inactiveCount }}</strong>
-      </article>
-    </div>
-
-    <div class="control-grid">
-      <label class="search-field">
-        <span class="material-symbols-outlined">search</span>
-        <input id="topping-master-search-input" type="search" [(ngModel)]="searchTerm" placeholder="Tìm tên, mã, nhóm...">
-      </label>
-
-      <label class="select-field">
-        <select id="topping-master-status-filter" [(ngModel)]="statusFilter" aria-label="Lọc trạng thái topping">
-          <option value="ALL">Tất cả trạng thái</option>
-          <option value="ACTIVE">Đang bán</option>
-          <option value="INACTIVE">Tạm ẩn</option>
-        </select>
-      </label>
-
-      <label class="select-field">
-        <select id="topping-master-group-filter" [(ngModel)]="groupFilter" aria-label="Lọc nhóm topping">
-          <option value="ALL">Tất cả nhóm</option>
-          <option *ngFor="let group of groupOptions" [ngValue]="group">{{ group }}</option>
-        </select>
-      </label>
-
+    <div class="header-actions">
       <button id="refresh-topping-master-btn" type="button" class="btn ghost" (click)="refresh()" [disabled]="loading">
         <span class="material-symbols-outlined">refresh</span>
         Làm mới
       </button>
       <button id="create-topping-master-btn" type="button" class="btn primary" (click)="openCreateDrawer()">
-        <span class="material-symbols-outlined">add_circle</span>
+        <span class="material-symbols-outlined">add</span>
         Thêm topping
       </button>
     </div>
@@ -61,43 +23,141 @@
     {{ errorMessage }}
   </div>
 
-  <div class="topping-board" *ngIf="visibleToppings.length; else emptyState">
-    <article class="topping-card" *ngFor="let topping of visibleToppings; trackBy: trackTopping">
-      <div class="card-media">
-        <img *ngIf="topping.imageUrl" [src]="topping.imageUrl" [alt]="topping.name">
-        <span *ngIf="!topping.imageUrl" class="material-symbols-outlined">icecream</span>
-        <em class="status-pill" [class.inactive]="topping.status === 'INACTIVE'">
-          {{ topping.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}
-        </em>
-      </div>
-
-      <div class="card-content">
-        <span class="code">{{ topping.code }}</span>
-        <h3>{{ topping.name }}</h3>
-        <div class="meta-row">
-          <span>{{ topping.groupName || 'Khác' }}</span>
-          <strong>{{ formatCurrency(topping.price) }}</strong>
-        </div>
-      </div>
-
-      <div class="card-actions">
-        <button id="toggle-topping-master-{{ topping.id }}" type="button" class="icon-btn" (click)="toggleStatus(topping)" [disabled]="loading" title="Đổi trạng thái">
-          <span class="material-symbols-outlined">{{ topping.status === 'ACTIVE' ? 'visibility_off' : 'visibility' }}</span>
-        </button>
-        <button id="edit-topping-master-{{ topping.id }}" type="button" class="icon-btn" (click)="openEditDrawer(topping)" title="Sửa">
-          <span class="material-symbols-outlined">edit</span>
-        </button>
-        <button id="delete-topping-master-{{ topping.id }}" type="button" class="icon-btn danger" (click)="deleteTopping(topping)" [disabled]="loading" title="Xóa">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
-      </div>
+  <section class="stats-row" aria-label="Topping stats">
+    <article class="stat-card">
+      <span>Tổng</span>
+      <strong>{{ pageData.totalElements }}</strong>
     </article>
-  </div>
+    <article class="stat-card active">
+      <span>Đang bán</span>
+      <strong>{{ activeCount }}</strong>
+    </article>
+    <article class="stat-card muted">
+      <span>Tạm ẩn</span>
+      <strong>{{ inactiveCount }}</strong>
+    </article>
+  </section>
 
-  <ng-template #emptyState>
-    <app-empty-state icon="icecream" title="Không có topping phù hợp"
-      description="Thử đổi bộ lọc hoặc tạo topping mới."></app-empty-state>
-  </ng-template>
+  <section class="filter-card" aria-label="Topping filters">
+    <label class="search-field">
+      <span class="material-symbols-outlined">search</span>
+      <input id="topping-master-search-input" type="search" [(ngModel)]="searchTerm" placeholder="Tìm tên, mã, nhóm...">
+    </label>
+
+    <label class="select-field">
+      <select id="topping-master-status-filter" [(ngModel)]="statusFilter" aria-label="Lọc trạng thái topping">
+        <option value="ALL">Tất cả trạng thái</option>
+        <option value="ACTIVE">Đang bán</option>
+        <option value="INACTIVE">Tạm ẩn</option>
+      </select>
+    </label>
+
+    <label class="select-field">
+      <select id="topping-master-group-filter" [(ngModel)]="groupFilter" aria-label="Lọc nhóm topping">
+        <option value="ALL">Tất cả nhóm</option>
+        <option *ngFor="let group of groupOptions" [ngValue]="group">{{ group }}</option>
+      </select>
+    </label>
+
+    <button id="clear-topping-master-filters-btn" type="button" class="btn filter-clear" (click)="searchTerm = ''; statusFilter = 'ALL'; groupFilter = 'ALL'">
+      <span class="material-symbols-outlined">filter_alt_off</span>
+      Xóa lọc
+    </button>
+  </section>
+
+  <section class="list-card" [class.is-loading]="loading">
+    <div class="list-head">
+      <div>
+        <h2>Danh sách topping</h2>
+        <p>{{ visibleToppings.length }} kết quả trên trang này</p>
+      </div>
+      <span class="loading-pill" *ngIf="loading">Đang tải...</span>
+    </div>
+
+    <div class="table-wrap" *ngIf="visibleToppings.length; else emptyState">
+      <table>
+        <thead>
+          <tr>
+            <th>Topping</th>
+            <th>Nhóm</th>
+            <th>Giá</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let topping of visibleToppings; trackBy: trackTopping">
+            <td>
+              <div class="topping-cell">
+                <div class="avatar">
+                  <img *ngIf="topping.imageUrl" [src]="topping.imageUrl" [alt]="topping.name">
+                  <span *ngIf="!topping.imageUrl" class="material-symbols-outlined">icecream</span>
+                </div>
+                <div>
+                  <strong>{{ topping.name }}</strong>
+                  <small>{{ topping.code }}</small>
+                </div>
+              </div>
+            </td>
+            <td><span class="group-pill">{{ topping.groupName || 'Khác' }}</span></td>
+            <td><strong class="price">{{ formatCurrency(topping.price) }}</strong></td>
+            <td>
+              <span class="status-badge" [class.inactive]="topping.status === 'INACTIVE'">
+                {{ topping.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button id="edit-topping-master-{{ topping.id }}" type="button" class="mini-btn" (click)="openEditDrawer(topping)">Sửa</button>
+                <button id="toggle-topping-master-{{ topping.id }}" type="button" class="mini-btn" (click)="toggleStatus(topping)" [disabled]="loading">
+                  {{ topping.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}
+                </button>
+                <button id="delete-topping-master-{{ topping.id }}" type="button" class="mini-btn danger" (click)="deleteTopping(topping)" [disabled]="loading">Xóa</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-list" *ngIf="visibleToppings.length">
+      <article class="mobile-card" *ngFor="let topping of visibleToppings; trackBy: trackTopping">
+        <div class="mobile-main">
+          <div class="avatar">
+            <img *ngIf="topping.imageUrl" [src]="topping.imageUrl" [alt]="topping.name">
+            <span *ngIf="!topping.imageUrl" class="material-symbols-outlined">icecream</span>
+          </div>
+          <div>
+            <h3>{{ topping.name }}</h3>
+            <p>{{ topping.code }} · {{ topping.groupName || 'Khác' }}</p>
+          </div>
+        </div>
+        <div class="mobile-meta">
+          <strong>{{ formatCurrency(topping.price) }}</strong>
+          <span class="status-badge" [class.inactive]="topping.status === 'INACTIVE'">
+            {{ topping.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}
+          </span>
+        </div>
+        <div class="row-actions compact">
+          <button type="button" class="mini-btn" (click)="openEditDrawer(topping)">Sửa</button>
+          <button type="button" class="mini-btn" (click)="toggleStatus(topping)" [disabled]="loading">{{ topping.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}</button>
+          <button type="button" class="mini-btn danger" (click)="deleteTopping(topping)" [disabled]="loading">Xóa</button>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyState>
+      <div class="empty-state">
+        <span class="material-symbols-outlined">icecream</span>
+        <h3>Không có topping phù hợp</h3>
+        <p>Thử đổi bộ lọc hoặc tạo topping mới.</p>
+        <button type="button" class="btn primary" (click)="openCreateDrawer()">
+          <span class="material-symbols-outlined">add</span>
+          Thêm topping
+        </button>
+      </div>
+    </ng-template>
+  </section>
 
   <section class="pagination-bar" *ngIf="pageData.totalElements > 0">
     <div class="page-size-control">

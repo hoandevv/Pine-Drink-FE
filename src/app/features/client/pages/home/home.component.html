@@ -14,9 +14,15 @@
     </div>
   </div>
   <div class="hero-visual">
-    <div class="drink-card main-drink" *ngIf="bestSellerProducts.length > 0">
-      <img *ngIf="bestSellerProducts[0].imageUrl" [src]="bestSellerProducts[0].imageUrl" [alt]="bestSellerProducts[0].name" />
-      <span>{{ getProductBadge(bestSellerProducts[0]) || 'Tươi hôm nay' }}</span>
+    <div class="drink-card main-drink" *ngIf="heroProduct as product" [attr.data-active-index]="activeHeroIndex">
+      <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" />
+      <div *ngIf="!product.imageUrl" class="hero-image-fallback">
+        <span class="material-symbols-outlined">local_cafe</span>
+      </div>
+      <span>{{ getProductBadge(product) || 'Tươi hôm nay' }}</span>
+      <div class="hero-dots" *ngIf="bestSellerProducts.length > 1">
+        <i *ngFor="let item of bestSellerProducts; let i = index" [class.active]="i === activeHeroIndex"></i>
+      </div>
     </div>
     <div class="floating-note">{{ 'home.hero.noQueue' | translate }}</div>
   </div>

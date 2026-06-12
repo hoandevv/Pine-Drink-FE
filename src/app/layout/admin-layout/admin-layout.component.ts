@@ -56,6 +56,7 @@ export class AdminLayoutComponent {
       title: 'Cấu hình sản phẩm',
       items: [
         { label: 'Variants', icon: 'tune', route: '/admin/products/variants', roles: ['ADMIN', 'MANAGER'] },
+        { label: 'Daily Stocks', icon: 'inventory_2', route: '/admin/products/daily-stocks', roles: ['ADMIN', 'MANAGER'] },
         { label: 'Product Toppings', icon: 'icecream', route: '/admin/products/toppings', roles: ['ADMIN', 'MANAGER'] },
         { label: 'Topping Master', icon: 'bakery_dining', route: '/admin/toppings', roles: ['ADMIN', 'MANAGER'] }
       ]

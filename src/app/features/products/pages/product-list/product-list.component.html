@@ -1,99 +1,73 @@
-<section class="product-studio">
-  <div class="studio-hero">
-    <div class="hero-copy">
-      <span class="hero-kicker"><i></i> Admin Catalog</span>
-      <h1>Sản phẩm gọn, giá rõ, menu dễ điều phối.</h1>
-      <p>Quản lý trạng thái bán, danh mục, giá và thông tin hiển thị cho từng món Pine Drink trong một workspace trực quan.</p>
+<section class="product-studio two-row">
+  <div class="top-row">
+    <header class="page-header">
+      <div class="title-block">
+        <span class="eyebrow">Admin Catalog</span>
+        <h1>Sản phẩm</h1>
+        <p>Quản lý menu, giá bán và trạng thái hiển thị.</p>
+      </div>
 
-      <div class="hero-actions">
-        <button id="create-product-button" type="button" class="primary-action" (click)="createProduct()">
+      <div class="header-actions">
+        <button id="create-product-button" type="button" class="btn primary" (click)="createProduct()">
           <span class="material-symbols-outlined">add</span>
           Thêm sản phẩm
         </button>
-        <button id="refresh-products-button" type="button" class="ghost-action" (click)="search()" [disabled]="loading">
+        <button id="refresh-products-button" type="button" class="btn ghost" (click)="search()" [disabled]="loading">
           <span class="material-symbols-outlined">sync</span>
           Làm mới
         </button>
       </div>
-    </div>
+    </header>
 
-    <div class="hero-panel" aria-label="Tổng quan sản phẩm">
-      <article class="metric-card total">
+    <section class="stats-row" aria-label="Tổng quan sản phẩm">
+      <article class="stat-card">
         <span>Tổng sản phẩm</span>
         <strong>{{ pageData.totalElements }}</strong>
-        <small>Đang quản lý</small>
       </article>
-      <article class="metric-card active">
+      <article class="stat-card active">
         <span>Đang bán</span>
         <strong>{{ activeProducts }}</strong>
-        <small>Hiển thị trên menu</small>
       </article>
-      <article class="metric-card hidden">
-        <span>Tạm ẩn</span>
-        <strong>{{ hiddenProducts }}</strong>
-        <small>Cần rà soát</small>
-      </article>
-      <article class="metric-card price">
-        <span>Giá trung bình</span>
+      <article class="stat-card price">
+        <span>Giá TB</span>
         <strong>{{ averagePrice | number }}</strong>
-        <small>VND / sản phẩm</small>
+        <small>VND</small>
       </article>
-    </div>
+    </section>
   </div>
 
-  <section class="branch-availability-dock" *ngIf="branches.length" aria-label="Tồn kho theo chi nhánh">
-    <div class="branch-copy">
-      <span class="branch-kicker"><i></i> Branch Availability</span>
-      <h2>{{ selectedBranch?.name || 'Chọn chi nhánh' }}</h2>
-      <p>Theo dõi nhanh sản phẩm còn hàng, hết hàng và giá bán riêng theo từng chi nhánh.</p>
-    </div>
-
-    <label class="branch-select" for="admin-branch-availability-select">
-      <span>Chi nhánh kiểm tra</span>
-      <select id="admin-branch-availability-select" [ngModel]="selectedBranchId" (ngModelChange)="onBranchChanged($event)">
+  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filter-card toolbar-row">
+    <label class="branch-select compact" *ngIf="branches.length" for="admin-branch-availability-select">
+      <span>Chi nhánh</span>
+      <select id="admin-branch-availability-select" [ngModel]="selectedBranchId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onBranchChanged($event)">
         <option *ngFor="let branch of branches" [ngValue]="branch.id">{{ branch.name }}</option>
       </select>
     </label>
 
-    <div class="branch-mini-metrics">
-      <article>
-        <span>Còn hàng</span>
-        <strong>{{ availableAtBranchCount }}</strong>
-      </article>
-      <article class="warn">
-        <span>Hết hàng</span>
-        <strong>{{ soldOutAtBranchCount }}</strong>
-      </article>
-    </div>
-  </section>
-
-  <form [formGroup]="filterForm" (ngSubmit)="search()" class="filter-dock">
     <label class="search-field" for="product-keyword-input">
       <span class="material-symbols-outlined">search</span>
       <input id="product-keyword-input" type="text" formControlName="keyword" placeholder="Tìm tên sản phẩm, mã SKU..." />
     </label>
 
     <label class="select-field" for="product-category-filter">
-      <span>Danh mục</span>
       <select id="product-category-filter" formControlName="categoryId" aria-label="Lọc danh mục">
-        <option value="">Tất cả</option>
+        <option value="">Tất cả danh mục</option>
         <option *ngFor="let category of categoryOptions" [value]="category.value">{{ category.label }}</option>
       </select>
     </label>
 
     <label class="select-field" for="product-status-filter">
-      <span>Trạng thái</span>
       <select id="product-status-filter" formControlName="status" aria-label="Lọc trạng thái">
-        <option value="">Tất cả</option>
+        <option value="">Tất cả trạng thái</option>
         <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
       </select>
     </label>
 
-    <button id="search-products-button" type="submit" class="filter-action" [disabled]="loading">
+    <button id="search-products-button" type="submit" class="btn filter" [disabled]="loading">
       <span class="material-symbols-outlined">tune</span>
       Lọc
     </button>
-    <button id="reset-products-button" type="button" class="filter-reset" (click)="reset()" [disabled]="loading">Reset</button>
+    <button id="reset-products-button" type="button" class="btn reset" (click)="reset()" [disabled]="loading">Reset</button>
   </form>
 </section>
 
@@ -107,75 +81,98 @@
   <article *ngFor="let item of [1, 2, 3, 4]" class="skeleton-card"></article>
 </section>
 
-<section class="product-grid" *ngIf="!loading && products.length > 0; else productsEmpty">
-  <article
-    class="product-card"
-    *ngFor="let product of products; trackBy: trackProduct"
-    [class.is-inactive]="product.status === 'INACTIVE'"
-    [class.is-branch-sold-out]="isSoldOutAtBranch(product)">
-    <div class="product-media">
-      <img *ngIf="product.imageUrl; else drinkIcon" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
-      <ng-template #drinkIcon>
-        <div class="drink-mark">
-          <span class="material-symbols-outlined">local_cafe</span>
+<section class="product-list-card" *ngIf="!loading && products.length > 0; else productsEmpty">
+  <div class="list-head">
+    <div>
+      <h2>Danh sách sản phẩm</h2>
+      <p>{{ products.length }} sản phẩm trên trang này</p>
+    </div>
+    <span class="loading-pill" *ngIf="availabilityLoading">Đang cập nhật tồn kho...</span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sản phẩm</th>
+          <th>Danh mục</th>
+          <th>Giá</th>
+          <th>Trạng thái</th>
+          <th>Chi nhánh</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of products; trackBy: trackProduct" [class.is-inactive]="product.status === 'INACTIVE'" [class.is-sold-out]="isSoldOutAtBranch(product)">
+          <td>
+            <div class="product-cell">
+              <div class="thumb">
+                <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+                <span *ngIf="!product.imageUrl" class="material-symbols-outlined">local_cafe</span>
+              </div>
+              <div>
+                <strong>{{ product.name }}</strong>
+                <small>{{ product.code }}</small>
+              </div>
+            </div>
+          </td>
+          <td><span class="category-pill">{{ product.categoryName || product.categoryId || 'Chưa phân loại' }}</span></td>
+          <td>
+            <strong class="price">{{ getBranchSalePrice(product) | number }} VND</strong>
+            <small class="origin-price" *ngIf="getAvailability(product.id)?.salePrice && getBranchSalePrice(product) !== product.price">Gốc {{ product.price | number }}</small>
+          </td>
+          <td><span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}</span></td>
+          <td>
+            <span class="branch-chip" *ngIf="getAvailability(product.id) as availability" [class.sold-out]="!availability.available">
+              {{ availability.available ? 'Còn hàng' : 'Hết hàng' }}
+            </span>
+            <span class="branch-chip muted" *ngIf="!getAvailability(product.id)">Chưa set</span>
+          </td>
+          <td>
+            <div class="row-actions">
+              <button type="button" class="icon-btn edit" [attr.aria-label]="'Sửa ' + product.name" (click)="editProduct(product.id)"><span class="material-symbols-outlined">edit</span></button>
+              <button
+                type="button"
+                class="icon-btn status-toggle"
+                [class.restore]="product.status === 'INACTIVE'"
+                [attr.aria-label]="(product.status === 'ACTIVE' ? 'Ẩn ' : 'Bật lại ') + product.name"
+                (click)="toggleProductStatus(product)">
+                <span class="material-symbols-outlined">{{ product.status === 'ACTIVE' ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mobile-list">
+    <article class="mobile-card" *ngFor="let product of products; trackBy: trackProduct" [class.is-inactive]="product.status === 'INACTIVE'" [class.is-sold-out]="isSoldOutAtBranch(product)">
+      <div class="mobile-main">
+        <div class="thumb">
+          <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
+          <span *ngIf="!product.imageUrl" class="material-symbols-outlined">local_cafe</span>
         </div>
-      </ng-template>
-      <span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">
-        {{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}
-      </span>
-      <span
-        class="branch-status-chip"
-        *ngIf="getAvailability(product.id) as availability"
-        [class.sold-out]="!availability.available">
-        {{ availability.available ? 'Còn tại chi nhánh' : 'Hết tại chi nhánh' }}
-      </span>
-    </div>
-
-    <div class="product-body">
-      <div class="product-meta">
-        <span>{{ product.code }}</span>
-        <span>{{ product.categoryName || product.categoryId || 'Chưa phân loại' }}</span>
+        <div>
+          <h3>{{ product.name }}</h3>
+          <p>{{ product.code }} · {{ product.categoryName || product.categoryId || 'Chưa phân loại' }}</p>
+        </div>
       </div>
-      <h2>{{ product.name }}</h2>
-      <p>{{ product.description || 'Sản phẩm chưa có mô tả. Hãy cập nhật để khách hàng dễ chọn hơn.' }}</p>
-    </div>
-
-    <footer class="product-footer">
-      <div class="price-block">
-        <span>{{ getAvailability(product.id)?.salePrice ? 'Giá chi nhánh' : 'Giá bán' }}</span>
+      <div class="mobile-meta">
         <strong>{{ getBranchSalePrice(product) | number }} VND</strong>
-        <small *ngIf="getAvailability(product.id)?.salePrice && getBranchSalePrice(product) !== product.price">
-          Gốc {{ product.price | number }} VND
-        </small>
+        <span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}</span>
       </div>
-      <div class="stock-actions" *ngIf="selectedBranchId">
-        <button
-          type="button"
-          class="stock-btn available"
-          (click)="markProductAvailable(product)"
-          [disabled]="isUpdatingAvailability(product.id) || getAvailability(product.id)?.available === true">
-          <span class="material-symbols-outlined">check_circle</span>
-          Còn hàng
-        </button>
-        <button
-          type="button"
-          class="stock-btn sold-out"
-          (click)="markProductSoldOut(product)"
-          [disabled]="isUpdatingAvailability(product.id) || getAvailability(product.id)?.available === false">
-          <span class="material-symbols-outlined">cancel</span>
-          Hết hàng
+      <span class="branch-chip" *ngIf="getAvailability(product.id) as availability" [class.sold-out]="!availability.available">
+        {{ availability.available ? 'Còn hàng tại chi nhánh' : 'Hết hàng tại chi nhánh' }}
+      </span>
+      <div class="row-actions compact">
+        <button type="button" class="mini-btn" (click)="editProduct(product.id)">Sửa</button>
+        <button type="button" class="mini-btn status-toggle" [class.restore]="product.status === 'INACTIVE'" (click)="toggleProductStatus(product)">
+          {{ product.status === 'ACTIVE' ? 'Ẩn' : 'Bật lại' }}
         </button>
       </div>
-      <div class="card-actions">
-        <button type="button" class="icon-btn edit" [attr.aria-label]="'Sửa ' + product.name" (click)="editProduct(product.id)">
-          <span class="material-symbols-outlined">edit</span>
-        </button>
-        <button type="button" class="icon-btn danger" [attr.aria-label]="'Xóa ' + product.name" (click)="deleteProduct(product)">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
-      </div>
-    </footer>
-  </article>
+    </article>
+  </div>
 </section>
 
 <ng-template #productsEmpty>

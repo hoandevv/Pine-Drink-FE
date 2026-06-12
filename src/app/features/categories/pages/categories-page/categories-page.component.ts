@@ -30,6 +30,8 @@ export class CategoriesPageComponent implements OnInit {
   errorMessage = '';
   drawerOpen = false;
   imageBrokenIds = new Set<string>();
+  searchTerm = '';
+  statusFilter: 'ALL' | Category['status'] = 'ALL';
 
   selectedImageFile: File | null = null;
   previewImageUrl = '';
@@ -58,6 +60,21 @@ export class CategoriesPageComponent implements OnInit {
 
   get previewSource(): string {
     return this.previewImageUrl || this.form.get('imageUrl')?.value || '';
+  }
+
+  get filteredCategories(): Category[] {
+    const keyword = this.searchTerm.trim().toLowerCase();
+
+    return this.categories.filter((category) => {
+      const matchesStatus = this.statusFilter === 'ALL' || category.status === this.statusFilter;
+      const haystack = [category.name, category.code, category.description]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      const matchesKeyword = !keyword || haystack.includes(keyword);
+
+      return matchesStatus && matchesKeyword;
+    });
   }
 
   openCreateDrawer(): void {

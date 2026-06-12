@@ -142,6 +142,21 @@
         height: 100%;
         object-fit: cover;
         border-radius: 22px;
+        animation: heroDrinkIn 0.72s cubic-bezier(0.2, 0.8, 0.2, 1), heroFloat 4.6s ease-in-out infinite;
+      }
+
+      .hero-image-fallback {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #FFF0B8, #DFF3D4);
+
+        .material-symbols-outlined {
+          font-size: 5rem;
+          color: #164A2F;
+        }
       }
 
       span {
@@ -155,13 +170,58 @@
         font-size: 0.875rem;
         font-weight: 800;
         box-shadow: 0 8px 20px rgba(217, 154, 22, 0.3);
+        animation: badgePop 0.48s ease both;
+      }
+
+      strong {
+        position: absolute;
+        left: 1.35rem;
+        right: 1.35rem;
+        bottom: -1.1rem;
+        z-index: 3;
+        padding: 0.72rem 1rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(14px);
+        color: #142117;
+        font-size: 1rem;
+        font-weight: 900;
+        box-shadow: 0 12px 30px rgba(11, 51, 32, 0.12);
+        animation: titleSlideIn 0.58s ease both;
+      }
+
+      .hero-dots {
+        position: absolute;
+        left: 50%;
+        bottom: 1.25rem;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 0.45rem;
+        padding: 0.42rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(12px);
+
+        i {
+          width: 0.5rem;
+          height: 0.5rem;
+          border-radius: 999px;
+          background: rgba(22, 74, 47, 0.22);
+          transition: width 0.28s ease, background 0.28s ease;
+
+          &.active {
+            width: 1.35rem;
+            background: #164A2F;
+          }
+        }
       }
     }
 
     .floating-note {
       position: absolute;
-      bottom: 2.4rem;
+      bottom: -0.8rem;
       left: 1.2rem;
+      z-index: 4;
       padding: 0.95rem 1.3rem;
       background: white;
       border-radius: 16px;
@@ -178,6 +238,34 @@
       }
     }
   }
+}
+
+@keyframes heroDrinkIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.94) rotate(2deg);
+    filter: blur(10px) saturate(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1) rotate(0deg);
+    filter: blur(0) saturate(1);
+  }
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.012); }
+}
+
+@keyframes badgePop {
+  from { opacity: 0; transform: translateY(-10px) scale(0.88); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes titleSlideIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 // ============================================
