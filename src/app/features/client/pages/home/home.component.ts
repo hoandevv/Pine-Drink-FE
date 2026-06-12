@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { Product } from '../../../products/models/product.model';
@@ -13,8 +13,10 @@ import { VoucherResponse, VoucherService } from '../../../vouchers/services/vouc
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   bestSellerProducts: Product[] = [];
+  activeHeroIndex = 0;
+  private heroRotationTimer?: ReturnType<typeof setInterval>;
   vouchers: VoucherResponse[] = [];
   nearbyBranches: Branch[] = [];
   selectedBranch: Branch | null = null;
@@ -34,6 +36,10 @@ export class HomeComponent implements OnInit {
     this.loadData();
   }
 
+  ngOnDestroy(): void {
+    this.stopHeroRotation();
+  }
+
   loadData(): void {
     this.loadProducts();
     this.loadBranches();
@@ -46,10 +52,11 @@ export class HomeComponent implements OnInit {
     this.productError = '';
     this.productService.getProducts(0, 24, undefined, undefined, 'ACTIVE').subscribe({
       next: page => {
-        const products = page.content || [];
+        const products = (page.content || []).filter(product => product.status === 'ACTIVE');
         this.bestSellerProducts = products
           .sort((a, b) => Number(b.bestSeller) - Number(a.bestSeller) || Number(b.featured) - Number(a.featured))
           .slice(0, 4);
+        this.startHeroRotation();
         this.loadingProducts = false;
       },
       error: () => {
@@ -58,6 +65,26 @@ export class HomeComponent implements OnInit {
         this.loadingProducts = false;
       }
     });
+  }
+
+  get heroProduct(): Product | null {
+    return this.bestSellerProducts[this.activeHeroIndex] || this.bestSellerProducts[0] || null;
+  }
+
+  private startHeroRotation(): void {
+    this.stopHeroRotation();
+    this.activeHeroIndex = 0;
+    if (this.bestSellerProducts.length <= 1) { return; }
+
+    this.heroRotationTimer = setInterval(() => {
+      this.activeHeroIndex = (this.activeHeroIndex + 1) % this.bestSellerProducts.length;
+    }, 3200);
+  }
+
+  private stopHeroRotation(): void {
+    if (!this.heroRotationTimer) { return; }
+    clearInterval(this.heroRotationTimer);
+    this.heroRotationTimer = undefined;
   }
 
   formatPrice(price: number): string {

@@ -8,8 +8,10 @@ import { Branch } from '../../../branches/models/branch.model';
 import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
 import { BranchService } from '../../../branches/services/branch.service';
 import { Product } from '../../../products/models/product.model';
+import { DailyStock } from '../../../products/models/daily-stock.model';
 import { ProductTopping } from '../../../products/models/product-topping.model';
 import { ProductVariant } from '../../../products/models/product-variant.model';
+import { DailyStockService } from '../../../products/services/daily-stock.service';
 import { ProductService } from '../../../products/services/product.service';
 import { ProductToppingService } from '../../../products/services/product-topping.service';
 import { ProductVariantService } from '../../../products/services/product-variant.service';
@@ -43,7 +45,9 @@ export class ProductDetailComponent implements OnInit {
   selectedBranchName = '';
   branchProductAvailability: BranchProductAvailability | null = null;
   branchToppingAvailabilities: BranchToppingAvailability[] = [];
+  dailyStocks: DailyStock[] = [];
   availabilityLoading = false;
+  quotaLoading = false;
 
   selectedSize = '';
   selectedVariant: ProductVariant | null = null;
@@ -79,7 +83,8 @@ export class ProductDetailComponent implements OnInit {
     private readonly productToppingService: ProductToppingService,
     private readonly productVariantService: ProductVariantService,
     private readonly branchService: BranchService,
-    private readonly branchAvailabilityService: BranchAvailabilityService
+    private readonly branchAvailabilityService: BranchAvailabilityService,
+    private readonly dailyStockService: DailyStockService
   ) {}
 
   ngOnInit(): void {
@@ -130,8 +135,11 @@ export class ProductDetailComponent implements OnInit {
   }
 
   selectSize(sizeId: string): void {
-    this.selectedSize = sizeId;
-    this.selectedVariant = this.sizeOptions.find(size => size.id === sizeId)?.variant || null;
+    const option = this.visibleSizeOptions.find(size => size.id === sizeId) || this.sizeOptions.find(size => size.id === sizeId);
+    if (!option) { return; }
+    this.selectedSize = option.id;
+    this.selectedVariant = option.variant || null;
+    this.normalizeQuantityToStock();
   }
 
   selectIceLevel(level: number): void {
@@ -156,7 +164,8 @@ export class ProductDetailComponent implements OnInit {
   }
 
   incrementQuantity(): void {
-    if (this.quantity < 99) {
+    const max = this.maxOrderQuantity;
+    if (this.quantity < max) {
       this.quantity++;
     }
   }
@@ -196,9 +205,51 @@ export class ProductDetailComponent implements OnInit {
 
   get productBadge(): string {
     if (!this.product) { return ''; }
+    if (this.selectedDailyStock && this.selectedDailyStock.availableQuantity <= 0) { return 'Hết quota'; }
     if (this.product.bestSeller) { return 'Best seller'; }
     if (this.product.featured) { return 'Nổi bật'; }
     return '';
+  }
+
+  get selectedDailyStock(): DailyStock | null {
+    if (!this.selectedVariant) { return null; }
+    return this.dailyStocks.find(stock => stock.variantId === this.selectedVariant?.id) || null;
+  }
+
+  get availableQuota(): number | null {
+    const stock = this.selectedDailyStock;
+    return stock ? Math.max(0, Number(stock.availableQuantity) || 0) : null;
+  }
+
+  get maxOrderQuantity(): number {
+    const quota = this.availableQuota;
+    return quota === null ? 99 : Math.max(0, Math.min(99, quota));
+  }
+
+  get quotaStatusLabel(): string {
+    if (this.quotaLoading) { return 'Đang kiểm tra quota'; }
+    if (!this.selectedVariant) { return 'Chọn size để xem quota'; }
+    if (!this.selectedBranchId) { return 'Chọn chi nhánh để xem quota'; }
+    if (!this.selectedDailyStock) { return 'Chi nhánh chưa set quota hôm nay'; }
+    if ((this.availableQuota || 0) <= 0) { return 'Hết quota hôm nay'; }
+    if ((this.availableQuota || 0) <= 5) { return `Sắp hết · còn ${this.availableQuota} phần`; }
+    return `Còn ${this.availableQuota} phần hôm nay`;
+  }
+
+  get quotaTone(): 'ok' | 'low' | 'out' | 'unset' {
+    if (!this.selectedDailyStock) { return 'unset'; }
+    if ((this.availableQuota || 0) <= 0) { return 'out'; }
+    if ((this.availableQuota || 0) <= 5) { return 'low'; }
+    return 'ok';
+  }
+
+  get visibleSizeOptions(): SizeOption[] {
+    if (!this.dailyStocks.length) { return this.sizeOptions; }
+    return this.sizeOptions.filter(size => !size.variant || this.hasQuotaForVariant(size.variant.id));
+  }
+
+  private hasQuotaForVariant(variantId: string): boolean {
+    return this.dailyStocks.some(stock => stock.variantId === variantId);
   }
   addToCart(): void {
     if (!this.product || this.isProductUnavailable) { return; }
@@ -240,8 +291,8 @@ export class ProductDetailComponent implements OnInit {
 
   get isProductUnavailable(): boolean {
     const availability = this.branchProductAvailability;
-    if (!availability) { return false; }
-    return availability.status !== 'ACTIVE' || !availability.available || !this.isWithinAvailabilityWindow(availability);
+    if (!availability) { return this.availableQuota !== null && this.availableQuota <= 0; }
+    return availability.status !== 'ACTIVE' || !availability.available || !this.isWithinAvailabilityWindow(availability) || (this.availableQuota !== null && this.availableQuota <= 0);
   }
 
   get availabilityText(): string {
@@ -347,6 +398,7 @@ export class ProductDetailComponent implements OnInit {
   private refreshAvailability(): void {
     if (!this.selectedBranchId) { return; }
     this.loadBranchProductAvailability();
+    this.loadDailyStocks();
     if (this.product) {
       this.loadProductToppings(this.product.id);
     }
@@ -366,6 +418,43 @@ export class ProductDetailComponent implements OnInit {
         this.availabilityLoading = false;
       }
     });
+  }
+
+  private loadDailyStocks(): void {
+    if (!this.selectedBranchId) { return; }
+
+    this.quotaLoading = true;
+    this.dailyStockService.getByBranchAndDate(this.selectedBranchId, this.todayKey()).subscribe({
+      next: stocks => {
+        this.dailyStocks = stocks || [];
+        this.quotaLoading = false;
+        this.normalizeQuantityToStock();
+      },
+      error: () => {
+        this.dailyStocks = [];
+        this.quotaLoading = false;
+      }
+    });
+  }
+
+  private normalizeQuantityToStock(): void {
+    if (this.visibleSizeOptions.length && !this.visibleSizeOptions.some(size => size.id === this.selectedSize)) {
+      this.selectSize(this.visibleSizeOptions[0].id);
+      return;
+    }
+
+    const max = this.maxOrderQuantity;
+    if (max <= 0) {
+      this.quantity = 1;
+      return;
+    }
+    this.quantity = Math.min(Math.max(this.quantity, 1), max);
+  }
+
+  private todayKey(): string {
+    const now = new Date();
+    const offset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offset).toISOString().slice(0, 10);
   }
 
   private applyToppingAvailability(toppings: MockTopping[]): MockTopping[] {

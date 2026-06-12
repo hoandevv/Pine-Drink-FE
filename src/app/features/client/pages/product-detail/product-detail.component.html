@@ -20,8 +20,8 @@
         <div class="stock-overlay" *ngIf="selectedBranchId" [class.is-unavailable]="isProductUnavailable">
           <span class="material-symbols-outlined">{{ isProductUnavailable ? 'block' : 'verified' }}</span>
           <div>
-            <strong>{{ availabilityLoading ? 'Đang kiểm tra' : (isProductUnavailable ? 'Tạm hết tại chi nhánh' : 'Còn hàng') }}</strong>
-            <small>{{ selectedBranch?.name }}</small>
+            <strong>{{ availabilityLoading || quotaLoading ? 'Đang kiểm tra' : (isProductUnavailable ? 'Tạm hết tại chi nhánh' : 'Còn hàng') }}</strong>
+            <small>{{ selectedBranch?.name }} · {{ quotaStatusLabel }}</small>
           </div>
         </div>
       </div>
@@ -50,11 +50,11 @@
         <h3 class="group-title">
           <span class="material-symbols-outlined">straighten</span>
           Chọn size
-          <span class="optional-label" *ngIf="sizeOptions.length">{{ sizeOptions.length }} lựa chọn</span>
+          <span class="optional-label" *ngIf="visibleSizeOptions.length">{{ visibleSizeOptions.length }} lựa chọn</span>
         </h3>
         <div class="size-options">
           <button
-            *ngFor="let size of sizeOptions"
+            *ngFor="let size of visibleSizeOptions"
             type="button"
             class="size-option"
             [class.selected]="selectedSize === size.id"
@@ -69,10 +69,13 @@
           </button>
         </div>
         <p class="variant-hint" *ngIf="selectedVariant">
-          {{ selectedVariant.variantName }} · Giá size {{ formatPrice(basePrice) }}
+          {{ selectedVariant.variantName }} · Giá size {{ formatPrice(basePrice) }} · {{ quotaStatusLabel }}
         </p>
-        <p class="variant-hint" *ngIf="!selectedVariant && sizeOptions.length === 1">
+        <p class="variant-hint" *ngIf="!selectedVariant && visibleSizeOptions.length === 1">
           Sản phẩm chưa có size riêng, dùng giá mặc định.
+        </p>
+        <p class="variant-hint is-empty" *ngIf="!visibleSizeOptions.length">
+          Chi nhánh chưa set quota cho các size hôm nay.
         </p>
       </div>
 
@@ -167,7 +170,7 @@
         <span class="material-symbols-outlined">remove</span>
       </button>
       <span class="qty-value">{{ quantity }}</span>
-      <button type="button" class="qty-button" (click)="incrementQuantity()" [disabled]="quantity >= 99">
+      <button type="button" class="qty-button" (click)="incrementQuantity()" [disabled]="quantity >= maxOrderQuantity || isProductUnavailable">
         <span class="material-symbols-outlined">add</span>
       </button>
     </div>

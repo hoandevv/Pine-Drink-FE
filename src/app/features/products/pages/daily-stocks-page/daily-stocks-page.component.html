@@ -1,0 +1,118 @@
+<section class="daily-stock-page">
+  <header class="hero-card">
+    <div>
+      <span class="eyebrow">Daily variant stock</span>
+      <h1>Tồn kho bán trong ngày</h1>
+      <p>Set quota theo chi nhánh + biến thể + ngày, theo dõi sold/reserved/available và log thao tác.</p>
+    </div>
+    <div class="hero-actions">
+      <button id="refresh-daily-stock-btn" type="button" class="btn ghost" (click)="refresh()" [disabled]="loading || bootLoading">
+        <span class="material-symbols-outlined">refresh</span>Làm mới
+      </button>
+      <button id="copy-daily-stock-btn" type="button" class="btn soft" (click)="openCopyPanel()" [disabled]="!selectedBranchId">
+        <span class="material-symbols-outlined">content_copy</span>Copy quota
+      </button>
+      <button id="open-daily-stock-drawer-btn" type="button" class="btn primary" (click)="openCreateDrawer()" [disabled]="!selectedBranchId">
+        <span class="material-symbols-outlined">add</span>Set quota
+      </button>
+    </div>
+  </header>
+
+  <div class="alert danger" *ngIf="errorMessage"><span class="material-symbols-outlined">error</span>{{ errorMessage }}</div>
+  <div class="alert success" *ngIf="successMessage"><span class="material-symbols-outlined">check_circle</span>{{ successMessage }}</div>
+
+  <section class="control-card">
+    <label>Chi nhánh
+      <select id="daily-stock-branch-select" [ngModel]="selectedBranchId" (ngModelChange)="onBranchChange($event)" [disabled]="bootLoading || !branches.length">
+        <option value="" disabled>Chọn chi nhánh</option>
+        <option *ngFor="let branch of branches; trackBy: trackBranch" [ngValue]="branch.id">{{ branch.name }} · {{ branch.code || branch.status }}</option>
+      </select>
+    </label>
+    <label>Ngày bán
+      <input id="daily-stock-date-input" type="date" [ngModel]="selectedDate" (ngModelChange)="onDateChange($event)" />
+    </label>
+    <div class="branch-chip" *ngIf="selectedBranch as branch">
+      <span class="material-symbols-outlined">storefront</span>
+      <div><strong>{{ branch.name }}</strong><small>{{ branch.address || 'Chưa có địa chỉ' }}</small></div>
+    </div>
+  </section>
+
+  <section class="metric-grid">
+    <article><span>Quota ngày</span><strong>{{ totalQuota }}</strong><em>ly có thể bán</em></article>
+    <article><span>Available</span><strong>{{ totalAvailable }}</strong><em>còn bán</em></article>
+    <article><span>Reserved</span><strong>{{ totalReserved }}</strong><em>đang giữ</em></article>
+    <article><span>Sold</span><strong>{{ totalSold }}</strong><em>đã bán</em></article>
+  </section>
+
+  <section class="stock-card" [class.is-loading]="loading">
+    <div class="card-head">
+      <div>
+        <h2>Bảng stock theo biến thể</h2>
+        <p>{{ selectedDate }} · {{ stocks.length }} dòng quota</p>
+      </div>
+      <span class="loading-pill" *ngIf="loading || bootLoading">Đang tải...</span>
+    </div>
+
+    <div class="empty-state" *ngIf="!loading && !stocks.length">
+      <span class="material-symbols-outlined">inventory_2</span>
+      <h3>Chưa set quota cho ngày này</h3>
+      <p>Set từng biến thể hoặc copy quota từ ngày trước để bắt đầu bán.</p>
+      <button type="button" class="btn primary" (click)="openCreateDrawer()"><span class="material-symbols-outlined">add</span>Set quota đầu tiên</button>
+    </div>
+
+    <div class="table-wrap" *ngIf="stocks.length">
+      <table>
+        <thead><tr><th>Biến thể</th><th>Quota</th><th>Sold</th><th>Reserved</th><th>Available</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let stock of stocks; trackBy: trackStock">
+            <td data-label="Biến thể"><div class="variant-cell"><span>{{ (stock.variantName || variantLabel(stock.variantId)).charAt(0) }}</span><div><strong>{{ stock.variantName || variantLabel(stock.variantId) }}</strong><small>{{ stock.productName || stock.variantId }}</small></div></div></td>
+            <td data-label="Quota"><strong>{{ stock.dailyQuantity }}</strong></td>
+            <td data-label="Sold">{{ stock.soldQuantity }}</td>
+            <td data-label="Reserved">{{ stock.reservedQuantity }}</td>
+            <td data-label="Available"><span class="available-pill" [class.empty]="stock.availableQuantity <= 0" [class.low]="stock.availableQuantity > 0 && stock.availableQuantity <= 5">{{ stock.availableQuantity }}</span></td>
+            <td data-label="Trạng thái"><span class="status-badge" [class.empty]="stock.availableQuantity <= 0" [class.low]="stock.availableQuantity > 0 && stock.availableQuantity <= 5">{{ stockStatusLabel(stock) }}</span></td>
+            <td data-label="Thao tác"><button id="edit-daily-stock-{{ stock.id }}" type="button" class="action-btn" (click)="openEditDrawer(stock)">Sửa / Log</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen || copyOpen" (click)="drawerOpen ? closeDrawer() : closeCopyPanel()"></div>
+
+<aside class="stock-drawer" [class.open]="drawerOpen" aria-label="Daily stock quota form">
+  <form [formGroup]="quotaForm" (ngSubmit)="saveQuota()">
+    <div class="drawer-head"><div><span class="eyebrow">{{ selectedStock ? 'Adjust quota' : 'Set quota' }}</span><h2>{{ selectedStock ? 'Cập nhật quota' : 'Set quota ngày' }}</h2></div><button type="button" class="icon-btn" (click)="closeDrawer()"><span class="material-symbols-outlined">close</span></button></div>
+    <label>Biến thể
+      <select id="daily-stock-variant-select" formControlName="variantId" [disabled]="!!selectedStock">
+        <option value="" disabled>Chọn biến thể</option>
+        <option *ngFor="let variant of variants; trackBy: trackVariant" [ngValue]="variant.id">{{ variant.productName }} · {{ variant.variantName }}</option>
+      </select>
+    </label>
+    <label>Daily quantity
+      <input id="daily-stock-quantity-input" type="number" min="0" formControlName="dailyQuantity" />
+      <small *ngIf="quotaForm.controls.dailyQuantity.invalid && quotaForm.controls.dailyQuantity.touched">Số lượng phải >= 0 và không nhỏ hơn sold + reserved.</small>
+    </label>
+    <label>Lý do
+      <textarea id="daily-stock-reason-input" rows="3" formControlName="reason"></textarea>
+    </label>
+    <section class="log-panel" *ngIf="selectedStock">
+      <h3>Log gần nhất</h3>
+      <p *ngIf="logLoading">Đang tải log...</p>
+      <div class="log-item" *ngFor="let log of logs; trackBy: trackLog"><strong>{{ log.actionType }}</strong><span>{{ log.quantity }} · {{ log.reason || 'Không có lý do' }}</span><small>{{ log.createdAt }}</small></div>
+    </section>
+    <div class="drawer-actions"><button type="button" class="btn ghost" (click)="closeDrawer()">Hủy</button><button id="save-daily-stock-btn" type="submit" class="btn primary" [disabled]="saving"><span class="material-symbols-outlined">save</span>{{ saving ? 'Đang lưu...' : 'Lưu quota' }}</button></div>
+  </form>
+</aside>
+
+<aside class="stock-drawer copy" [class.open]="copyOpen" aria-label="Copy daily stock quota">
+  <form [formGroup]="copyForm" (ngSubmit)="copyQuota()">
+    <div class="drawer-head"><div><span class="eyebrow">Copy quota</span><h2>Copy từ lịch sử</h2></div><button type="button" class="icon-btn" (click)="closeCopyPanel()"><span class="material-symbols-outlined">close</span></button></div>
+    <label>Ngày nguồn<input id="copy-source-date-input" type="date" formControlName="sourceDate" /></label>
+    <label class="check-row"><input id="copy-overwrite-input" type="checkbox" formControlName="overwrite" />Overwrite ngày hiện tại nếu đã có quota</label>
+    <label>Lý do<textarea id="copy-reason-input" rows="3" formControlName="reason"></textarea></label>
+    <div class="copy-note"><span class="material-symbols-outlined">info</span>Chỉ copy dailyQuantity. Sold/reserved ngày mới luôn bắt đầu từ 0.</div>
+    <div class="drawer-actions"><button type="button" class="btn ghost" (click)="closeCopyPanel()">Hủy</button><button id="submit-copy-quota-btn" type="submit" class="btn primary" [disabled]="saving"><span class="material-symbols-outlined">content_copy</span>Copy quota</button></div>
+  </form>
+</aside>

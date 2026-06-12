@@ -106,23 +106,30 @@ export class ProductListComponent implements OnInit {
     this.router.navigate(['/admin/products', id]);
   }
 
-  deleteProduct(product: Product): void {
+  toggleProductStatus(product: Product): void {
+    const nextStatus: Product['status'] = product.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    const actionLabel = nextStatus === 'ACTIVE' ? 'bật lại' : 'ẩn';
     const productName = product.name || product.code || 'sản phẩm này';
-    if (!window.confirm(`Xóa ${productName}? Thao tác này không thể hoàn tác.`)) {
+
+    if (!window.confirm(`Xác nhận ${actionLabel} ${productName}?`)) {
       return;
     }
 
     this.loading = true;
     this.errorMessage = '';
 
-    this.productService.deleteProduct(product.id)
+    this.productService.updateProductStatus(product.id, nextStatus)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: () => this.loadProducts(this.pageData.page),
         error: () => {
-          this.errorMessage = 'Không thể xóa sản phẩm. Vui lòng thử lại hoặc kiểm tra quyền thao tác.';
+          this.errorMessage = `Không thể ${actionLabel} sản phẩm. Vui lòng thử lại hoặc kiểm tra quyền thao tác.`;
         }
       });
+  }
+
+  deleteProduct(product: Product): void {
+    this.toggleProductStatus(product);
   }
 
   onPageChange(page: number): void {
