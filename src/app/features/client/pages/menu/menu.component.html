@@ -192,13 +192,13 @@
 
       <div class="cart-items">
         <div *ngFor="let item of cartItems" class="cart-item">
-          <img [src]="item.productImage" [alt]="item.productName" />
+          <img [src]="item.productImageUrl || 'assets/images/product-placeholder.svg'" [alt]="item.productName" />
           <div class="cart-item-info">
             <h4>{{ item.productName }}</h4>
-            <p>Size {{ item.size }} • Đá {{ item.iceLevel }}% • Đường {{ item.sugarLevel }}%</p>
+            <p>{{ item.variantName || 'Size mặc định' }} • Đá {{ item.iceLevel || 'NORMAL' }} • Đường {{ item.sugarLevel || 'NORMAL' }}</p>
             <div class="cart-item-footer">
               <span class="quantity">x{{ item.quantity }}</span>
-              <strong>{{ formatPrice(item.price * item.quantity) }}</strong>
+              <strong>{{ formatPrice(item.totalPrice || (item.unitPrice * item.quantity)) }}</strong>
             </div>
           </div>
         </div>

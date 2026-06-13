@@ -10,8 +10,22 @@
       <p *ngIf="cartItems.length > 0">{{ cartItems.length }} sản phẩm</p>
     </div>
 
+    <div *ngIf="loading" class="empty-cart">
+      <span class="material-symbols-outlined">progress_activity</span>
+      <h2>Đang tải giỏ hàng...</h2>
+    </div>
+
+    <div *ngIf="!loading && errorMessage" class="empty-cart">
+      <span class="material-symbols-outlined">error</span>
+      <h2>Chưa thể tải giỏ hàng</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="primary-button" (click)="continueShopping()">
+        Quay lại menu
+      </button>
+    </div>
+
     <!-- Empty Cart State -->
-    <div *ngIf="cartItems.length === 0" class="empty-cart">
+    <div *ngIf="!loading && !errorMessage && cartItems.length === 0" class="empty-cart">
       <span class="material-symbols-outlined">shopping_cart</span>
       <h2>Giỏ hàng trống</h2>
       <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục</p>
@@ -21,24 +35,24 @@
     </div>
 
     <!-- Cart Content -->
-    <div *ngIf="cartItems.length > 0" class="cart-content">
+    <div *ngIf="!loading && !errorMessage && cartItems.length > 0" class="cart-content">
       <!-- Cart Items -->
       <div class="cart-items-section">
         <div class="cart-items-list">
           <article *ngFor="let item of cartItems" class="cart-item">
-            <img [src]="item.productImage" [alt]="item.productName" />
+            <img [src]="item.productImageUrl || 'assets/images/placeholder-product.svg'" [alt]="item.productName" />
             
             <div class="item-details">
               <h3>{{ item.productName }}</h3>
               <div class="item-options">
-                <span class="option-tag">Size {{ item.size }}</span>
-                <span class="option-tag">Đá {{ item.iceLevel }}%</span>
-                <span class="option-tag">Đường {{ item.sugarLevel }}%</span>
+                <span *ngIf="item.variantName" class="option-tag">{{ item.variantName }}</span>
+                <span *ngIf="item.iceLevel" class="option-tag">Đá {{ item.iceLevel }}</span>
+                <span *ngIf="item.sugarLevel" class="option-tag">Đường {{ item.sugarLevel }}</span>
               </div>
               <div *ngIf="item.toppings.length > 0" class="item-toppings">
                 <span class="topping-label">Topping:</span>
                 <span *ngFor="let topping of item.toppings" class="topping-tag">
-                  {{ topping.name }} (+{{ formatPrice(topping.price) }})
+                  {{ topping.toppingName }} (+{{ formatPrice(topping.price) }})
                 </span>
               </div>
               <p *ngIf="item.note" class="item-note">
@@ -63,7 +77,7 @@
               </div>
               
               <div class="item-price">
-                <strong>{{ formatPrice(item.price * item.quantity) }}</strong>
+                <strong>{{ formatPrice(item.totalPrice) }}</strong>
               </div>
 
               <button class="remove-button" (click)="removeItem(item)">

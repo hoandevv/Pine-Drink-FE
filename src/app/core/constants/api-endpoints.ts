@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
     detail: (id: string) => `/customer/addresses/${id}`,
     setDefault: (id: string) => `/customer/addresses/${id}/set-default`
   },
+  customerCart: '/customer/cart',
   geocoding: {
     search: '/geocoding/search',
     reverse: '/geocoding/reverse'

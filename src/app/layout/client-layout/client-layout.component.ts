@@ -38,6 +38,11 @@ export class ClientLayoutComponent {
     return branchId ? { branchId } : {};
   }
 
+  get userDisplayName(): string {
+    const user = this.authService.getCurrentUser();
+    return user?.fullName || user?.username || user?.email || 'Tài khoản';
+  }
+
   formatPrice(price: number): string {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }

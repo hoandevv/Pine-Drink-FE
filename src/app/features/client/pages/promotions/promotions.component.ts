@@ -30,8 +30,17 @@ export class PromotionsComponent implements OnInit {
 
   loadVouchers(): void {
     this.loading = true;
-    this.voucherService.search({
-      status: 'ACTIVE',
+    const branchId = sessionStorage.getItem('selectedBranchId') || '';
+    if (!branchId) {
+      this.loading = false;
+      this.allVouchers = [];
+      this.filteredVouchers = [];
+      this.toast.error('Vui lòng chọn chi nhánh để xem ưu đãi');
+      return;
+    }
+
+    this.voucherService.getAvailableForCustomer({
+      branchId,
       page: 0,
       size: 100,
       sort: 'createdAt,desc'

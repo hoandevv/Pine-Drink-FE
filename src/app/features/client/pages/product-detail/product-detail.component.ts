@@ -2,8 +2,9 @@ import { Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MOCK_CART, MockCartItem, MockTopping } from '../../../../shared/mock-data';
+import { MockTopping } from '../../../../shared/mock-data';
 import { BranchProductAvailability, BranchToppingAvailability } from '../../../branches/models/branch-availability.model';
+import { CartService } from '../../services/cart.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
 import { BranchService } from '../../../branches/services/branch.service';
@@ -84,10 +85,16 @@ export class ProductDetailComponent implements OnInit {
     private readonly productVariantService: ProductVariantService,
     private readonly branchService: BranchService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
-    private readonly dailyStockService: DailyStockService
+    private readonly dailyStockService: DailyStockService,
+    private readonly cartService: CartService
   ) {}
 
   ngOnInit(): void {
+    const routeBranchId = this.route.snapshot.queryParamMap.get('branchId') || '';
+    if (routeBranchId) {
+      sessionStorage.setItem('selectedBranchId', routeBranchId);
+    }
+
     this.loadBranches();
     this.route.params.subscribe(params => {
       const productId = params['id'];
@@ -131,6 +138,9 @@ export class ProductDetailComponent implements OnInit {
   selectBranch(branchId: string): void {
     if (this.selectedBranchId === branchId) { return; }
     this.selectedBranchId = branchId;
+    this.selectedBranchName = this.branches.find(branch => branch.id === branchId)?.name || this.selectedBranchName;
+    sessionStorage.setItem('selectedBranchId', this.selectedBranchId);
+    sessionStorage.setItem('selectedBranchName', this.selectedBranchName);
     this.refreshAvailability();
   }
 
@@ -223,21 +233,25 @@ export class ProductDetailComponent implements OnInit {
 
   get maxOrderQuantity(): number {
     const quota = this.availableQuota;
-    return quota === null ? 99 : Math.max(0, Math.min(99, quota));
+    return quota === null ? 0 : Math.max(0, Math.min(99, quota));
   }
 
   get quotaStatusLabel(): string {
-    if (this.quotaLoading) { return 'Đang kiểm tra quota'; }
-    if (!this.selectedVariant) { return 'Chọn size để xem quota'; }
-    if (!this.selectedBranchId) { return 'Chọn chi nhánh để xem quota'; }
-    if (!this.selectedDailyStock) { return 'Chi nhánh chưa set quota hôm nay'; }
-    if ((this.availableQuota || 0) <= 0) { return 'Hết quota hôm nay'; }
+    if (this.availabilityLoading || this.quotaLoading) { return 'Đang kiểm tra tồn hàng'; }
+    if (this.branchProductAvailability && (this.branchProductAvailability.status !== 'ACTIVE' || !this.branchProductAvailability.available || !this.isWithinAvailabilityWindow(this.branchProductAvailability))) {
+      return this.branchProductAvailability.soldOutReason || 'Tạm hết tại chi nhánh';
+    }
+    if (!this.selectedVariant) { return 'Hết hàng'; }
+    if (!this.selectedBranchId) { return 'Chọn chi nhánh để xem tồn hàng'; }
+    if (!this.selectedDailyStock) { return 'Hết hàng'; }
+    if ((this.availableQuota || 0) <= 0) { return 'Hết hàng'; }
     if ((this.availableQuota || 0) <= 5) { return `Sắp hết · còn ${this.availableQuota} phần`; }
     return `Còn ${this.availableQuota} phần hôm nay`;
   }
 
   get quotaTone(): 'ok' | 'low' | 'out' | 'unset' {
-    if (!this.selectedDailyStock) { return 'unset'; }
+    if (this.branchProductAvailability && this.isProductUnavailable) { return 'out'; }
+    if (!this.selectedVariant || !this.selectedDailyStock) { return 'out'; }
     if ((this.availableQuota || 0) <= 0) { return 'out'; }
     if ((this.availableQuota || 0) <= 5) { return 'low'; }
     return 'ok';
@@ -252,25 +266,26 @@ export class ProductDetailComponent implements OnInit {
     return this.dailyStocks.some(stock => stock.variantId === variantId);
   }
   addToCart(): void {
-    if (!this.product || this.isProductUnavailable) { return; }
+    if (!this.product || this.isProductUnavailable || !this.selectedBranchId) { return; }
 
-    const newItem: MockCartItem = {
-      id: `cart-item-${Date.now()}`,
+    this.cartService.addItem({
+      branchId: this.selectedBranchId,
       productId: this.product.id,
-      productName: this.product.name,
-      productImage: this.product.imageUrl || '',
+      variantId: this.selectedVariant?.id,
       quantity: this.quantity,
-      price: this.basePrice,
-      size: this.selectedVariant?.sizeLabel || this.selectedSize,
-      iceLevel: this.selectedIceLevel,
-      sugarLevel: this.selectedSugarLevel,
-      toppings: [...this.selectedToppings],
-      note: this.note.trim() || undefined
-    };
-
-    MOCK_CART.items.push(newItem);
-    alert(`Đã thêm ${this.quantity} ${this.product.name} vào giỏ hàng!`);
-    this.router.navigate(['/cart']);
+      sugarLevel: `${this.selectedSugarLevel}%`,
+      iceLevel: `${this.selectedIceLevel}%`,
+      note: this.note.trim() || undefined,
+      toppings: this.selectedToppings.map(topping => ({ toppingId: topping.id, quantity: 1 }))
+    }).subscribe({
+      next: () => {
+        alert(`Đã thêm ${this.quantity} ${this.product?.name} vào giỏ hàng!`);
+        this.router.navigate(['/cart']);
+      },
+      error: () => {
+        alert('Không thêm được vào giỏ hàng. Vui lòng đăng nhập hoặc thử lại.');
+      }
+    });
   }
 
   goBack(): void {
@@ -291,16 +306,16 @@ export class ProductDetailComponent implements OnInit {
 
   get isProductUnavailable(): boolean {
     const availability = this.branchProductAvailability;
-    if (!availability) { return this.availableQuota !== null && this.availableQuota <= 0; }
-    return availability.status !== 'ACTIVE' || !availability.available || !this.isWithinAvailabilityWindow(availability) || (this.availableQuota !== null && this.availableQuota <= 0);
+    if (availability && (availability.status !== 'ACTIVE' || !availability.available || !this.isWithinAvailabilityWindow(availability))) { return true; }
+    return !this.selectedVariant || !this.selectedDailyStock || (this.availableQuota !== null && this.availableQuota <= 0);
   }
 
   get availabilityText(): string {
     if (!this.selectedBranch) { return 'Chọn chi nhánh để kiểm tra tồn hàng.'; }
-    if (!this.branchProductAvailability) { return 'Chi nhánh này chưa có cấu hình riêng, dùng trạng thái mặc định.'; }
-    if (this.isProductUnavailable) {
+    if (this.branchProductAvailability && this.isProductUnavailable) {
       return this.branchProductAvailability.soldOutReason || 'Tạm hết món tại chi nhánh này.';
     }
+    if (!this.selectedVariant || !this.selectedDailyStock || (this.availableQuota || 0) <= 0) { return 'Hết hàng tại chi nhánh này.'; }
     return 'Sẵn sàng phục vụ tại chi nhánh đã chọn.';
   }
 
@@ -378,18 +393,23 @@ export class ProductDetailComponent implements OnInit {
     this.branchService.getActiveBranches(0, 100).subscribe({
       next: page => {
         this.branches = page.content || [];
-        const storedBranchId = sessionStorage.getItem('selectedBranchId') || '';
+        const routeBranchId = this.route.snapshot.queryParamMap.get('branchId') || '';
+        const storedBranchId = routeBranchId || sessionStorage.getItem('selectedBranchId') || '';
         const storedBranchName = sessionStorage.getItem('selectedBranchName') || '';
         const storedBranch = this.branches.find(branch => branch.id === storedBranchId);
         const fallbackBranch = this.branches[0];
 
         this.selectedBranchId = storedBranch?.id || fallbackBranch?.id || '';
         this.selectedBranchName = storedBranch?.name || storedBranchName || fallbackBranch?.name || '';
+        if (this.selectedBranchId) {
+          sessionStorage.setItem('selectedBranchId', this.selectedBranchId);
+          sessionStorage.setItem('selectedBranchName', this.selectedBranchName);
+        }
         this.refreshAvailability();
       },
       error: () => {
         this.branches = [];
-        this.selectedBranchId = sessionStorage.getItem('selectedBranchId') || '';
+        this.selectedBranchId = this.route.snapshot.queryParamMap.get('branchId') || sessionStorage.getItem('selectedBranchId') || '';
         this.selectedBranchName = sessionStorage.getItem('selectedBranchName') || '';
       }
     });

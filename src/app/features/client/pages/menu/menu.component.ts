@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
-import { MOCK_CART, MockCartItem } from '../../../../shared/mock-data';
 import { BranchProductAvailability } from '../../../branches/models/branch-availability.model';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
@@ -11,6 +10,7 @@ import { Category } from '../../../categories/models/category.model';
 import { CategoryService } from '../../../categories/services/category.service';
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
+import { CartItem, CartService } from '../../services/cart.service';
 
 interface ClientCategoryTab {
   id: string;
@@ -31,7 +31,7 @@ export class MenuComponent implements OnInit {
   categories: ClientCategoryTab[] = [];
   selectedBranch: Branch | null = null;
   productAvailabilityMap = new Map<string, BranchProductAvailability>();
-  cartItems: MockCartItem[] = [];
+  cartItems: CartItem[] = [];
 
   selectedCategoryId = 'all';
   searchQuery = '';
@@ -47,8 +47,9 @@ export class MenuComponent implements OnInit {
     private readonly productService: ProductService,
     private readonly categoryService: CategoryService,
     private readonly branchService: BranchService,
-    private readonly branchAvailabilityService: BranchAvailabilityService
-  ) {}
+    private readonly branchAvailabilityService: BranchAvailabilityService,
+    private readonly cartService: CartService
+  ) { }
 
   ngOnInit(): void {
     this.loadData();
@@ -89,11 +90,28 @@ export class MenuComponent implements OnInit {
   }
 
   loadCartData(): void {
-    this.cartItems = MOCK_CART.items;
+    const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
+    if (!branchId) {
+      this.cartItems = [];
+      return;
+    }
+
+    this.cartService.getActiveCart(branchId).subscribe({
+      next: cart => {
+        this.cartItems = cart.items || [];
+      },
+      error: () => {
+        this.cartItems = [];
+      }
+    });
   }
 
   filterProducts(): void {
     let filtered = [...this.allProducts];
+
+    if (this.selectedBranch) {
+      filtered = filtered.filter(product => !this.isProductSoldOut(product));
+    }
 
     if (this.selectedCategoryId !== 'all') {
       filtered = filtered.filter(product => product.categoryId === this.selectedCategoryId);
@@ -186,7 +204,12 @@ export class MenuComponent implements OnInit {
 
   addToCart(product: Product): void {
     if (this.isProductSoldOut(product)) { return; }
-    this.router.navigate(['/product', product.id]);
+    const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
+    if (branchId && this.selectedBranch?.name) {
+      sessionStorage.setItem('selectedBranchId', branchId);
+      sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
+    }
+    this.router.navigate(['/product', product.id], { queryParams: branchId ? { branchId } : undefined });
   }
 
   viewCart(): void {
@@ -214,7 +237,7 @@ export class MenuComponent implements OnInit {
 
   isProductSoldOut(product: Product): boolean {
     const availability = this.productAvailabilityMap.get(product.id);
-    return Boolean(availability && !availability.available);
+    return !!availability && (availability.status !== 'ACTIVE' || !availability.available);
   }
 
   productDisplayPrice(product: Product): number {
@@ -227,7 +250,7 @@ export class MenuComponent implements OnInit {
   }
 
   get cartTotal(): number {
-    return this.cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return this.cartItems.reduce((sum, item) => sum + item.totalPrice, 0);
   }
 
   private normalizeCurrentPage(): void {
@@ -272,6 +295,7 @@ export class MenuComponent implements OnInit {
           sessionStorage.setItem('selectedBranchId', this.selectedBranch.id);
           sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
           this.loadProductAvailabilities(this.selectedBranch.id);
+          this.loadCartData();
         }
       },
       error: () => {
@@ -281,6 +305,7 @@ export class MenuComponent implements OnInit {
 
         if (storedBranchId) {
           this.loadProductAvailabilities(storedBranchId);
+          this.loadCartData();
         }
       }
     });
@@ -293,12 +318,14 @@ export class MenuComponent implements OnInit {
       next: availabilities => {
         this.productAvailabilityMap = new Map(
           availabilities
-            .filter(item => item.status === 'ACTIVE')
+            .filter(item => item.productId)
             .map(item => [item.productId, item])
         );
+        this.filterProducts();
       },
       error: () => {
         this.productAvailabilityMap.clear();
+        this.filterProducts();
       }
     });
   }

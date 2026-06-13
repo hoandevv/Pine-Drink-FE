@@ -459,7 +459,10 @@ h2 {
 }
 
 .branch-map-field {
+  position: relative;
+  z-index: 20;
   padding: 14px;
+  overflow: visible;
 }
 
 .coordinate-preview {
@@ -488,15 +491,21 @@ h2 {
   border-radius: 20px;
 }
 
-// Ensure search dropdown is always above form elements and clickable
 :host ::ng-deep .branch-map-field .search-container {
   position: relative;
-  z-index: 9999;
+  z-index: 20000;
+  overflow: visible;
+}
+
+:host ::ng-deep .branch-map-field .search-input-wrapper {
+  position: relative;
+  z-index: 20001;
+  overflow: visible;
 }
 
 :host ::ng-deep .branch-map-field .search-results {
   position: absolute;
-  z-index: 10000;
+  z-index: 20002;
   pointer-events: auto;
 }
 
