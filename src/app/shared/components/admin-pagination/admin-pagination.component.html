@@ -10,7 +10,7 @@
   <label class="admin-pagination__size" *ngIf="showPageSize">
     <span>Hiển thị</span>
     <select
-      aria-label="Số dòng mỗi trang"
+      aria-label="Số bản ghi mỗi trang"
       [ngModel]="pageSize"
       (ngModelChange)="changePageSize($event)"
       [disabled]="disabled">
