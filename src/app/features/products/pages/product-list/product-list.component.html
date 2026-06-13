@@ -179,25 +179,15 @@
   <app-empty-state *ngIf="!loading" title="Chưa có sản phẩm phù hợp" description="Hãy thêm sản phẩm mới hoặc điều chỉnh bộ lọc để xem dữ liệu từ server."></app-empty-state>
 </ng-template>
 
-<div class="pagination-bar" *ngIf="pageData.totalElements > 0">
-  <div class="page-size-control">
-    <span>Hiển thị</span>
-    <select id="product-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
-      <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-    </select>
-    <span>/ trang</span>
-  </div>
-
-  <div class="page-status">
-    Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} sản phẩm
-  </div>
-
-  <div class="page-actions">
-    <button id="product-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading">
-      <span class="material-symbols-outlined">chevron_left</span>
-    </button>
-    <button id="product-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
-      <span class="material-symbols-outlined">chevron_right</span>
-    </button>
-  </div>
-</div>
+<app-admin-pagination
+  *ngIf="pageData.totalElements > 0"
+  [page]="pageData.page"
+  [totalPages]="pageData.totalPages"
+  [totalItems]="pageData.totalElements"
+  [pageSize]="pageData.size"
+  [pageSizeOptions]="pageSizeOptions"
+  itemLabel="sản phẩm"
+  [disabled]="loading"
+  (pageChange)="changePage($event)"
+  (pageSizeChange)="changePageSize($event)">
+</app-admin-pagination>

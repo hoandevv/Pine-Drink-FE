@@ -407,8 +407,17 @@
 .status-pill { color: #07833f; background: #dcfce7; }
 .status-pill.inactive { color: #986600; background: #fff0bc; }
 
-.actions-col { width: 250px; }
-.row-actions { justify-content: flex-end; }
+.category-table th.actions-col,
+.category-table td:last-child {
+  width: 250px;
+  min-width: 250px;
+  text-align: center;
+}
+
+.category-table td:last-child .row-actions {
+  width: 100%;
+  justify-content: center;
+}
 
 .action-btn {
   min-height: 32px;
@@ -721,6 +730,7 @@
   }
 
   .category-cell { min-width: 0; width: 100%; }
+  .category-table td:last-child { width: auto; min-width: 0; }
   .row-actions { flex-wrap: wrap; justify-content: flex-end; }
   .action-btn { flex: 1; justify-content: center; }
   .empty-mini { align-items: stretch; flex-direction: column; }

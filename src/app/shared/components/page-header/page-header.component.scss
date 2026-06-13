@@ -1,9 +1,26 @@
 .page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(187, 247, 208, 0.78);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(220, 252, 231, 0.72), transparent 34%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 251, 235, 0.72));
+  box-shadow: 0 16px 38px rgba(15, 47, 28, 0.075);
+  overflow: hidden;
+}
+
+.page-header > div:first-child {
+  min-width: 0;
+  padding-inline-start: 2px;
+}
+
+:host ::ng-deep .page-header > *:last-child {
+  flex: 0 0 auto;
 }
 
 .eyebrow {
@@ -18,23 +35,26 @@
 h1 {
   margin: 0;
   color: #102018;
-  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-size: clamp(1.45rem, 2vw, 1.85rem);
   font-weight: 950;
   letter-spacing: -0.04em;
-  line-height: 1.05;
+  line-height: 1.08;
 }
 
 p:last-child {
-  margin: 5px 0 0;
-  color: #6d7c71;
-  max-width: 520px;
+  margin: 7px 0 0;
+  color: #66756a;
+  max-width: 620px;
   font-size: 13px;
-  font-weight: 700;
-  line-height: 1.35;
+  font-weight: 750;
+  line-height: 1.45;
 }
 
 @media (max-width: 768px) {
   .page-header {
+    align-items: stretch;
     flex-direction: column;
+    padding: 16px;
+    border-radius: 22px;
   }
-}
+}

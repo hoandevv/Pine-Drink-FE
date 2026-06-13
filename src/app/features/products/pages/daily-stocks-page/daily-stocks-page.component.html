@@ -1,7 +1,6 @@
 <section class="daily-stock-page">
   <header class="hero-card">
     <div>
-      <span class="eyebrow">Daily variant stock</span>
       <h1>Tồn kho bán trong ngày</h1>
       <p>Set quota theo chi nhánh + biến thể + ngày, theo dõi sold/reserved/available và log thao tác.</p>
     </div>
@@ -83,7 +82,7 @@
 
 <aside class="stock-drawer" [class.open]="drawerOpen" aria-label="Daily stock quota form">
   <form [formGroup]="quotaForm" (ngSubmit)="saveQuota()">
-    <div class="drawer-head"><div><span class="eyebrow">{{ selectedStock ? 'Adjust quota' : 'Set quota' }}</span><h2>{{ selectedStock ? 'Cập nhật quota' : 'Set quota ngày' }}</h2></div><button type="button" class="icon-btn" (click)="closeDrawer()"><span class="material-symbols-outlined">close</span></button></div>
+    <div class="drawer-head"><div><h2>{{ selectedStock ? 'Cập nhật quota' : 'Set quota ngày' }}</h2></div><button type="button" class="icon-btn" (click)="closeDrawer()"><span class="material-symbols-outlined">close</span></button></div>
     <label>Biến thể
       <select id="daily-stock-variant-select" formControlName="variantId" [disabled]="!!selectedStock">
         <option value="" disabled>Chọn biến thể</option>
@@ -108,7 +107,7 @@
 
 <aside class="stock-drawer copy" [class.open]="copyOpen" aria-label="Copy daily stock quota">
   <form [formGroup]="copyForm" (ngSubmit)="copyQuota()">
-    <div class="drawer-head"><div><span class="eyebrow">Copy quota</span><h2>Copy từ lịch sử</h2></div><button type="button" class="icon-btn" (click)="closeCopyPanel()"><span class="material-symbols-outlined">close</span></button></div>
+    <div class="drawer-head"><div><h2>Copy từ lịch sử</h2></div><button type="button" class="icon-btn" (click)="closeCopyPanel()"><span class="material-symbols-outlined">close</span></button></div>
     <label>Ngày nguồn<input id="copy-source-date-input" type="date" formControlName="sourceDate" /></label>
     <label class="check-row"><input id="copy-overwrite-input" type="checkbox" formControlName="overwrite" />Overwrite ngày hiện tại nếu đã có quota</label>
     <label>Lý do<textarea id="copy-reason-input" rows="3" formControlName="reason"></textarea></label>
