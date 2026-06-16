@@ -11,7 +11,7 @@ export class AdminPaginationComponent {
   @Input() totalItems = 0;
   @Input() pageSize = 12;
   @Input() pageSizeOptions: number[] = [6, 12, 24, 48];
-  @Input() itemLabel = 'bản ghi';
+  @Input() itemLabel = 'dữ liệu';
   @Input() showPageSize = true;
   @Input() disabled = false;
 
