@@ -18,7 +18,7 @@
           *ngFor="let result of searchResults"
           type="button"
           class="search-result-item"
-          (pointerdown)="selectResult(result); $event.stopPropagation()"
+          (pointerdown)="selectResult(result); $event.preventDefault(); $event.stopPropagation()"
         >
           <span class="material-symbols-outlined">location_on</span>
           <div class="result-info">

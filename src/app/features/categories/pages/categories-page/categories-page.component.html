@@ -1,7 +1,6 @@
 <section class="category-admin" aria-label="Quản lý danh mục">
   <header class="admin-head">
     <div class="head-copy">
-      <span class="eyebrow">Admin / Categories</span>
       <h1>Danh mục</h1>
       <p>CRUD nhóm món Pine Drink, tối ưu thao tác nhanh.</p>
     </div>
@@ -131,30 +130,18 @@
       </table>
     </div>
 
-    <div class="pagination-bar" *ngIf="pageData.totalElements > 0">
-      <div class="page-size-control">
-        <span>Hiển thị</span>
-        <select id="category-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
-          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-        </select>
-        <span>/ trang</span>
-      </div>
-
-      <div class="page-status">
-        Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} danh mục
-      </div>
-
-      <div class="page-actions">
-        <button id="category-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)"
-          [disabled]="pageData.page === 0 || loading">
-          <span class="material-symbols-outlined">chevron_left</span>
-        </button>
-        <button id="category-next-page-btn" type="button" (click)="changePage(pageData.page + 1)"
-          [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
-          <span class="material-symbols-outlined">chevron_right</span>
-        </button>
-      </div>
-    </div>
+    <app-admin-pagination
+      *ngIf="pageData.totalElements > 0"
+      [page]="pageData.page"
+      [totalPages]="pageData.totalPages"
+      [totalItems]="pageData.totalElements"
+      [pageSize]="pageData.size"
+      [pageSizeOptions]="pageSizeOptions"
+      itemLabel="danh mục"
+      [disabled]="loading"
+      (pageChange)="changePage($event)"
+      (pageSizeChange)="changePageSize($event)">
+    </app-admin-pagination>
   </section>
 </section>
 

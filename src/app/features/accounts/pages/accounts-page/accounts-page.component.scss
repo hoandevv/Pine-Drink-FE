@@ -520,9 +520,34 @@
 }
 
 .create-form {
+  flex: 1;
+  min-height: 0;
   display: grid;
+  align-content: start;
   gap: 12px;
-  padding-top: 16px;
+  margin-right: -6px;
+  padding: 16px 6px 4px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 74, 42, 0.28) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(15, 74, 42, 0.24);
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 74, 42, 0.38);
+  }
 
   label {
     display: grid;

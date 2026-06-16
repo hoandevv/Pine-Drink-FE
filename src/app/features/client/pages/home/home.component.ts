@@ -43,8 +43,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadData(): void {
     this.loadProducts();
     this.loadBranches();
-
-    this.loadVouchers();
   }
 
   loadProducts(): void {
@@ -101,6 +99,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   selectBranch(branch: Branch): void {
     this.selectedBranch = branch;
+    sessionStorage.setItem('selectedBranchId', branch.id);
+    sessionStorage.setItem('selectedBranchName', branch.name);
+    this.loadVouchers();
   }
 
   applyVoucher(voucherCode: string): void {
@@ -109,14 +110,25 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private loadVouchers(): void {
-    this.voucherService.search({ status: 'ACTIVE', page: 0, size: 3, sort: 'createdAt,desc' }).subscribe({
+    const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
+    if (!branchId) {
+      this.vouchers = [];
+      return;
+    }
+
+    this.voucherService.getAvailableForCustomer({ branchId, page: 0, size: 3, sort: 'createdAt,desc' }).subscribe({
       next: res => this.vouchers = res.data.content || [],
       error: () => this.vouchers = []
     });
   }
 
   addToCart(product: Product): void {
-    this.router.navigate(['/product', product.id]);
+    const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
+    if (branchId && this.selectedBranch?.name) {
+      sessionStorage.setItem('selectedBranchId', branchId);
+      sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
+    }
+    this.router.navigate(['/product', product.id], { queryParams: branchId ? { branchId } : undefined });
   }
 
   getProductBadge(product: Product): string {
@@ -131,6 +143,11 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: page => {
         this.nearbyBranches = (page.content || []).slice(0, 4);
         this.selectedBranch = this.nearbyBranches[0] || null;
+        if (this.selectedBranch) {
+          sessionStorage.setItem('selectedBranchId', this.selectedBranch.id);
+          sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
+        }
+        this.loadVouchers();
         this.loadBranchHours(this.nearbyBranches);
       },
       error: () => {

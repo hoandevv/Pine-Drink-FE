@@ -384,8 +384,15 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
+table th:last-child,
+table td:last-child {
+  width: 188px;
+  min-width: 188px;
+  text-align: center;
+}
+
 .row-actions {
-  justify-content: flex-end;
+  justify-content: center;
   gap: 6px;
 }
 

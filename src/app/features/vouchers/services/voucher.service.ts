@@ -70,6 +70,16 @@ export class VoucherService {
     return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(this.apiUrl, { params: httpParams });
   }
 
+  getAvailableForCustomer(params: { branchId: string; page?: number; size?: number; sort?: string }): Observable<BaseResponse<PageResponse<VoucherResponse>>> {
+    let httpParams = new HttpParams().set('branchId', params.branchId);
+    httpParams = httpParams.set('page', (params.page ?? 0).toString());
+    httpParams = httpParams.set('size', (params.size ?? 20).toString());
+    if (params.sort) {
+      httpParams = httpParams.set('sort', params.sort);
+    }
+    return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(`${this.apiUrl}/customer/available`, { params: httpParams });
+  }
+
   create(payload: VoucherPayload): Observable<BaseResponse<VoucherResponse>> {
     return this.http.post<BaseResponse<VoucherResponse>>(this.apiUrl, payload);
   }

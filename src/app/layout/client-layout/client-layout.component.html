@@ -19,7 +19,7 @@
     <ng-container *ngIf="isLoggedIn; else guestActions">
       <div class="user-chip" routerLink="/profile" style="cursor: pointer;">
         <span class="material-symbols-outlined">account_circle</span>
-        <span>Tài khoản</span>
+        <span>{{ userDisplayName }}</span>
       </div>
       <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
     </ng-container>

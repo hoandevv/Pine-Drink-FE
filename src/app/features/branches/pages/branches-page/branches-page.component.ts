@@ -81,7 +81,7 @@ export class BranchesPageComponent implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly branchService: BranchService,
     public readonly accessControl: AccessControlService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadBranches();
@@ -224,11 +224,25 @@ export class BranchesPageComponent implements OnInit {
   }
 
   onLocationSelected(location: MapPickerResult): void {
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return;
+    }
+
     this.branchForm.patchValue({
       address: location.addressLine || location.displayName || this.branchForm.controls.address.value,
-      latitude: location.latitude,
-      longitude: location.longitude
+      latitude,
+      longitude
     });
+
+    this.branchForm.controls.latitude.markAsDirty();
+    this.branchForm.controls.latitude.markAsTouched();
+    this.branchForm.controls.longitude.markAsDirty();
+    this.branchForm.controls.longitude.markAsTouched();
+    this.branchForm.controls.latitude.updateValueAndValidity();
+    this.branchForm.controls.longitude.updateValueAndValidity();
   }
 
   statusLabel(status: string): string {

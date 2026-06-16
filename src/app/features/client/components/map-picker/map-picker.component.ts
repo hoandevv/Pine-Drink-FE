@@ -38,6 +38,16 @@ export class MapPickerComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();
   private readonly defaultCenter: L.LatLngExpression = [21.028511, 105.804817]; // Hanoi
   private readonly defaultZoom = 13;
+  private readonly defaultMarkerIcon = L.icon({
+    iconRetinaUrl: 'assets/marker-icon-2x.png',
+    iconUrl: 'assets/marker-icon.png',
+    shadowUrl: 'assets/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    tooltipAnchor: [16, -28],
+    shadowSize: [41, 41]
+  });
 
   constructor(private readonly geocodingService: GeocodingService) { }
 
@@ -66,21 +76,8 @@ export class MapPickerComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
 
-    // Fix marker icon issue with Leaflet + Angular
-    const iconRetinaUrl = 'assets/marker-icon-2x.png';
-    const iconUrl = 'assets/marker-icon.png';
-    const shadowUrl = 'assets/marker-shadow.png';
-    const iconDefault = L.icon({
-      iconRetinaUrl,
-      iconUrl,
-      shadowUrl,
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      tooltipAnchor: [16, -28],
-      shadowSize: [41, 41]
-    });
-    L.Marker.prototype.options.icon = iconDefault;
+    // Fix marker icon issue with Leaflet + Angular/Webpack.
+    L.Marker.mergeOptions({ icon: this.defaultMarkerIcon });
   }
 
   private setupSearch(): void {
@@ -252,7 +249,12 @@ export class MapPickerComponent implements OnInit, OnDestroy {
       this.map.removeLayer(this.marker);
     }
 
-    this.marker = L.marker(latLng, { draggable: true, icon }).addTo(this.map);
+    const markerOptions: L.MarkerOptions = {
+      draggable: true,
+      icon: icon || this.defaultMarkerIcon
+    };
+
+    this.marker = L.marker(latLng, markerOptions).addTo(this.map);
     this.marker.on('dragend', () => {
       const position = this.marker.getLatLng();
       this.onMarkerDragged(position.lat, position.lng);
