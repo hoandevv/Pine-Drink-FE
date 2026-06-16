@@ -38,6 +38,7 @@ export class ProductToppingsPageComponent implements OnInit {
   drawerOpen = false;
   errorMessage = '';
   searchTerm = '';
+  productSearchTerm = '';
   statusFilter: 'ALL' | 'ACTIVE' | 'INACTIVE' = 'ALL';
 
   constructor(
@@ -53,6 +54,14 @@ export class ProductToppingsPageComponent implements OnInit {
 
   get selectedProduct(): Product | undefined {
     return this.products.find((product) => product.id === this.selectedProductId);
+  }
+
+  get filteredProducts(): Product[] {
+    const keyword = this.productSearchTerm.trim().toLowerCase();
+    if (!keyword) { return this.products; }
+
+    return this.products.filter((product) => [product.name, product.code, product.categoryName]
+      .some((value) => (value || '').toLowerCase().includes(keyword)));
   }
 
   get assignedToppingIds(): Set<string> {

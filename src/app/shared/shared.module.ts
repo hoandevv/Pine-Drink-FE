@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { AdminPaginationComponent } from './components/admin-pagination/admin-pagination.component';
 import { EmptyStateComponent } from './components/empty-state/empty-state.component';
 import { GlobalLoadingComponent } from './components/global-loading/global-loading.component';
 import { PageHeaderComponent } from './components/page-header/page-header.component';
@@ -18,6 +19,7 @@ import { MapPickerComponent } from '../features/client/components/map-picker/map
     PageHeaderComponent,
     EmptyStateComponent,
     PaginationComponent,
+    AdminPaginationComponent,
     MapPickerComponent
   ],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslateModule],
@@ -31,6 +33,7 @@ import { MapPickerComponent } from '../features/client/components/map-picker/map
     PageHeaderComponent,
     EmptyStateComponent,
     PaginationComponent,
+    AdminPaginationComponent,
     MapPickerComponent
   ]
 })

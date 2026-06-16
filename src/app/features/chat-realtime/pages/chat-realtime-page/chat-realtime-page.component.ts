@@ -5,6 +5,7 @@ import { TokenService } from 'src/app/core/services/token.service';
 import { Branch } from 'src/app/features/branches/models/branch.model';
 import { BranchService } from 'src/app/features/branches/services/branch.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AccessControlService } from 'src/app/core/services/access-control.service';
 
 @Component({
   selector: 'app-chat-realtime-page',
@@ -23,7 +24,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
   searchText = '';
   selectedFilter: 'all' | 'unread' | 'processing' | 'closed' = 'all';
   showRoomCreator = false;
-  
+
   loadingRooms = false;
   loadingMessages = false;
   creatingRoom = false;
@@ -34,6 +35,18 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
   isSystemScope = false;
   branches: Branch[] = [];
   loadingBranches = false;
+  currentUserRoles: string[] = [];
+
+  // Mobile navigation states
+  showMobileSidebar = true;
+  showMobileInfo = false;
+
+  clientSuggestions = [
+    { label: '🍹 Menu hôm nay', text: 'Chào Pine Drink, cho mình xin menu hôm nay với ạ!' },
+    { label: '🚚 Giao hàng', text: 'Phí ship đến khu vực của mình là bao nhiêu vậy shop?' },
+    { label: '⭐ Khuyến mãi', text: 'Hiện tại chi nhánh mình có chương trình ưu đãi nào không ạ?' },
+    { label: '📝 Đơn hàng', text: 'Mình muốn kiểm tra trạng thái đơn hàng vừa đặt.' }
+  ];
 
   private shouldScrollToBottom = false;
   private readonly subscriptions = new Subscription();
@@ -43,14 +56,16 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     private readonly tokenService: TokenService,
     private readonly branchService: BranchService,
     private readonly router: Router,
-    private readonly route: ActivatedRoute
-  ) {}
+    private readonly route: ActivatedRoute,
+    private readonly accessControl: AccessControlService
+  ) { }
 
   ngOnInit(): void {
     const currentUser = this.tokenService.getCurrentUserFromToken();
     const requestedBranchId = this.route.snapshot.queryParamMap.get('branchId') || sessionStorage.getItem('selectedBranchId') || '';
 
     this.currentUserId = currentUser?.id;
+    this.currentUserRoles = currentUser?.roles || [];
     this.currentUserBranchIds = currentUser?.scope?.branchIds || [];
     this.isSystemScope = currentUser?.scope?.type === 'SYSTEM';
     this.branchId = this.isClientChat
@@ -74,8 +89,8 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
     if (this.searchText.trim()) {
       const q = this.searchText.toLowerCase();
-      filtered = filtered.filter(r => 
-        (r.customerName?.toLowerCase().includes(q)) || 
+      filtered = filtered.filter(r =>
+        (r.customerName?.toLowerCase().includes(q)) ||
         (r.roomCode?.toLowerCase().includes(q)) ||
         (r.orderId?.toLowerCase().includes(q)) ||
         (r.title?.toLowerCase().includes(q))
@@ -125,6 +140,14 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
       next: (response) => {
         this.rooms = response.data?.content || [];
         this.loadingRooms = false;
+
+        // Auto select room if branchId is present (e.g. from FAB)
+        if (this.branchId && this.rooms.length > 0) {
+          const targetRoom = this.rooms.find(r => r.branchId === this.branchId);
+          if (targetRoom && !this.activeRoom) {
+            this.selectRoom(targetRoom);
+          }
+        }
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Không tải được danh sách phòng chat';
@@ -145,6 +168,16 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     this.activeRoom = undefined;
     this.messages = [];
     this.loadRooms();
+  }
+
+  toggleMobileSidebar(): void {
+    this.showMobileSidebar = !this.showMobileSidebar;
+    if (this.showMobileSidebar) this.showMobileInfo = false;
+  }
+
+  toggleMobileInfo(): void {
+    this.showMobileInfo = !this.showMobileInfo;
+    if (this.showMobileInfo) this.showMobileSidebar = false;
   }
 
   openSelectedBranchChat(): void {
@@ -187,22 +220,51 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
   selectRoom(room: ChatRoomResponse): void {
     this.errorMessage = '';
+
+    // Reset unread count locally for immediate feedback
+    if (room.unreadCount && room.unreadCount > 0) {
+      room.unreadCount = 0;
+      this.markAsRead(room.id);
+    }
+
     this.chatRealtime.getRoom(room.id).subscribe({
       next: (response) => {
         const freshRoom = response.data || room;
         this.activeRoom = freshRoom;
-        this.upsertRoom(freshRoom);
+
+        // Ensure fresh data also has reset unread count
+        this.activeRoom.unreadCount = 0;
+
+        this.upsertRoom(this.activeRoom);
         this.messages = [];
         this.loadMessages(freshRoom.id);
         this.chatRealtime.subscribeRoom(freshRoom.id);
+        this.showMobileSidebar = false;
       },
       error: () => {
         this.activeRoom = room;
         this.messages = [];
         this.loadMessages(room.id);
         this.chatRealtime.subscribeRoom(room.id);
+        this.showMobileSidebar = false;
       }
     });
+  }
+
+  private markAsRead(roomId: string): void {
+    // TODO: Implement backend API call: this.chatRealtime.markAsRead(roomId).subscribe(...)
+    console.log(`Marking room ${roomId} as read`);
+  }
+
+  selectSuggestion(text: string): void {
+    if (!this.branchId) {
+      this.errorMessage = 'Vui lòng chọn chi nhánh trước khi đặt câu hỏi bro.';
+      return;
+    }
+    this.messageContent = text;
+    if (!this.activeRoom) {
+      this.openSelectedBranchChat();
+    }
   }
 
   sendMessage(): void {
@@ -234,7 +296,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
         const el = this.messageListContainer.nativeElement;
         el.scrollTop = el.scrollHeight;
       }
-    } catch (err) {}
+    } catch (err) { }
   }
 
   private bindRealtime(): void {
@@ -274,20 +336,37 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   private upsertRoom(room: ChatRoomResponse): void {
+    const isNowActive = room.id === this.activeRoom?.id;
+    const finalRoom = isNowActive ? { ...room, unreadCount: 0 } : room;
+
     const exists = this.rooms.some((item) => item.id === room.id);
-    this.rooms = exists
-      ? this.rooms.map((item) => (item.id === room.id ? { ...item, ...room } : item))
-      : [room, ...this.rooms];
-    this.rooms = [...this.rooms].sort((a, b) => this.toTime(b.lastMessageAt || b.createdAt) - this.toTime(a.lastMessageAt || a.createdAt));
+    if (exists) {
+      this.rooms = this.rooms.map((item) => (item.id === room.id ? { ...item, ...finalRoom } : item));
+    } else {
+      this.rooms = [finalRoom, ...this.rooms];
+    }
+
+    // Always sort by latest message/activity
+    this.rooms.sort((a, b) => this.toTime(b.lastMessageAt || b.createdAt) - this.toTime(a.lastMessageAt || a.createdAt));
   }
 
   private bumpRoomPreview(message: ChatMessageResponse): void {
-    this.rooms = this.rooms.map((room) =>
-      room.id === message.roomId
-        ? { ...room, lastMessagePreview: message.content || '[message]', lastMessageAt: message.createdAt }
-        : room
-    );
-    this.rooms = [...this.rooms].sort((a, b) => this.toTime(b.lastMessageAt || b.createdAt) - this.toTime(a.lastMessageAt || a.createdAt));
+    const isNowActive = message.roomId === this.activeRoom?.id;
+
+    this.rooms = this.rooms.map((room) => {
+      if (room.id === message.roomId) {
+        return {
+          ...room,
+          lastMessagePreview: message.content || '[Tin nhắn]',
+          lastMessageAt: message.createdAt,
+          unreadCount: isNowActive ? 0 : (room.unreadCount || 0) + 1
+        };
+      }
+      return room;
+    });
+
+    // Sort: Newest message at top
+    this.rooms.sort((a, b) => this.toTime(b.lastMessageAt || b.createdAt) - this.toTime(a.lastMessageAt || a.createdAt));
   }
 
   private loadBranches(): void {
@@ -327,7 +406,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     return this.isClientChat ? 'Hỗ trợ khách hàng' : (this.isSystemScope ? 'Hỗ trợ khách hàng' : `Hỗ trợ tại ${this.getBranchLabel(this.branchId || this.currentUserBranchIds[0])}`.trim());
   }
 
-  getBranchLabel(branchId?: string): string {
+  getBranchLabel(branchId?: string | null): string {
     const branch = this.branches.find((item) => item.id === branchId);
     if (!branch) {
       return branchId ? `Chi nhánh ${branchId}` : '';
@@ -343,8 +422,14 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     return !!this.getRoomAvatarUrl(room);
   }
 
+  get isStaffChat(): boolean {
+    return this.accessControl.isAdminConsoleUser() || this.currentUserRoles
+      .map((role) => role.toUpperCase().replace(/^ROLE_/, ''))
+      .some((role) => ['ADMIN', 'MANAGER', 'DELIVERY', 'STAFF'].includes(role));
+  }
+
   get isClientChat(): boolean {
-    return this.router.url.startsWith('/chat');
+    return this.router.url.startsWith('/chat') && !this.isStaffChat;
   }
 
   getConversationTitle(room: ChatRoomResponse): string {
