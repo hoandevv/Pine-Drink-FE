@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
+import { AuthService } from '../../../../core/services/auth.service';
 import { BranchProductAvailability } from '../../../branches/models/branch-availability.model';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
@@ -48,7 +49,8 @@ export class MenuComponent implements OnInit {
     private readonly categoryService: CategoryService,
     private readonly branchService: BranchService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
-    private readonly cartService: CartService
+    private readonly cartService: CartService,
+    private readonly authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -90,6 +92,11 @@ export class MenuComponent implements OnInit {
   }
 
   loadCartData(): void {
+    if (!this.authService.isAuthenticated()) {
+      this.cartItems = [];
+      return;
+    }
+
     const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
     if (!branchId) {
       this.cartItems = [];

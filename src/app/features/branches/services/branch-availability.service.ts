@@ -14,35 +14,40 @@ import {
 @Injectable({ providedIn: 'root' })
 export class BranchAvailabilityService {
   private readonly branchesUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.branches}`;
+  private readonly adminBranchesUrl = `${environment.apiBaseUrl}/admin${API_ENDPOINTS.branches}`;
 
   constructor(private readonly http: HttpClient) {}
 
   getProductAvailabilities(branchId: string): Observable<BranchProductAvailability[]> {
     return this.http
-      .get<BaseResponse<BranchProductAvailability[]>>(this.availabilityUrl(branchId, 'products'))
+      .get<BaseResponse<BranchProductAvailability[]>>(this.publicAvailabilityUrl(branchId, 'products'))
       .pipe(map((response) => (response.data || []).map((item) => this.normalizeProductAvailability(item))));
   }
 
   getToppingAvailabilities(branchId: string): Observable<BranchToppingAvailability[]> {
     return this.http
-      .get<BaseResponse<BranchToppingAvailability[]>>(this.availabilityUrl(branchId, 'toppings'))
+      .get<BaseResponse<BranchToppingAvailability[]>>(this.publicAvailabilityUrl(branchId, 'toppings'))
       .pipe(map((response) => (response.data || []).map((item) => this.normalizeToppingAvailability(item))));
   }
 
   createProductAvailability(branchId: string, request: BranchProductAvailabilityRequest): Observable<BranchProductAvailability> {
     return this.http
-      .post<BaseResponse<BranchProductAvailability>>(this.availabilityUrl(branchId, 'products'), request)
+      .post<BaseResponse<BranchProductAvailability>>(this.adminAvailabilityUrl(branchId, 'products'), request)
       .pipe(map((response) => this.normalizeProductAvailability(response.data)));
   }
 
   updateProductAvailability(branchId: string, id: string, request: BranchProductAvailabilityRequest): Observable<BranchProductAvailability> {
     return this.http
-      .put<BaseResponse<BranchProductAvailability>>(`${this.availabilityUrl(branchId, 'products')}/${id}`, request)
+      .put<BaseResponse<BranchProductAvailability>>(`${this.adminAvailabilityUrl(branchId, 'products')}/${id}`, request)
       .pipe(map((response) => this.normalizeProductAvailability(response.data)));
   }
 
-  private availabilityUrl(branchId: string, resource: 'products' | 'toppings'): string {
+  private publicAvailabilityUrl(branchId: string, resource: 'products' | 'toppings'): string {
     return `${this.branchesUrl}/${branchId}/availability/${resource}`;
+  }
+
+  private adminAvailabilityUrl(branchId: string, resource: 'products' | 'toppings'): string {
+    return `${this.adminBranchesUrl}/${branchId}/availability/${resource}`;
   }
 
   private normalizeProductAvailability(item: BranchProductAvailability): BranchProductAvailability {
