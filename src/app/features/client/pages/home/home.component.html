@@ -15,6 +15,8 @@
   </div>
   <div class="hero-visual">
     <div class="drink-card main-drink" *ngIf="heroProduct as product" [attr.data-active-index]="activeHeroIndex">
+      <span class="pour-fill" aria-hidden="true"></span>
+      <span class="pour-gloss" aria-hidden="true"></span>
       <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" />
       <div *ngIf="!product.imageUrl" class="hero-image-fallback">
         <span class="material-symbols-outlined">local_cafe</span>
@@ -38,7 +40,8 @@
     <button type="button" class="active">{{ 'home.quickOrder.pickupAtStore' | translate }}</button>
     <button type="button">{{ 'home.quickOrder.delivery' | translate }}</button>
   </div>
-  <button class="primary-button compact" (click)="navigateToMenu()">{{ 'home.quickOrder.startOrder' | translate }}</button>
+  <button class="primary-button compact" (click)="navigateToMenu()">{{ 'home.quickOrder.startOrder' | translate
+    }}</button>
 </section>
 
 <section class="home-promise" aria-label="Pine Drink service promises">

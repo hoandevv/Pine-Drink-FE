@@ -1,6 +1,30 @@
-<div class="loading-overlay" *ngIf="loadingService.loading$ | async">
+<div class="loading-overlay" *ngIf="loadingService.loading$ | async" role="status" aria-live="polite" aria-label="Đang tải dữ liệu">
   <div class="loading-card">
-    <span class="spinner"></span>
-    <p>Dang tai du lieu...</p>
+    <div class="bottle-stage" aria-hidden="true">
+      <span class="glow glow-primary"></span>
+      <span class="glow glow-accent"></span>
+
+      <svg viewBox="0 0 205 615" class="pine-bottle">
+        <defs>
+          <linearGradient id="pineLiquid" x1="0" x2="1" y1="1" y2="0">
+            <stop offset="0%" stop-color="#0f8f5f" />
+            <stop offset="55%" stop-color="#8bc34a" />
+            <stop offset="100%" stop-color="#ffd166" />
+          </linearGradient>
+          <clipPath id="bottleClip">
+            <path d="M47 595c-8 0-26-6-26-34V261c0-17 9-29 16-38s16-28 16-28L68 59l-4-5s3-30 7-36 14-6 32-6 28 0 32 6 7 36 7 36l-4 5 15 136s9 19 16 28 16 21 16 38v300c0 28-18 34-26 34H47z" />
+          </clipPath>
+        </defs>
+
+        <g clip-path="url(#bottleClip)">
+          <rect class="liquid" x="18" y="160" width="170" height="450" rx="34" />
+          <path class="wave wave-one" d="M15 382c28-18 54-18 82 0s54 18 82 0 54-18 82 0v235H15z" />
+          <path class="wave wave-two" d="M-20 420c32-16 64-16 96 0s64 16 96 0 64-16 96 0v210H-20z" />
+        </g>
+
+        <path class="bottle-outline" d="M47 595c-8 0-26-6-26-34V261c0-17 9-29 16-38s16-28 16-28L68 59l-4-5s3-30 7-36 14-6 32-6 28 0 32 6 7 36 7 36l-4 5 15 136s9 19 16 28 16 21 16 38v300c0 28-18 34-26 34H47z" />
+        <path class="leaf" d="M76 302c32-42 72-45 93-35-7 38-35 69-83 69 20-12 39-29 52-51-24 10-43 23-62 17z" />
+      </svg>
+    </div>
   </div>
 </div>

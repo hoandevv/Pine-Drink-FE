@@ -1,33 +1,53 @@
-<header class="client-nav">
-  <a routerLink="/" class="brand"><span>Pine Drink</span></a>
-  <nav class="nav-links">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Trang chủ</a>
-    <a routerLink="/menu" routerLinkActive="active">Menu</a>
-    <a routerLink="/promotions" routerLinkActive="active">Khuyến mãi</a>
-    <a routerLink="/track-order" routerLinkActive="active">Theo dõi đơn</a>
-    <a routerLink="/stores" routerLinkActive="active">Cửa hàng</a>
-    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị">
+<header class="client-nav" [class.mobile-open]="isMobileNavOpen">
+  <a routerLink="/" class="brand" (click)="closeMobileNav()"><span>Pine Drink</span></a>
+
+  <nav class="nav-links" [class.is-open]="isMobileNavOpen" aria-label="Điều hướng chính">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileNav()">Trang chủ</a>
+    <a routerLink="/menu" routerLinkActive="active" (click)="closeMobileNav()">Menu</a>
+    <a routerLink="/promotions" routerLinkActive="active" (click)="closeMobileNav()">Khuyến mãi</a>
+    <a routerLink="/track-order" routerLinkActive="active" (click)="closeMobileNav()">Theo dõi đơn</a>
+    <a routerLink="/stores" routerLinkActive="active" (click)="closeMobileNav()">Cửa hàng</a>
+    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị" (click)="closeMobileNav()">
       <span class="material-symbols-outlined">admin_panel_settings</span>
       <span>Quản trị</span>
     </a>
+
+    <div class="mobile-user-panel">
+      <ng-container *ngIf="isLoggedIn; else mobileGuestActions">
+        <a class="user-chip" routerLink="/profile" (click)="closeMobileNav()">
+          <span class="material-symbols-outlined">account_circle</span>
+          <span>{{ userDisplayName }}</span>
+        </a>
+        <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
+      </ng-container>
+      <ng-template #mobileGuestActions>
+        <a routerLink="/auth/login" class="login-button" (click)="closeMobileNav()">Login</a>
+      </ng-template>
+    </div>
   </nav>
+
   <div class="nav-actions">
-    <button class="cart-button" type="button" aria-label="Giỏ hàng" routerLink="/cart">
+    <button class="cart-button" type="button" aria-label="Giỏ hàng" routerLink="/cart" (click)="closeMobileNav()">
       <span class="material-symbols-outlined">shopping_bag</span>
-      <strong>{{ cartCount }}</strong>
+      <strong [attr.data-count]="cartCount">{{ cartCount }}</strong>
     </button>
     <ng-container *ngIf="isLoggedIn; else guestActions">
-      <div class="user-chip" routerLink="/profile" style="cursor: pointer;">
+      <a class="user-chip" routerLink="/profile" aria-label="Tài khoản" (click)="closeMobileNav()">
         <span class="material-symbols-outlined">account_circle</span>
         <span>{{ userDisplayName }}</span>
-      </div>
+        <span class="material-symbols-outlined user-chip__chevron">expand_more</span>
+      </a>
       <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
     </ng-container>
     <ng-template #guestActions>
       <a routerLink="/auth/login" class="login-button">Login</a>
     </ng-template>
+    <button class="mobile-menu-button" type="button" aria-label="Mở menu" [attr.aria-expanded]="isMobileNavOpen" (click)="toggleMobileNav()">
+      <span class="material-symbols-outlined">{{ isMobileNavOpen ? 'close' : 'menu' }}</span>
+    </button>
   </div>
 </header>
+<div class="mobile-nav-overlay" [class.is-open]="isMobileNavOpen" (click)="closeMobileNav()" aria-hidden="true"></div>
 
 <main class="client-page">
   <router-outlet></router-outlet>

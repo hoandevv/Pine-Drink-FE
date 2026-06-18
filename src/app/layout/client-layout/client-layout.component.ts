@@ -13,6 +13,7 @@ export class ClientLayoutComponent {
 
   readonly cartCount = 2;
   readonly cartTotal = 84000;
+  isMobileNavOpen = false;
 
   constructor(
     private readonly authService: AuthService,
@@ -43,11 +44,20 @@ export class ClientLayoutComponent {
     return user?.fullName || user?.username || user?.email || 'Tài khoản';
   }
 
+  toggleMobileNav(): void {
+    this.isMobileNavOpen = !this.isMobileNavOpen;
+  }
+
+  closeMobileNav(): void {
+    this.isMobileNavOpen = false;
+  }
+
   formatPrice(price: number): string {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
   logout(): void {
+    this.closeMobileNav();
     this.authService.logout();
     this.router.navigate(['/auth/login']);
   }
