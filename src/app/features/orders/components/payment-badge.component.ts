@@ -28,3 +28,4 @@ import { PaymentStatus } from '../models/order.model';
 export class PaymentBadgeComponent {
   @Input() status: PaymentStatus = 'UNPAID';
 }
+

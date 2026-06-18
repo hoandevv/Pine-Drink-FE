@@ -87,6 +87,118 @@
           </article>
         </div>
 
+        <div class="checkout-options">
+          <div class="option-group">
+            <label>Hình thức nhận hàng</label>
+            <select [(ngModel)]="orderType" (ngModelChange)="onOrderTypeChange()">
+              <option value="DELIVERY">Giao hàng tận nơi</option>
+              <option value="PICKUP">Đến lấy tại quán</option>
+            </select>
+          </div>
+
+          <div class="option-group" *ngIf="orderType === 'DELIVERY'">
+            <label>Địa chỉ giao hàng</label>
+            <select [(ngModel)]="selectedAddressId" (ngModelChange)="onAddressChange()">
+              <option value="" disabled>Chọn địa chỉ</option>
+              <option *ngFor="let address of addresses" [value]="address.id">
+                {{ address.receiverName }} - {{ address.receiverPhone }} - {{ formatAddress(address) }}
+              </option>
+            </select>
+
+            <div *ngIf="selectedAddress as address" class="selected-address-card">
+              <div class="address-card-icon">
+                <span class="material-symbols-outlined">location_on</span>
+              </div>
+              <div class="address-card-content">
+                <div class="receiver-line">
+                  <strong>{{ address.receiverName }}</strong>
+                  <span>{{ address.receiverPhone }}</span>
+                </div>
+                <p>{{ formatAddress(address) }}</p>
+                <small *ngIf="address.isDefault">Địa chỉ mặc định</small>
+              </div>
+            </div>
+
+            <div *ngIf="selectedAddress as address" class="delivery-info-description">
+              <h4>
+                <span class="material-symbols-outlined">local_shipping</span>
+                Thông tin giao hàng
+              </h4>
+              <div class="delivery-info-row">
+                <span class="info-label">Số điện thoại</span>
+                <strong>{{ address.receiverPhone }}</strong>
+              </div>
+              <div class="delivery-info-row">
+                <span class="info-label">Địa chỉ</span>
+                <p>{{ formatAddress(address) }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="!selectedAddress" class="delivery-info-description empty">
+              <h4>
+                <span class="material-symbols-outlined">info</span>
+                Chưa có thông tin giao hàng
+              </h4>
+              <p *ngIf="addresses.length === 0">
+                Bạn chưa có địa chỉ giao hàng. Hãy thêm địa chỉ mới để tiếp tục đặt hàng.
+              </p>
+              <p *ngIf="addresses.length > 0">
+                Vui lòng chọn một địa chỉ để hiển thị số điện thoại và địa chỉ giao hàng.
+              </p>
+            </div>
+
+            <button type="button" class="link-button" routerLink="/addresses/new">Thêm địa chỉ mới</button>
+            <p *ngIf="deliveryError" class="delivery-error">{{ deliveryError }}</p>
+          </div>
+
+          <div class="option-group" *ngIf="orderType === 'PICKUP'">
+            <label>Thông tin lấy tại quán</label>
+
+            <div *ngIf="selectedBranch as branch" class="delivery-info-description pickup">
+              <h4>
+                <span class="material-symbols-outlined">storefront</span>
+                Chi nhánh nhận hàng
+              </h4>
+              <div class="delivery-info-row">
+                <span class="info-label">Tên quán</span>
+                <strong>{{ branch.name }}</strong>
+              </div>
+              <div class="delivery-info-row">
+                <span class="info-label">Số điện thoại</span>
+                <strong>{{ branch.phone || 'Chưa cập nhật' }}</strong>
+              </div>
+              <div class="delivery-info-row">
+                <span class="info-label">Địa chỉ</span>
+                <p>{{ branch.address || 'Chưa cập nhật địa chỉ' }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="!selectedBranch" class="delivery-info-description empty">
+              <h4>
+                <span class="material-symbols-outlined">info</span>
+                Chưa có thông tin chi nhánh
+              </h4>
+              <p>Vui lòng chọn chi nhánh trước khi đặt món đến lấy tại quán.</p>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label>Thanh toán</label>
+            <select [(ngModel)]="paymentMethod">
+              <option [value]="orderType === 'DELIVERY' ? 'COD' : 'CASH'">
+                {{ orderType === 'DELIVERY' ? 'COD - Thanh toán khi nhận hàng' : 'Tiền mặt tại quán' }}
+              </option>
+              <option value="VNPAY">VNPay</option>
+              <option value="MOMO">MoMo</option>
+            </select>
+          </div>
+
+          <div class="option-group">
+            <label>Ghi chú</label>
+            <textarea rows="3" placeholder="Ghi chú cho đơn hàng" [(ngModel)]="note"></textarea>
+          </div>
+        </div>
+
         <!-- Voucher Section -->
         <div class="voucher-section">
           <h3>
@@ -121,7 +233,7 @@
             <span class="material-symbols-outlined">check_circle</span>
             <div>
               <strong>{{ selectedVoucher.code }}</strong>
-              <p>{{ selectedVoucher.title }}</p>
+              <p>{{ selectedVoucher.name }}</p>
             </div>
             <span class="discount-amount">-{{ formatPrice(discount) }}</span>
           </div>
@@ -132,21 +244,21 @@
               <article 
                 *ngFor="let voucher of availableVouchers" 
                 class="voucher-card"
-                [class.disabled]="subtotal < voucher.minOrderAmount"
+                [class.disabled]="subtotal < (voucher.minOrderAmount || 0)"
               >
                 <div class="voucher-icon">
                   <span class="material-symbols-outlined">confirmation_number</span>
                 </div>
                 <div class="voucher-info">
                   <strong>{{ voucher.code }}</strong>
-                  <p>{{ voucher.title }}</p>
-                  <small *ngIf="subtotal < voucher.minOrderAmount">
-                    Đơn tối thiểu {{ formatPrice(voucher.minOrderAmount) }}
+                  <p>{{ voucher.name }}</p>
+                  <small *ngIf="subtotal < (voucher.minOrderAmount || 0)">
+                    Đơn tối thiểu {{ formatPrice(voucher.minOrderAmount || 0) }}
                   </small>
                 </div>
                 <button 
                   class="apply-voucher-button"
-                  [disabled]="subtotal < voucher.minOrderAmount || selectedVoucher?.id === voucher.id"
+                  [disabled]="subtotal < (voucher.minOrderAmount || 0) || selectedVoucher?.id === voucher.id"
                   (click)="applyVoucher(voucher)"
                 >
                   {{ selectedVoucher?.id === voucher.id ? 'Đã áp dụng' : 'Áp dụng' }}
@@ -181,8 +293,8 @@
           </div>
         </div>
 
-        <button class="checkout-button" (click)="proceedToCheckout()">
-          Tiến hành thanh toán
+        <button class="checkout-button" (click)="proceedToCheckout()" [disabled]="checkingOut || !!deliveryError">
+          {{ checkingOut ? 'Đang tạo đơn...' : 'Tiến hành thanh toán' }}
         </button>
 
         <div class="payment-methods">

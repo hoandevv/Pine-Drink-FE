@@ -20,7 +20,7 @@
         <input
           type="text"
           class="search-input"
-          placeholder="Nhập mã đơn hàng (VD: PD-9842)"
+          placeholder="Nhập mã đơn hàng (VD: PD202406180001)"
           [(ngModel)]="searchOrderNumber"
           (keyup.enter)="searchOrder()"
         />
@@ -31,8 +31,8 @@
           (click)="clearSearch()">
           <span class="material-symbols-outlined">close</span>
         </button>
-        <button type="button" class="search-button" (click)="searchOrder()">
-          Tra cứu
+        <button type="button" class="search-button" (click)="searchOrder()" [disabled]="loading">
+          {{ loading ? 'Đang tra cứu...' : 'Tra cứu' }}
         </button>
       </div>
       <p class="search-error" *ngIf="searchError">
@@ -161,26 +161,26 @@
           </h3>
           <div class="items-list">
             <article *ngFor="let item of currentOrder.items" class="order-item">
-              <div class="item-image" [style.background-image]="'url(' + item.productImage + ')'"></div>
-              <div class="item-details">
-                <h4 class="item-name">{{ item.productName }}</h4>
-                <div class="item-specs">
-                  <span class="spec-badge">{{ item.size }}</span>
-                  <span class="spec-badge">Đá {{ item.iceLevel }}%</span>
-                  <span class="spec-badge">Đường {{ item.sugarLevel }}%</span>
+                <div class="item-image" [style.background]="getItemImageStyle(item)"></div>
+                <div class="item-details">
+                  <h4 class="item-name">{{ getItemName(item) }}</h4>
+                  <div class="item-specs">
+                    <span class="spec-badge">{{ getItemSize(item) }}</span>
+                    <span class="spec-badge" *ngIf="item.iceLevel">Đá {{ item.iceLevel }}</span>
+                    <span class="spec-badge" *ngIf="item.sugarLevel">Đường {{ item.sugarLevel }}</span>
+                  </div>
+                  <div class="item-toppings" *ngIf="getItemToppings(item)">
+                    <span class="material-symbols-outlined">add_circle</span>
+                    <span>{{ getItemToppings(item) }}</span>
+                  </div>
+                  <p class="item-note" *ngIf="item.note">
+                    <span class="material-symbols-outlined">note</span>
+                    {{ item.note }}
+                  </p>
                 </div>
-                <div class="item-toppings" *ngIf="item.toppings.length > 0">
-                  <span class="material-symbols-outlined">add_circle</span>
-                  <span>{{ item.toppings.join(', ') }}</span>
-                </div>
-                <p class="item-note" *ngIf="item.note">
-                  <span class="material-symbols-outlined">note</span>
-                  {{ item.note }}
-                </p>
-              </div>
               <div class="item-pricing">
                 <div class="item-quantity">x{{ item.quantity }}</div>
-                <div class="item-price">{{ formatPrice(item.price * item.quantity) }}</div>
+                <div class="item-price">{{ formatPrice(getItemLineTotal(item)) }}</div>
               </div>
             </article>
           </div>
@@ -245,11 +245,15 @@
             <div class="info-list">
               <div class="info-item" *ngIf="currentOrder.orderType === 'DELIVERY'">
                 <span class="info-label">Địa chỉ</span>
-                <span class="info-value">{{ currentOrder.deliveryAddress }}</span>
+                <span class="info-value">{{ currentOrder.deliveryAddress || currentOrder.customerAddress || 'Chưa cập nhật' }}</span>
               </div>
               <div class="info-item">
                 <span class="info-label">Chi nhánh</span>
-                <span class="info-value">{{ currentOrder.branchName }}</span>
+                <span class="info-value">{{ currentOrder.branchName || 'Chưa cập nhật' }}</span>
+              </div>
+              <div class="info-item" *ngIf="currentOrder.branchAddress">
+                <span class="info-label">Địa chỉ CN</span>
+                <span class="info-value">{{ currentOrder.branchAddress }}</span>
               </div>
             </div>
           </div>
@@ -270,7 +274,7 @@
                 <span 
                   class="payment-status-badge"
                   [class.paid]="currentOrder.paymentStatus === 'PAID'"
-                  [class.pending]="currentOrder.paymentStatus === 'PENDING'"
+                  [class.pending]="currentOrder.paymentStatus === 'PENDING' || currentOrder.paymentStatus === 'UNPAID'"
                   [class.failed]="currentOrder.paymentStatus === 'FAILED'">
                   {{ getPaymentStatusLabel(currentOrder.paymentStatus) }}
                 </span>

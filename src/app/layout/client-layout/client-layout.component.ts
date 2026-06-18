@@ -56,6 +56,11 @@ export class ClientLayoutComponent {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
+  goToCart(): void {
+    this.closeMobileNav();
+    this.router.navigate(['/cart']);
+  }
+
   logout(): void {
     this.closeMobileNav();
     this.authService.logout();

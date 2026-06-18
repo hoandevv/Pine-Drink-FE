@@ -95,3 +95,4 @@ export interface OrderStat {
 export class OrderStatsComponent {
   @Input() stats: OrderStat[] = [];
 }
+

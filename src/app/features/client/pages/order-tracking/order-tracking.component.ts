@@ -1,13 +1,26 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { MOCK_ORDERS, MockOrder } from '../../../../shared/mock-data';
+import { finalize } from 'rxjs';
 
-interface OrderStatus {
+import { Order, OrderItem } from '../../../orders/models/order.model';
+import { OrderService } from '../../../orders/services/order.service';
+
+interface OrderStatusStep {
   key: string;
   label: string;
   icon: string;
   completed: boolean;
 }
+
+type TrackingOrder = Order & {
+  orderNumber: string;
+  subtotal: number;
+  discount: number;
+  shippingFee: number;
+  total: number;
+  estimatedTime?: string;
+  voucherCode?: string;
+};
 
 @Component({
   selector: 'app-order-tracking',
@@ -15,19 +28,21 @@ interface OrderStatus {
   styleUrls: ['./order-tracking.component.scss']
 })
 export class OrderTrackingComponent implements OnInit {
-  searchOrderNumber: string = '';
-  currentOrder: MockOrder | null = null;
-  recentOrders: MockOrder[] = [];
-  orderStatuses: OrderStatus[] = [];
-  searchError: string = '';
+  searchOrderNumber = '';
+  currentOrder: TrackingOrder | null = null;
+  recentOrders: TrackingOrder[] = [];
+  orderStatuses: OrderStatusStep[] = [];
+  searchError = '';
+  loading = false;
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly orderService: OrderService
+  ) {}
 
   ngOnInit(): void {
-    // Load recent orders (for demo purposes)
-    this.recentOrders = MOCK_ORDERS.slice(0, 3);
+    this.loadRecentOrders();
 
-    // Check if order ID is in route params
     this.route.paramMap.subscribe(params => {
       const orderId = params.get('orderId');
       if (orderId) {
@@ -36,73 +51,132 @@ export class OrderTrackingComponent implements OnInit {
     });
   }
 
+  loadRecentOrders(): void {
+    this.orderService.getMyOrders(0, 3).subscribe({
+      next: page => {
+        this.recentOrders = (page?.content || []).map(order => this.toTrackingOrder(order));
+      },
+      error: () => {
+        this.recentOrders = [];
+      }
+    });
+  }
+
   searchOrder(): void {
-    if (!this.searchOrderNumber.trim()) {
+    const keyword = this.searchOrderNumber.trim();
+    if (!keyword) {
       this.searchError = 'Vui lòng nhập mã đơn hàng';
       return;
     }
 
-    const order = MOCK_ORDERS.find(
-      o => o.orderNumber.toLowerCase() === this.searchOrderNumber.trim().toLowerCase()
-    );
-
-    if (order) {
-      this.currentOrder = order;
-      this.searchError = '';
-      this.buildOrderStatuses(order);
-    } else {
-      this.currentOrder = null;
-      this.searchError = 'Không tìm thấy đơn hàng với mã này';
-    }
+    this.loading = true;
+    this.orderService.getOrderByCode(keyword)
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: order => this.setCurrentOrder(order),
+        error: () => {
+          this.currentOrder = null;
+          this.orderStatuses = [];
+          this.searchError = 'Không tìm thấy đơn hàng với mã này';
+        }
+      });
   }
 
   searchByOrderId(orderId: string): void {
-    const order = MOCK_ORDERS.find(o => o.id === orderId);
-    if (order) {
-      this.currentOrder = order;
-      this.searchOrderNumber = order.orderNumber;
-      this.buildOrderStatuses(order);
-    }
+    this.loading = true;
+    this.orderService.getOrderById(orderId)
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: order => this.setCurrentOrder(order),
+        error: () => {
+          this.currentOrder = null;
+          this.orderStatuses = [];
+          this.searchError = 'Không tìm thấy đơn hàng';
+        }
+      });
   }
 
-  selectRecentOrder(order: MockOrder): void {
-    this.currentOrder = order;
-    this.searchOrderNumber = order.orderNumber;
+  selectRecentOrder(order: TrackingOrder): void {
+    this.setCurrentOrder(order);
+  }
+
+  private setCurrentOrder(order: Order): void {
+    const trackingOrder = this.toTrackingOrder(order);
+    this.currentOrder = trackingOrder;
+    this.searchOrderNumber = trackingOrder.orderNumber;
     this.searchError = '';
-    this.buildOrderStatuses(order);
+    this.buildOrderStatuses(trackingOrder);
   }
 
-  buildOrderStatuses(order: MockOrder): void {
+  private toTrackingOrder(order: Order): TrackingOrder {
+    return {
+      ...order,
+      orderNumber: order.orderCode,
+      orderType: order.orderType || order.type || 'PICKUP',
+      subtotal: order.subtotalAmount ?? order.subtotal ?? 0,
+      discount: order.discountAmount ?? order.discount ?? 0,
+      shippingFee: order.deliveryFee ?? 0,
+      total: order.totalAmount ?? 0,
+      items: order.items || []
+    };
+  }
+
+  buildOrderStatuses(order: TrackingOrder): void {
     const allStatuses = [
       { key: 'PENDING', label: 'Đã đặt hàng', icon: 'receipt_long' },
       { key: 'CONFIRMED', label: 'Đã xác nhận', icon: 'check_circle' },
       { key: 'PREPARING', label: 'Đang chuẩn bị', icon: 'restaurant' },
-      { key: 'READY', label: order.orderType === 'PICKUP' ? 'Sẵn sàng lấy' : 'Đang giao', icon: order.orderType === 'PICKUP' ? 'shopping_bag' : 'local_shipping' },
+      { key: 'READY', label: order.orderType === 'PICKUP' ? 'Sẵn sàng lấy' : 'Sẵn sàng giao', icon: order.orderType === 'PICKUP' ? 'shopping_bag' : 'inventory_2' },
+      { key: 'DELIVERING', label: 'Đang giao', icon: 'local_shipping' },
       { key: 'COMPLETED', label: 'Hoàn thành', icon: 'task_alt' }
     ];
 
-    const statusOrder = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED'];
+    const statusOrder = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'DELIVERING', 'COMPLETED'];
     const currentIndex = statusOrder.indexOf(order.status);
 
-    this.orderStatuses = allStatuses.map((status, index) => ({
-      ...status,
-      completed: order.status === 'CANCELLED' ? false : index <= currentIndex
-    }));
+    this.orderStatuses = allStatuses
+      .filter(status => order.orderType === 'DELIVERY' || status.key !== 'DELIVERING')
+      .map(status => ({
+        ...status,
+        completed: order.status === 'CANCELLED' || order.status === 'REJECTED' ? false : statusOrder.indexOf(status.key) <= currentIndex
+      }));
 
-    // Handle cancelled orders
-    if (order.status === 'CANCELLED') {
+    if (order.status === 'CANCELLED' || order.status === 'REJECTED') {
       this.orderStatuses = [
         { key: 'PENDING', label: 'Đã đặt hàng', icon: 'receipt_long', completed: true },
-        { key: 'CANCELLED', label: 'Đã hủy', icon: 'cancel', completed: true }
+        { key: order.status, label: order.status === 'CANCELLED' ? 'Đã hủy' : 'Đã từ chối', icon: 'cancel', completed: true }
       ];
     }
   }
 
-  formatPrice(price: number): string {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+  getItemName(item: OrderItem): string {
+    return item.productName || item.name || 'Sản phẩm';
   }
 
-  formatDate(dateString: string): string {
+  getItemImageStyle(item: OrderItem): string {
+    return item.image
+      ? `url(${item.image})`
+      : 'linear-gradient(135deg, #fff8e7 0%, #e8f5df 100%)';
+  }
+
+  getItemSize(item: OrderItem): string {
+    return item.variantName || item.variant || item.size || 'Mặc định';
+  }
+
+  getItemToppings(item: OrderItem): string {
+    return (item.toppings || []).map(topping => topping.toppingName || topping.name).filter(Boolean).join(', ');
+  }
+
+  getItemLineTotal(item: OrderItem): number {
+    return item.totalPrice ?? ((item.unitPrice ?? item.price ?? 0) * item.quantity);
+  }
+
+  formatPrice(price: number | undefined): string {
+    return new Intl.NumberFormat('vi-VN').format(price || 0) + 'đ';
+  }
+
+  formatDate(dateString?: string): string {
+    if (!dateString) return 'Chưa cập nhật';
     const date = new Date(dateString);
     return date.toLocaleString('vi-VN', {
       day: '2-digit',
@@ -115,43 +189,50 @@ export class OrderTrackingComponent implements OnInit {
 
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
-      'PENDING': '#f59e0b',
-      'CONFIRMED': '#3b82f6',
-      'PREPARING': '#8b5cf6',
-      'READY': '#10b981',
-      'COMPLETED': '#22c55e',
-      'CANCELLED': '#ef4444'
+      PENDING: '#f59e0b',
+      CONFIRMED: '#3b82f6',
+      PREPARING: '#8b5cf6',
+      READY: '#10b981',
+      DELIVERING: '#06b6d4',
+      COMPLETED: '#22c55e',
+      CANCELLED: '#ef4444',
+      REJECTED: '#ef4444'
     };
     return colors[status] || '#69725F';
   }
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'PENDING': 'Chờ xác nhận',
-      'CONFIRMED': 'Đã xác nhận',
-      'PREPARING': 'Đang chuẩn bị',
-      'READY': 'Sẵn sàng',
-      'COMPLETED': 'Hoàn thành',
-      'CANCELLED': 'Đã hủy'
+      PENDING: 'Chờ xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      PREPARING: 'Đang chuẩn bị',
+      READY: 'Sẵn sàng',
+      DELIVERING: 'Đang giao',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+      REJECTED: 'Đã từ chối'
     };
     return labels[status] || status;
   }
 
   getPaymentMethodLabel(method: string): string {
     const labels: { [key: string]: string } = {
-      'CASH': 'Tiền mặt',
-      'CARD': 'Thẻ ngân hàng',
-      'MOMO': 'Ví MoMo',
-      'ZALOPAY': 'Ví ZaloPay'
+      CASH: 'Tiền mặt',
+      COD: 'Thanh toán khi nhận hàng',
+      VNPAY: 'VNPay',
+      MOMO: 'Ví MoMo',
+      BANK_TRANSFER: 'Chuyển khoản'
     };
     return labels[method] || method;
   }
 
   getPaymentStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'PENDING': 'Chờ thanh toán',
-      'PAID': 'Đã thanh toán',
-      'FAILED': 'Thanh toán thất bại'
+      UNPAID: 'Chưa thanh toán',
+      PENDING: 'Chờ thanh toán',
+      PAID: 'Đã thanh toán',
+      FAILED: 'Thanh toán thất bại',
+      REFUNDED: 'Đã hoàn tiền'
     };
     return labels[status] || status;
   }

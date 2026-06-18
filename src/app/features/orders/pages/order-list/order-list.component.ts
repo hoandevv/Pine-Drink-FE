@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus } from '../../models/order.model';
 import { OrderStat } from '../../components/order-stats.component';
+import { OrderService } from '../../services/order.service';
 
 @Component({
   selector: 'app-order-list',
@@ -13,36 +13,54 @@ import { OrderStat } from '../../components/order-stats.component';
 export class OrderListComponent implements OnInit {
   viewMode: 'table' | 'kanban' = 'table';
   isDrawerOpen = false;
+  isLoading = false;
   selectedOrder: Order | null = null;
   activeTab: OrderStatus | 'ALL' = 'ALL';
 
   stats: OrderStat[] = [];
   orders: Order[] = [];
+  allOrders: Order[] = [];
   pageData: PageResponse<Order> = {
     content: [], page: 0, size: 10, totalElements: 0, totalPages: 0, first: true, last: true
   };
 
   readonly tabs: { label: string; value: OrderStatus | 'ALL'; count: number }[] = [
     { label: 'All', value: 'ALL', count: 0 },
-    { label: 'New', value: 'NEW', count: 0 },
+    { label: 'Pending', value: 'PENDING', count: 0 },
     { label: 'Confirmed', value: 'CONFIRMED', count: 0 },
     { label: 'Preparing', value: 'PREPARING', count: 0 },
     { label: 'Ready', value: 'READY', count: 0 },
+    { label: 'Delivering', value: 'DELIVERING', count: 0 },
     { label: 'Completed', value: 'COMPLETED', count: 0 },
-    { label: 'Cancelled', value: 'CANCELLED', count: 0 }
+    { label: 'Cancelled', value: 'CANCELLED', count: 0 },
+    { label: 'Rejected', value: 'REJECTED', count: 0 }
   ];
 
-  constructor(private readonly fb: FormBuilder) {}
+  constructor(private readonly orderService: OrderService) {}
 
   ngOnInit(): void {
     this.refreshData();
   }
 
   refreshData(): void {
-    this.orders = this.mockOrders;
-    this.updateStats();
-    this.updateTabCounts();
-    this.filterOrders();
+    this.isLoading = true;
+    this.orderService.getOrders(0, 100, this.activeTab).subscribe({
+      next: (response) => {
+        this.pageData = response;
+        this.allOrders = response.content ?? [];
+        this.orders = this.allOrders;
+        this.updateStats();
+        this.updateTabCounts();
+      },
+      error: (error) => {
+        console.error('Load orders failed', error);
+        this.orders = [];
+        this.allOrders = [];
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
   }
 
   toggleView(mode: 'table' | 'kanban'): void {
@@ -51,17 +69,34 @@ export class OrderListComponent implements OnInit {
 
   onTabChange(tab: OrderStatus | 'ALL'): void {
     this.activeTab = tab;
-    this.filterOrders();
+    this.refreshData();
   }
 
   onFilterChange(filters: any): void {
-    // Logic for advanced filtering would go here
-    this.filterOrders();
+    const keyword = (filters?.keyword ?? filters?.search ?? '').toString().trim().toLowerCase();
+    if (!keyword) {
+      this.orders = this.allOrders;
+      return;
+    }
+
+    this.orders = this.allOrders.filter((order) =>
+      [order.orderCode, order.customerName, order.customerPhone, order.branchName]
+        .filter(Boolean)
+        .some((value) => value!.toLowerCase().includes(keyword))
+    );
   }
 
   openDetail(order: Order): void {
-    this.selectedOrder = order;
-    this.isDrawerOpen = true;
+    this.orderService.getOrderById(order.id).subscribe({
+      next: (detail) => {
+        this.selectedOrder = this.normalizeOrder(detail);
+        this.isDrawerOpen = true;
+      },
+      error: () => {
+        this.selectedOrder = order;
+        this.isDrawerOpen = true;
+      }
+    });
   }
 
   closeDrawer(): void {
@@ -69,80 +104,83 @@ export class OrderListComponent implements OnInit {
   }
 
   onStatusChange({ order, status }: { order: Order; status: OrderStatus }): void {
-    const updatedOrder = { 
-      ...order, 
-      status, 
-      updatedAt: new Date().toLocaleTimeString(),
-      timeline: [{ status, time: new Date().toLocaleTimeString() }, ...order.timeline]
-    };
-    
-    this.mockOrders = this.mockOrders.map(o => o.id === order.id ? updatedOrder : o);
-    if (this.selectedOrder?.id === order.id) {
-      this.selectedOrder = updatedOrder;
-    }
-    this.refreshData();
-  }
-
-  private filterOrders(): void {
-    let filtered = this.mockOrders;
-    if (this.activeTab !== 'ALL') {
-      filtered = filtered.filter(o => o.status === this.activeTab);
-    }
-    this.orders = filtered;
-    this.pageData.totalElements = filtered.length;
-    this.pageData.content = filtered;
+    this.orderService.updateOrderStatus(order.id, status).subscribe({
+      next: (updatedOrder) => {
+        const normalized = this.normalizeOrder(updatedOrder);
+        this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
+        this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
+        if (this.selectedOrder?.id === order.id) {
+          this.selectedOrder = normalized;
+        }
+        this.updateStats();
+        this.updateTabCounts();
+      },
+      error: (error) => console.error('Update order status failed', error)
+    });
   }
 
   private updateStats(): void {
+    const pending = this.allOrders.filter(o => o.status === 'PENDING').length;
+    const preparing = this.allOrders.filter(o => o.status === 'PREPARING').length;
+    const revenue = this.allOrders
+      .filter(o => o.status === 'COMPLETED')
+      .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+
     this.stats = [
-      { label: 'New Orders', value: this.mockOrders.filter(o => o.status === 'NEW').length, change: 12, icon: 'fiber_new', color: 'amber', trend: 'up' },
-      { label: 'Preparing', value: this.mockOrders.filter(o => o.status === 'PREPARING').length, change: -5, icon: 'local_cafe', color: 'orange', trend: 'down' },
-      { label: 'Revenue Today', value: '4,250k', change: 8, icon: 'payments', color: 'pine', trend: 'up' },
-      { label: 'Avg Time', value: '14m', change: -2, icon: 'timer', color: 'blue', trend: 'up' }
+      { label: 'Pending Orders', value: pending, change: 0, icon: 'fiber_Pending', color: 'amber', trend: 'up' },
+      { label: 'Preparing', value: preparing, change: 0, icon: 'local_cafe', color: 'orange', trend: 'up' },
+      { label: 'Completed Revenue', value: this.formatCompactCurrency(revenue), change: 0, icon: 'payments', color: 'pine', trend: 'up' },
+      { label: 'Total Orders', value: this.allOrders.length, change: 0, icon: 'receipt_long', color: 'blue', trend: 'up' }
     ];
   }
 
   private updateTabCounts(): void {
     this.tabs.forEach(tab => {
-      tab.count = tab.value === 'ALL' ? this.mockOrders.length : this.mockOrders.filter(o => o.status === tab.value).length;
+      tab.count = tab.value === 'ALL' ? this.allOrders.length : this.allOrders.filter(o => o.status === tab.value).length;
     });
   }
 
-  private mockOrders: Order[] = [
-    {
-      id: '1', orderCode: 'PD-8821', customerName: 'Hoàng Minh', customerPhone: '0901234567',
-      totalAmount: 145000, subtotal: 155000, discount: 10000, status: 'NEW', paymentStatus: 'PAID',
-      paymentMethod: 'MoMo', type: 'DELIVERY', priority: 'URGENT', createdAt: '10:45 AM',
-      items: [
-        { id: 'i1', name: 'Pine Green Tea', size: 'L', variant: '50% Sugar', quantity: 2, price: 45000, totalPrice: 90000, toppings: [{ name: 'Aloe Vera', price: 5000 }] }
-      ],
-      timeline: [{ status: 'NEW', time: '10:45 AM', note: 'Customer placed order via App' }],
-      customerAddress: '123 Lê Lợi, Quận 1, TP.HCM'
-    },
-    {
-      id: '2', orderCode: 'PD-8820', customerName: 'Khánh Vy', customerPhone: '0933445566',
-      totalAmount: 98000, subtotal: 98000, discount: 0, status: 'PREPARING', paymentStatus: 'UNPAID',
-      paymentMethod: 'Cash', type: 'WALK_IN', priority: 'NORMAL', createdAt: '10:30 AM',
-      items: [
-        { id: 'i2', name: 'Golden Milk Tea', size: 'M', variant: 'Less Ice', quantity: 1, price: 55000, totalPrice: 55000, toppings: [{ name: 'Pearl', price: 10000 }] }
-      ],
-      timeline: [
-        { status: 'CONFIRMED', time: '10:35 AM' },
-        { status: 'NEW', time: '10:30 AM' }
-      ]
-    },
-    {
-      id: '3', orderCode: 'PD-8819', customerName: 'Anh Tuấn', customerPhone: '0912889900',
-      totalAmount: 210000, subtotal: 210000, discount: 0, status: 'READY', paymentStatus: 'PAID',
-      paymentMethod: 'Bank Transfer', type: 'PICKUP', priority: 'HIGH', createdAt: '10:15 AM',
-      items: [
-        { id: 'i3', name: 'Oolong Macchiato', size: 'L', quantity: 3, price: 65000, totalPrice: 195000, toppings: [] }
-      ],
-      timeline: [
-        { status: 'READY', time: '10:40 AM' },
-        { status: 'PREPARING', time: '10:25 AM' },
-        { status: 'NEW', time: '10:15 AM' }
-      ]
+  private normalizeOrder(order: Order): Order {
+    return {
+      ...order,
+      type: order.type ?? order.orderType,
+      subtotal: order.subtotal ?? order.subtotalAmount ?? 0,
+      discount: order.discount ?? order.discountAmount ?? 0,
+      customerAddress: order.customerAddress ?? order.deliveryAddress,
+      priority: order.priority ?? 'NORMAL',
+      timeline: order.timeline ?? this.buildTimeline(order),
+      items: (order.items ?? []).map((item) => ({
+        ...item,
+        name: item.name ?? item.productName,
+        variant: item.variant ?? item.variantName,
+        price: item.price ?? item.unitPrice ?? 0,
+        size: item.size ?? item.variantName,
+        toppings: item.toppings ?? []
+      }))
+    };
+  }
+
+  private buildTimeline(order: Order) {
+    return [
+      { status: 'REJECTED' as OrderStatus, time: order.rejectedAt ?? '', note: 'Rejected' },
+      { status: 'CANCELLED' as OrderStatus, time: order.cancelledAt ?? '', note: order.cancelReason },
+      { status: 'COMPLETED' as OrderStatus, time: order.completedAt ?? '', note: 'Completed' },
+      { status: 'DELIVERING' as OrderStatus, time: order.deliveringAt ?? '', note: 'Delivering' },
+      { status: 'READY' as OrderStatus, time: order.readyAt ?? '', note: 'Ready' },
+      { status: 'PREPARING' as OrderStatus, time: order.preparedAt ?? '', note: 'Preparing' },
+      { status: 'CONFIRMED' as OrderStatus, time: order.confirmedAt ?? '', note: 'Confirmed' },
+      { status: 'PENDING' as OrderStatus, time: order.createdAt, note: 'Order created' }
+    ].filter(item => item.time);
+  }
+
+  private formatCompactCurrency(value: number): string {
+    if (value >= 1000000) {
+      return `${Math.round(value / 100000) / 10}m`;
     }
-  ];
+    if (value >= 1000) {
+      return `${Math.round(value / 1000)}k`;
+    }
+    return `${value}`;
+  }
 }
+

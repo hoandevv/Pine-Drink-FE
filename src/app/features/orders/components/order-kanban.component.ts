@@ -14,7 +14,7 @@ import { Order, OrderStatus } from '../models/order.model';
         <div class="column-content">
           <div *ngFor="let order of getOrdersByStatus(column.status)" 
                class="kanban-card" 
-               [ngClass]="order.priority.toLowerCase()"
+               [ngClass]="(order.priority || 'NORMAL').toLowerCase()"
                (click)="cardClick.emit(order)">
             <div class="card-header">
               <span class="order-code">#{{ order.orderCode }}</span>
@@ -34,7 +34,7 @@ import { Order, OrderStatus } from '../models/order.model';
             <div class="card-footer">
               <app-payment-badge [status]="order.paymentStatus"></app-payment-badge>
               <div class="actions" (click)="$event.stopPropagation()">
-                <button *ngIf="order.status === 'NEW'" class="btn-next" (click)="statusChange.emit({order: order, status: 'CONFIRMED'})">
+                <button *ngIf="order.status === 'PENDING'" class="btn-next" (click)="statusChange.emit({order: order, status: 'CONFIRMED'})">
                   Confirm
                 </button>
                 <button *ngIf="order.status === 'CONFIRMED'" class="btn-next" (click)="statusChange.emit({order: order, status: 'PREPARING'})">
@@ -148,7 +148,7 @@ export class OrderKanbanComponent {
   @Output() statusChange = new EventEmitter<{order: Order, status: OrderStatus}>();
 
   columns: { label: string; status: OrderStatus }[] = [
-    { label: 'New', status: 'NEW' },
+    { label: 'PENDING', status: 'PENDING' },
     { label: 'Confirmed', status: 'CONFIRMED' },
     { label: 'Preparing', status: 'PREPARING' },
     { label: 'Ready', status: 'READY' }
@@ -158,3 +158,4 @@ export class OrderKanbanComponent {
     return this.orders.filter(o => o.status === status);
   }
 }
+

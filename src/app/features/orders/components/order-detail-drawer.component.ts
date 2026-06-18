@@ -110,7 +110,7 @@ import { Order, OrderStatus } from '../models/order.model';
               <span class="material-symbols-outlined">print</span>
               Print
             </button>
-            <button *ngIf="order.status === 'NEW'" class="btn-primary" (click)="statusChange.emit({order: order, status: 'CONFIRMED'})">
+            <button *ngIf="order.status === 'PENDING'" class="btn-primary" (click)="statusChange.emit({order: order, status: 'CONFIRMED'})">
               Confirm Order
             </button>
             <button *ngIf="order.status === 'CONFIRMED'" class="btn-primary" (click)="statusChange.emit({order: order, status: 'PREPARING'})">
@@ -238,3 +238,4 @@ export class OrderDetailDrawerComponent {
   @Output() close = new EventEmitter<void>();
   @Output() statusChange = new EventEmitter<{order: Order, status: OrderStatus}>();
 }
+

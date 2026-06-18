@@ -60,8 +60,8 @@ import { Order, OrderItem } from '../models/order.model';
               <app-order-status-badge [status]="order.status"></app-order-status-badge>
             </td>
             <td>
-              <span class="priority-dot" [ngClass]="order.priority.toLowerCase()"></span>
-              <span class="priority-label">{{ order.priority }}</span>
+              <span class="priority-dot" [ngClass]="(order.priority || 'NORMAL').toLowerCase()"></span>
+              <span class="priority-label">{{ order.priority || 'NORMAL' }}</span>
             </td>
             <td class="col-actions">
               <button class="btn-icon" (click)="$event.stopPropagation(); actionClick.emit({order: order, type: 'more'})">
@@ -162,6 +162,7 @@ export class OrderTableComponent {
   @Output() actionClick = new EventEmitter<{order: Order, type: string}>();
 
   getItemsPreview(order: Order): string {
-    return order.items.map((i: OrderItem) => i.name).join(', ');
+    return order.items.map((i: OrderItem) => i.name || i.productName || 'Item').join(', ');
   }
 }
+
