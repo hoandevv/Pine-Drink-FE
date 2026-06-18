@@ -85,32 +85,10 @@ export class ErrorInterceptor implements HttpInterceptor {
       return;
     }
 
-    const hadSession = !!this.tokenService.getAccessToken();
     this.tokenService.clearTokens();
     this.loadingService.reset();
-
-    if (this.isProtectedUrl(this.router.url)) {
-      this.toastService.warning(message);
-      this.router.navigate(['/auth/login'], {
-        queryParams: { redirectUrl: this.router.url }
-      });
-      return;
-    }
-
-    if (hadSession) {
-      this.toastService.warning(message);
-    }
-  }
-
-  private isProtectedUrl(url: string): boolean {
-    const path = url.split('?')[0].split('#')[0];
-    return (
-      path.startsWith('/admin') ||
-      path.startsWith('/chat') ||
-      path.startsWith('/cart') ||
-      path.startsWith('/profile') ||
-      path.startsWith('/addresses')
-    );
+    this.toastService.warning(message);
+    this.router.navigate(['/auth/login']);
   }
 
   private resolveMessage(error: ApiError): string {

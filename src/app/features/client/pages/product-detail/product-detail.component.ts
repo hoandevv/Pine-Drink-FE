@@ -444,7 +444,7 @@ export class ProductDetailComponent implements OnInit {
     if (!this.selectedBranchId) { return; }
 
     this.quotaLoading = true;
-    this.dailyStockService.getPublicByBranchAndDate(this.selectedBranchId, this.todayKey()).subscribe({
+    this.dailyStockService.getByBranchAndDate(this.selectedBranchId, this.todayKey()).subscribe({
       next: stocks => {
         this.dailyStocks = stocks || [];
         this.quotaLoading = false;

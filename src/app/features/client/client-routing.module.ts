@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { AuthGuard } from '../../core/guards/auth.guard';
 import { HomeComponent } from './pages/home/home.component';
 import { MenuComponent } from './pages/menu/menu.component';
 import { StoreLocatorComponent } from './pages/store-locator/store-locator.component';
@@ -44,27 +43,22 @@ const routes: Routes = [
   },
   {
     path: 'cart',
-    canActivate: [AuthGuard],
     component: CartComponent
   },
   {
     path: 'profile',
-    canActivate: [AuthGuard],
     component: ProfileComponent
   },
   {
     path: 'addresses/new',
-    canActivate: [AuthGuard],
     component: AddressFormComponent
   },
   {
     path: 'addresses/edit/:id',
-    canActivate: [AuthGuard],
     component: AddressFormComponent
   },
   {
     path: 'addresses',
-    canActivate: [AuthGuard],
     component: AddressListComponent
   }
 ];

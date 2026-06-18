@@ -27,13 +27,6 @@ export class DailyStockService {
       .pipe(map((response) => response.data || []));
   }
 
-  getPublicByBranchAndDate(branchId: string, date: string): Observable<DailyStock[]> {
-    const params = new HttpParams().set('date', date);
-    return this.http
-      .get<BaseResponse<DailyStock[]>>(`${environment.apiBaseUrl}/branches/${branchId}/daily-stocks`, { params })
-      .pipe(map((response) => response.data || []));
-  }
-
   setQuota(request: SetDailyStockQuotaRequest): Observable<DailyStock> {
     return this.http
       .post<BaseResponse<DailyStock>>(this.apiUrl, request)
