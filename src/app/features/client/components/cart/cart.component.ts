@@ -68,6 +68,7 @@ export class CartComponent implements OnInit {
         this.cartItems = cart.items || [];
         this.loading = false;
         this.calculateTotal();
+        this.cartService.syncCart(this.cartItems, branchId);
       },
       error: () => {
         this.cartItems = [];
@@ -206,6 +207,7 @@ export class CartComponent implements OnInit {
     }
     item.totalPrice = (item.unitPrice + item.toppingAmount) * item.quantity;
     this.calculateTotal();
+    this.cartService.syncCart(this.cartItems);
   }
 
   removeItem(item: CartItem): void {
@@ -213,6 +215,7 @@ export class CartComponent implements OnInit {
     if (index > -1) {
       this.cartItems.splice(index, 1);
       this.calculateTotal();
+      this.cartService.syncCart(this.cartItems);
     }
   }
 

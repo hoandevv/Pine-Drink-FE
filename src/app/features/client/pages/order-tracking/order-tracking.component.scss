@@ -424,32 +424,40 @@
 }
 
 .timeline {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  align-items: start;
   gap: 0;
+  overflow-x: auto;
+  padding: 0.5rem 0.25rem 0.25rem;
+  scrollbar-width: thin;
+
+  @media (max-width: 768px) {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(128px, 1fr);
+    grid-template-columns: none;
+    padding-bottom: 0.75rem;
+  }
 }
 
 .timeline-item {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding-bottom: 2rem;
-
-  &:last-child {
-    padding-bottom: 0;
-  }
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  text-align: center;
 }
 
 .timeline-marker {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   background: #E8DDC3;
   border-radius: 50%;
   border: 3px solid #E8DDC3;
-  flex-shrink: 0;
   position: relative;
   z-index: 2;
   transition: all 0.3s;
@@ -490,15 +498,19 @@
 }
 
 .timeline-content {
-  flex: 1;
-  padding-top: 0.5rem;
+  display: flex;
+  min-height: 52px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.25rem;
 }
 
 .timeline-label {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #69725F;
-  margin-bottom: 0.25rem;
+  line-height: 1.25;
 
   .timeline-item.completed & {
     color: #164A2F;
@@ -506,26 +518,26 @@
 
   .timeline-item.active & {
     color: #164A2F;
-    font-size: 1.125rem;
   }
 }
 
 .timeline-time {
-  font-size: 0.8125rem;
+  font-size: 0.78rem;
   color: #69725F;
   font-weight: 600;
 }
 
 .timeline-line {
   position: absolute;
-  left: 23px;
-  top: 48px;
-  width: 3px;
-  height: calc(100% - 48px);
+  top: 26px;
+  left: calc(50% + 26px);
+  width: calc(100% - 52px);
+  height: 3px;
   background: #E8DDC3;
+  z-index: 1;
 
   .timeline-item.completed & {
-    background: linear-gradient(180deg, #164A2F 0%, #2F6B46 100%);
+    background: linear-gradient(90deg, #164A2F 0%, #2F6B46 100%);
   }
 }
 

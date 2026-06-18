@@ -154,8 +154,9 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   getItemImageStyle(item: OrderItem): string {
-    return item.image
-      ? `url(${item.image})`
+    const imageUrl = item.productImageUrl || item.imageUrl || item.image || item.productImage;
+    return imageUrl
+      ? `url(${imageUrl}) center/cover no-repeat`
       : 'linear-gradient(135deg, #fff8e7 0%, #e8f5df 100%)';
   }
 
