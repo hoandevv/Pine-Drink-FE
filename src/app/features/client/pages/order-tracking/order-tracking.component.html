@@ -12,6 +12,13 @@
     </div>
   </header>
 
+  <section class="empty-state" *ngIf="!isLoggedIn">
+    <span class="material-symbols-outlined">lock</span>
+    <h3>Vui lòng đăng nhập để xem đơn hàng</h3>
+    <p>Trang theo dõi đơn hàng chỉ dành cho khách hàng đã đăng nhập.</p>
+  </section>
+
+  <ng-container *ngIf="isLoggedIn">
   <!-- Search Section -->
   <section class="search-section">
     <div class="search-container">
@@ -307,4 +314,5 @@
     <h3>Chưa có đơn hàng nào</h3>
     <p>Nhập mã đơn hàng ở trên để tra cứu</p>
   </section>
+  </ng-container>
 </div>

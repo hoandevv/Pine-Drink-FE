@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 
 import { Order, OrderItem } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 interface OrderStatusStep {
   key: string;
@@ -37,10 +38,15 @@ export class OrderTrackingComponent implements OnInit {
 
   constructor(
     private readonly route: ActivatedRoute,
-    private readonly orderService: OrderService
+    private readonly orderService: OrderService,
+    private readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    if (!this.isLoggedIn) {
+      return;
+    }
+
     this.loadRecentOrders();
 
     this.route.paramMap.subscribe(params => {
@@ -51,7 +57,16 @@ export class OrderTrackingComponent implements OnInit {
     });
   }
 
+  get isLoggedIn(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
   loadRecentOrders(): void {
+    if (!this.isLoggedIn) {
+      this.recentOrders = [];
+      return;
+    }
+
     this.orderService.getMyOrders(0, 3).subscribe({
       next: page => {
         this.recentOrders = (page?.content || []).map(order => this.toTrackingOrder(order));
@@ -64,6 +79,11 @@ export class OrderTrackingComponent implements OnInit {
 
   searchOrder(): void {
     const keyword = this.searchOrderNumber.trim();
+    if (!this.isLoggedIn) {
+      this.searchError = 'Vui lòng đăng nhập để xem đơn hàng';
+      return;
+    }
+
     if (!keyword) {
       this.searchError = 'Vui lòng nhập mã đơn hàng';
       return;
@@ -83,6 +103,11 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   searchByOrderId(orderId: string): void {
+    if (!this.isLoggedIn) {
+      this.searchError = 'Vui lòng đăng nhập để xem đơn hàng';
+      return;
+    }
+
     this.loading = true;
     this.orderService.getOrderById(orderId)
       .pipe(finalize(() => this.loading = false))

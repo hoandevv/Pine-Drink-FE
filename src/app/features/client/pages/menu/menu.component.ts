@@ -11,6 +11,7 @@ import { CategoryService } from '../../../categories/services/category.service';
 import { Product } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
 import { CartItem, CartService } from '../../services/cart.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 interface ClientCategoryTab {
   id: string;
@@ -48,7 +49,8 @@ export class MenuComponent implements OnInit {
     private readonly categoryService: CategoryService,
     private readonly branchService: BranchService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
-    private readonly cartService: CartService
+    private readonly cartService: CartService,
+    private readonly authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -91,7 +93,7 @@ export class MenuComponent implements OnInit {
 
   loadCartData(): void {
     const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
-    if (!branchId) {
+    if (!branchId || !this.authService.isAuthenticated()) {
       this.cartItems = [];
       return;
     }

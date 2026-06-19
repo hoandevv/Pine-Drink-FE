@@ -17,6 +17,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DailyStockService {
   private readonly apiUrl = `${environment.apiBaseUrl}/admin/daily-stocks`;
+  private readonly publicApiUrl = `${environment.apiBaseUrl}/branches`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -24,6 +25,13 @@ export class DailyStockService {
     const params = new HttpParams().set('branchId', branchId).set('date', date);
     return this.http
       .get<BaseResponse<DailyStock[]>>(this.apiUrl, { params })
+      .pipe(map((response) => response.data || []));
+  }
+
+  getPublicByBranchAndDate(branchId: string, date: string): Observable<DailyStock[]> {
+    const params = new HttpParams().set('date', date);
+    return this.http
+      .get<BaseResponse<DailyStock[]>>(`${this.publicApiUrl}/${branchId}/daily-stocks`, { params })
       .pipe(map((response) => response.data || []));
   }
 
