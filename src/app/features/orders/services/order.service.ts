@@ -59,9 +59,18 @@ export class OrderService {
   }
 
   getOrders(page = 0, size = 10, status?: OrderStatus | 'ALL', branchId?: string): Observable<PageResponse<Order>> {
-    return branchId
-      ? this.getBranchOrders(branchId, page, size, status)
-      : this.getMyOrders(page, size);
+    if (branchId) {
+      return this.getBranchOrders(branchId, page, size, status);
+    }
+
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (status && status !== 'ALL') {
+      params = params.set('status', status);
+    }
+
+    return this.http
+      .get<BaseResponse<PageResponse<Order>>>(this.apiUrl, { params })
+      .pipe(map((response) => response.data));
   }
 
   updateOrderStatus(id: string, status: OrderStatus, reason?: string): Observable<Order> {

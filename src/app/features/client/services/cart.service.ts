@@ -81,6 +81,13 @@ export class CartService {
     );
   }
 
+  removeItem(itemId: string): Observable<Cart> {
+    return this.http.delete<BaseResponse<Cart>>(`${this.apiUrl}/items/${itemId}`).pipe(
+      map(res => this.normalizeCart(res.data)),
+      tap(cart => this.cartSubject.next(cart))
+    );
+  }
+
   syncCart(items: CartItem[], branchId = sessionStorage.getItem('selectedBranchId') || ''): void {
     const normalizedItems = items.map(item => ({
       ...item,

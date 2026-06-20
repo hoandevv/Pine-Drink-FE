@@ -11,21 +11,38 @@ import { PaymentStatus } from '../models/order.model';
   `,
   styles: [`
     .p-badge {
+      min-height: 28px;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 700;
-      .material-symbols-outlined { font-size: 14px; }
+      gap: 5px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 950;
+      letter-spacing: .04em;
+      border: 1px solid transparent;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+      .material-symbols-outlined {
+        font-size: 14px;
+      }
     }
-    .paid { background: #f0fdf4; color: #16a34a; }
-    .unpaid { background: #fef2f2; color: #dc2626; }
-    .refunded { background: #f1f5f9; color: #64748b; }
+    .paid {
+      background: #f0fdf4;
+      color: #15803d;
+      border-color: #bbf7d0;
+    }
+    .unpaid {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+    .refunded {
+      background: #f8faf8;
+      color: #647067;
+      border-color: #e5ebe5;
+    }
   `]
 })
 export class PaymentBadgeComponent {
   @Input() status: PaymentStatus = 'UNPAID';
 }
-
