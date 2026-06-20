@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus } from '../../models/order.model';
 import { OrderStat } from '../../components/order-stats.component';
+import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
 
 @Component({
@@ -10,12 +12,14 @@ import { OrderService } from '../../services/order.service';
   templateUrl: './order-list.component.html',
   styleUrls: ['./order-list.component.scss']
 })
-export class OrderListComponent implements OnInit {
+export class OrderListComponent implements OnInit, OnDestroy {
   viewMode: 'table' | 'kanban' = 'table';
   isDrawerOpen = false;
   isLoading = false;
   selectedOrder: Order | null = null;
   activeTab: OrderStatus | 'ALL' = 'ALL';
+  private readonly subscriptions = new Subscription();
+  private readonly subscribedBranchIds = new Set<string>();
 
   stats: OrderStat[] = [];
   orders: Order[] = [];
@@ -36,10 +40,18 @@ export class OrderListComponent implements OnInit {
     { label: 'Rejected', value: 'REJECTED', count: 0 }
   ];
 
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly orderRealtimeService: OrderRealtimeService
+  ) {}
 
   ngOnInit(): void {
+    this.listenOrderRealtime();
     this.refreshData();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
 
   refreshData(): void {
@@ -49,6 +61,7 @@ export class OrderListComponent implements OnInit {
         this.pageData = response;
         this.allOrders = response.content ?? [];
         this.orders = this.allOrders;
+        this.subscribeLoadedBranches();
         this.updateStats();
         this.updateTabCounts();
       },
@@ -117,6 +130,46 @@ export class OrderListComponent implements OnInit {
       },
       error: (error) => console.error('Update order status failed', error)
     });
+  }
+
+  private listenOrderRealtime(): void {
+    this.subscriptions.add(
+      this.orderRealtimeService.orderEvents$.subscribe(event => this.applyRealtimeEvent(event))
+    );
+    this.orderRealtimeService.connect();
+  }
+
+  private subscribeLoadedBranches(): void {
+    this.allOrders
+      .map(order => order.branchId)
+      .filter((branchId): branchId is string => !!branchId)
+      .forEach(branchId => {
+        if (!this.subscribedBranchIds.has(branchId)) {
+          this.subscribedBranchIds.add(branchId);
+          this.orderRealtimeService.subscribeBranchOrders(branchId);
+        }
+      });
+  }
+
+  private applyRealtimeEvent(event: OrderRealtimeEnvelope): void {
+    const incoming = (event.payload || event.data || {}) as Partial<Order>;
+    const incomingId = incoming.id || event.targetId;
+    if (!incomingId || !this.allOrders.some(order => order.id === incomingId)) {
+      return;
+    }
+
+    const mergeOrder = (order: Order): Order =>
+      order.id === incomingId ? this.normalizeOrder({ ...order, ...incoming } as Order) : order;
+
+    this.allOrders = this.allOrders.map(mergeOrder);
+    this.orders = this.orders.map(mergeOrder);
+
+    if (this.selectedOrder?.id === incomingId) {
+      this.selectedOrder = this.normalizeOrder({ ...this.selectedOrder, ...incoming } as Order);
+    }
+
+    this.updateStats();
+    this.updateTabCounts();
   }
 
   private updateStats(): void {

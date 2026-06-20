@@ -1311,312 +1311,20 @@ button,
   }
 }
 
-// Tablet 768-1023: hero stacked, grids reduced deliberately.
-@media (min-width: 768px) and (max-width: 1023px) {
-  .hero-section {
-    grid-template-columns: 1fr;
-    padding: 4rem 2rem 3rem;
-    gap: 2rem;
-    min-height: auto;
-  }
-
-  .hero-section .hero-visual {
-    min-height: 390px;
-  }
-
-  .hero-section .hero-visual .main-drink {
-    width: min(72vw, 380px);
-  }
-
-  .quick-order {
-    margin: 1rem 1.5rem 0;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 1rem;
-  }
-
-  .quick-order .primary-button {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .quick-order .order-toggle button {
-    min-width: 112px;
-    min-height: 44px;
-  }
-
-  .section-block {
-    padding: 4rem 1.5rem;
-  }
-
-  .home-promise {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .category-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .product-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .promo-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .how-section {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 4rem 1.5rem !important;
-  }
-
-  .store-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-// Mobile large 480-767: single column, full-width CTAs.
-@media (min-width: 480px) and (max-width: 767px) {
-  .hero-section {
-    grid-template-columns: 1fr;
-    padding: 3.25rem 1.25rem 2.25rem;
-    gap: 1.5rem;
-  }
-
-  .hero-section .hero-copy h1 {
-    font-size: clamp(2.25rem, 9vw, 3.1rem);
-  }
-
-  .hero-section .hero-copy .hero-actions {
-    flex-direction: column;
-  }
-
-  .hero-section .hero-copy .hero-actions .primary-button,
-  .hero-section .hero-copy .hero-actions .secondary-button {
-    width: 100%;
-  }
-
-  .hero-section .hero-visual {
-    min-height: 315px;
-  }
-
-  .hero-section .hero-visual .main-drink {
-    width: min(78vw, 320px);
-  }
-
-  .hero-section .hero-visual .floating-note {
-    position: static;
-    margin-top: 0.75rem;
-  }
-
-  .quick-order {
-    margin: 0.75rem 1rem 0;
-    grid-template-columns: 1fr;
-  }
-
-  .quick-order .order-toggle,
-  .quick-order .primary-button {
-    width: 100%;
-  }
-
-  .quick-order .order-toggle button {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  .section-block {
-    padding: 3.25rem 1rem;
-  }
-
-  .section-heading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .home-promise,
-  .product-grid,
-  .promo-row,
-  .how-section,
-  .store-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .category-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .promo-card {
-    min-height: auto;
-  }
-
-  .step-card {
-    display: grid;
-    grid-template-columns: 48px 1fr;
-    column-gap: 1rem;
-    text-align: left;
-  }
-
-  .step-card span {
-    width: 44px;
-    height: 44px;
-    line-height: 44px;
-    margin: 0;
-  }
-}
-
-// Mobile small <480: 320px-safe, no horizontal scroll.
-@media (max-width: 479px) {
-  .hero-section {
-    grid-template-columns: 1fr;
-    padding: 2.6rem 1rem 2rem;
-    gap: 1.25rem;
-  }
-
-  .hero-section .hero-copy h1 {
-    font-size: clamp(2.05rem, 12vw, 2.85rem);
-  }
-
-  .hero-section .hero-copy p {
-    font-size: 1rem;
-  }
-
-  .hero-section .hero-copy .hero-actions {
-    flex-direction: column;
-  }
-
-  .hero-section .hero-copy .hero-actions .primary-button,
-  .hero-section .hero-copy .hero-actions .secondary-button {
-    width: 100%;
-  }
-
-  .hero-section .hero-copy .hero-stats {
-    gap: 0.75rem;
-  }
-
-  .hero-section .hero-copy .hero-stats span {
-    flex: 1 1 calc(50% - 0.75rem);
-    min-width: 132px;
-  }
-
-  .hero-section .hero-visual {
-    min-height: 280px;
-  }
-
-  .hero-section .hero-visual .main-drink {
-    width: min(82vw, 280px);
-    padding: 0.7rem;
-    border-radius: 24px;
-  }
-
-  .hero-section .hero-visual .main-drink img,
-  .hero-section .hero-visual .main-drink .hero-image-fallback {
-    border-radius: 18px;
-    animation:
-      pinePourReveal 0.72s cubic-bezier(0.18, 0.86, 0.24, 1) 0.04s forwards,
-      heroFloat 6.8s ease-in-out 0.9s infinite;
-  }
-
-  .hero-section .hero-visual .main-drink .pour-fill {
-    inset: 0.7rem;
-    border-radius: 18px;
-    animation-duration: 0.7s;
-  }
-
-  .hero-section .hero-visual .main-drink .pour-gloss {
-    opacity: 0.72;
-    animation-duration: 0.62s;
-  }
-
-  .hero-section .hero-visual .floating-note {
-    position: static;
-    margin-top: 0.65rem;
-  }
-
-  .quick-order {
-    margin: 0.5rem 0.75rem 0;
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
-
-  .quick-order>div:first-child,
-  .quick-order .order-toggle,
-  .quick-order .primary-button {
-    width: 100%;
-  }
-
-  .quick-order .order-toggle button {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 44px;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-  }
-
-  .section-block {
-    padding: 3rem 0.75rem;
-  }
-
-  .section-heading {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .home-promise,
-  .product-grid,
-  .promo-row,
-  .how-section,
-  .store-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .category-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
-  .category-card {
-    padding: 1rem 0.75rem;
-  }
-
-  .promo-card {
-    min-height: auto;
-    padding: 1.35rem;
-  }
-
-  .how-section {
-    padding: 3rem 0.75rem !important;
-  }
-
-  .step-card {
-    display: grid;
-    grid-template-columns: 44px 1fr;
-    column-gap: 0.85rem;
-    text-align: left;
-    padding: 1rem;
-  }
-
-  .step-card span {
-    width: 40px;
-    height: 40px;
-    line-height: 40px;
-    margin: 0;
-    font-size: 1rem;
-  }
-
-  .store-card>div {
-    padding: 1rem;
-  }
-}
-
 // ============================================
-// MOBILE-FIRST RESPONSIVE OVERRIDES
-// Desktop >=1024px remains source-of-truth.
+// MOBILE REDESIGN (<=1023px), single pass.
+// Desktop (>=1024px) above is untouched and stays the
+// source of truth. This replaces the old "Tablet / Mobile
+// large / Mobile small / Mobile-first overrides" blocks,
+// which duplicated and fought each other (that's what was
+// clipping the heading with "..." and blowing the hero
+// image up to fill the screen).
 // ============================================
 @media (max-width: 1023px) {
   :host {
-    --space-xs: 4px;
-    --space-sm: 8px;
+    --space-2xs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
     --space-md: 16px;
     --space-lg: 24px;
     --space-xl: 32px;
@@ -1629,407 +1337,472 @@ button,
     max-width: 100%;
   }
 
+  // ---------- HERO ----------
   .hero-section {
     grid-template-columns: 1fr;
     min-height: auto;
-    align-items: start;
-    gap: var(--space-lg);
-    padding: var(--space-xl) var(--space-lg) var(--space-lg);
-  }
-
-  .hero-section .hero-copy .eyebrow {
-    margin-bottom: var(--space-md);
-  }
-
-  .hero-section .hero-copy h1 {
-    max-width: 13ch;
-    margin-bottom: var(--space-md);
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    line-height: 1.04;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .hero-section .hero-copy p {
-    max-width: 56ch;
-    margin-bottom: var(--space-md);
-    font-size: clamp(0.9rem, 2vw, 1rem);
-    line-height: 1.55;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .hero-section .hero-copy .hero-actions {
-    gap: var(--space-sm);
-    margin-bottom: var(--space-md);
-  }
-
-  .hero-section .hero-copy .hero-stats {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--space-sm);
-    max-height: 90px;
-    padding-top: var(--space-md);
-  }
-
-  .hero-section .hero-copy .hero-stats span {
-    min-width: 0;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: var(--space-xs);
-    font-size: 0.78rem;
-    white-space: normal;
-  }
-
-  .hero-section .hero-copy .hero-stats span strong {
-    font-size: clamp(1rem, 3vw, 1.25rem);
-    line-height: 1;
-  }
-
-  .hero-section .hero-visual {
-    min-height: clamp(260px, 44vw, 380px);
-  }
-
-  .hero-section .hero-visual .main-drink {
-    width: min(72vw, 360px);
-  }
-
-  .quick-order {
-    margin: var(--space-md) var(--space-lg) 0;
-    padding: var(--space-md);
-    gap: var(--space-md);
-  }
-
-  .quick-order>div:first-child {
-    min-width: 0;
-  }
-
-  .quick-order>div:first-child small,
-  .store-address,
-  .store-meta-list small {
-    overflow-wrap: anywhere;
-  }
-
-  .home-promise {
-    margin-top: var(--space-lg);
-    padding-inline: var(--space-lg);
-    gap: var(--space-md);
-  }
-
-  .home-promise article {
-    min-height: auto;
-    padding: var(--space-lg);
-  }
-
-  .section-block {
-    padding: var(--space-xl) var(--space-lg);
-  }
-
-  .product-section,
-  .how-section {
-    padding: var(--space-xl) var(--space-lg) !important;
-  }
-
-  .section-heading {
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-  }
-
-  .section-heading h2 {
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    line-height: 1.12;
-  }
-
-  .store-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-md);
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .product-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .home-promise {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .hero-section .hero-copy .hero-actions .primary-button,
-  .hero-section .hero-copy .hero-actions .secondary-button {
-    width: auto;
-  }
-}
-
-@media (max-width: 767px) {
-  .hero-section {
-    padding: var(--space-lg) var(--space-md) var(--space-md);
-    gap: var(--space-md);
-  }
-
-  .hero-section .hero-visual {
-    order: -1;
-  }
-
-  .hero-section .hero-copy {
-    order: 1;
-  }
-
-  .hero-section .hero-copy h1 {
-    font-size: clamp(2rem, 10vw, 2.65rem);
-  }
-
-  .hero-section .hero-copy .hero-actions {
-    flex-direction: column;
-  }
-
-  .hero-section .hero-copy .hero-actions .primary-button,
-  .hero-section .hero-copy .hero-actions .secondary-button,
-  .quick-order .primary-button,
-  .promo-card button,
-  .store-card button {
-    width: 100%;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .hero-section .hero-visual {
-    min-height: 250px;
-  }
-
-  .quick-order {
-    margin-inline: var(--space-md);
-    grid-template-columns: 1fr;
     align-items: stretch;
+    text-align: center;
+    gap: var(--space-md);
+    padding: var(--space-lg) var(--space-lg) var(--space-xl);
+    background: linear-gradient(160deg, #FFFDF5 0%, #FFF6DC 46%, #E7F4DC 100%);
+
+    &::before {
+      display: none;
+    }
+
+    .hero-visual {
+      order: -1;
+      min-height: auto;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+
+    .hero-copy {
+      order: 1;
+
+      .eyebrow {
+        margin: 0 auto var(--space-sm);
+      }
+
+      h1 {
+        max-width: 22ch;
+        margin: 0 auto var(--space-sm);
+        font-size: clamp(1.85rem, 6.4vw, 2.65rem);
+        line-height: 1.14;
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+      }
+
+      p {
+        max-width: 34ch;
+        margin: 0 auto var(--space-md);
+        font-size: 0.95rem;
+        line-height: 1.6;
+        display: block;
+        -webkit-line-clamp: unset;
+        overflow: visible;
+      }
+
+      .hero-actions {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-md);
+
+        .primary-button {
+          flex: 1.3;
+        }
+
+        .secondary-button {
+          flex: 1;
+        }
+      }
+
+      .hero-stats {
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: var(--space-sm);
+        padding-top: var(--space-md);
+        margin: 0 calc(var(--space-lg) * -1);
+        padding-inline: var(--space-lg);
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+          display: none;
+        }
+
+        span {
+          flex: 0 0 auto;
+          scroll-snap-align: start;
+          min-width: 108px;
+          align-items: center;
+          gap: var(--space-2xs);
+          padding: 0.65rem 1rem;
+          background: #fff;
+          border-radius: 14px;
+          box-shadow: 0 8px 20px rgba(11, 51, 32, 0.08);
+          font-size: 0.78rem;
+          white-space: nowrap;
+
+          strong {
+            font-size: 1.05rem;
+          }
+        }
+      }
+    }
   }
 
-  .quick-order .order-toggle {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .quick-order .order-toggle button {
-    min-width: 0;
-    padding-inline: var(--space-sm);
-  }
-
-  .home-promise,
-  .product-grid,
-  .promo-row,
-  .how-section,
-  .store-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hero-section .hero-visual {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    min-height: auto;
-    gap: var(--space-sm);
-  }
-
+  // ---------- MAIN DRINK CARD: no longer eats the screen ----------
   .hero-section .hero-visual .main-drink {
-    width: min(100%, 420px);
-    max-width: calc(100vw - 32px);
+    width: min(56vw, 280px);
+    aspect-ratio: 0.92;
+    padding: 0.75rem;
+    border-radius: 26px;
+
+    >span:not(.pour-fill):not(.pour-gloss) {
+      top: 0.85rem;
+      right: 0.85rem;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.72rem;
+    }
+
+    strong {
+      left: 0.85rem;
+      right: 0.85rem;
+      bottom: -0.85rem;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.85rem;
+    }
   }
 
   .hero-section .hero-visual .floating-note {
     position: static;
-    width: fit-content;
-    max-width: 100%;
     margin: var(--space-sm) auto 0;
-    padding: 0.55rem 0.85rem;
+    width: fit-content;
+    max-width: 92%;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
     text-align: center;
     white-space: normal;
   }
 
+  // ---------- QUICK ORDER ----------
+  .quick-order {
+    margin: var(--space-md) var(--space-lg) 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    border-radius: 18px;
+
+    >div:first-child {
+      min-width: 0;
+    }
+
+    >div:first-child small {
+      display: block;
+      margin-left: 0;
+      margin-top: 0.2rem;
+      overflow-wrap: anywhere;
+    }
+
+    .order-toggle {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
+    }
+
+    .order-toggle button {
+      min-width: 0;
+      padding-inline: var(--space-sm);
+    }
+
+    .primary-button.compact {
+      width: 100%;
+    }
+  }
+
+  // ---------- HOME PROMISE: compact rows instead of tall cards ----------
   .home-promise {
+    grid-template-columns: 1fr;
+    margin-top: var(--space-lg);
+    padding-inline: var(--space-lg);
     gap: var(--space-sm);
+
+    article {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-md);
+      min-height: 0;
+      padding: var(--space-md) var(--space-md) var(--space-md) var(--space-sm);
+      border-radius: 16px;
+      text-align: left;
+
+      &::after {
+        display: none;
+      }
+    }
+
+    span {
+      flex: 0 0 auto;
+      width: 2.2rem;
+      height: 2.2rem;
+      margin-bottom: 0;
+      font-size: 0.85rem;
+    }
+
+    strong {
+      margin-bottom: 0.25rem;
+      font-size: 1rem;
+    }
+
+    p {
+      max-width: none;
+      font-size: 0.86rem;
+    }
   }
 
-  .home-promise article {
-    min-height: 0;
-    padding: var(--space-md);
+  // ---------- SECTION HEADING ----------
+  .section-block {
+    padding: var(--space-xl) var(--space-lg);
   }
 
-  .home-promise span {
-    width: 2.2rem;
-    height: 2.2rem;
-    margin-bottom: var(--space-sm);
-  }
-
-  .home-promise strong {
-    margin-bottom: var(--space-xs);
-    font-size: 1rem;
-  }
-
-  .home-promise p {
-    font-size: 0.86rem;
-    line-height: 1.45;
-  }
-
-  .product-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .product-card {
-    display: block;
-  }
-
-  .product-card .product-image {
-    width: 100%;
-    min-height: 0;
-    aspect-ratio: 1;
-  }
-
-  .product-card .product-image span {
-    top: var(--space-md);
-    left: var(--space-md);
-    max-width: calc(100% - 32px);
-    padding: 0.45rem 0.85rem;
-    font-size: 0.72rem;
-  }
-
-  .product-card .product-body {
-    padding: var(--space-md);
-  }
-
-  .product-card .product-body h3 {
-    margin-bottom: var(--space-sm);
-    font-size: 1rem;
-    line-height: 1.25;
-  }
-
-  .product-card .product-body p {
-    margin-bottom: var(--space-sm);
-    font-size: 0.82rem;
-    line-height: 1.45;
-  }
-
-  .product-card .product-body .product-meta {
-    gap: var(--space-sm);
-    margin-bottom: var(--space-sm);
-    font-size: 0.75rem;
-  }
-
-  .product-card .product-body .product-footer strong {
-    font-size: 1rem;
-  }
-
-  .how-section .step-card,
-  .step-card {
-    display: flex;
+  .section-heading {
     flex-direction: column;
     align-items: flex-start;
-    grid-template-columns: none;
-    text-align: left;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+
+    h2 {
+      font-size: clamp(1.4rem, 5vw, 2rem);
+    }
+
+    a {
+      font-size: 0.9rem;
+    }
   }
 
-  .how-section .step-card span,
-  .step-card span {
-    flex: 0 0 auto;
-    margin: 0 0 var(--space-sm);
-  }
-
-  .how-section .step-card h3,
-  .how-section .step-card p,
-  .step-card h3,
-  .step-card p {
-    width: 100%;
-    max-width: none;
-    min-width: 0;
-  }
-
-  .how-section .step-card p,
-  .step-card p {
-    overflow-wrap: normal;
-    word-break: normal;
-    white-space: normal;
-  }
-
-  .store-card>div {
-    padding: var(--space-md);
-  }
-
-  .store-card .store-card__visual {
-    min-height: 88px;
-  }
-
-  .store-card .store-card__visual .material-symbols-outlined {
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
-    font-size: 2rem;
-  }
-
-  .store-card>div h3 {
-    font-size: 1.05rem;
-    line-height: 1.25;
-  }
-
-  .store-card>div .store-address {
-    margin-bottom: var(--space-sm);
-    font-size: 0.86rem;
-    line-height: 1.4;
-  }
-
-  .store-card>div .store-meta-list {
-    gap: var(--space-sm);
-    margin-bottom: var(--space-md);
-  }
-}
-
-@media (max-width: 479px) {
-  .hero-section {
-    padding: var(--space-md) var(--space-md);
-  }
-
-  .hero-section .hero-visual {
-    min-height: 220px;
-  }
-
-  .hero-section .hero-visual .main-drink {
-    width: min(100%, 360px);
-    padding: 0.7rem;
+  // ---------- PRODUCT GRID: compact 2-up cards ----------
+  .product-section,
+  .how-section {
+    padding: var(--space-xl) var(--space-lg) !important;
     border-radius: 24px;
   }
 
-  .hero-section .hero-copy .hero-stats {
-    gap: var(--space-xs);
-    padding-top: var(--space-sm);
-  }
-
-  .section-block,
-  .product-section,
-  .how-section {
-    padding-block: var(--space-lg) !important;
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
   }
 
   .product-card {
-    display: block;
-    grid-template-columns: none;
+    border-radius: 16px;
   }
 
-  .product-card .product-image {
-    width: 100%;
-    aspect-ratio: 1;
+  .product-card .product-image span {
+    top: 0.6rem;
+    left: 0.6rem;
+    padding: 0.32rem 0.6rem;
+    font-size: 0.66rem;
   }
 
   .product-card .product-body {
-    padding: var(--space-sm);
+    padding: var(--space-sm) var(--space-sm) var(--space-md);
+  }
+
+  .product-card .product-body .product-meta {
+    font-size: 0.7rem;
+    margin-bottom: var(--space-xs);
+  }
+
+  .product-card .product-body h3 {
+    font-size: 0.92rem;
+    margin-bottom: var(--space-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .product-card .product-body p {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.76rem;
+    margin-bottom: var(--space-sm);
+  }
+
+  .product-card .product-body .product-footer strong {
+    font-size: 0.95rem;
   }
 
   .product-card .product-body .product-footer button {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+  }
+
+  // ---------- PROMO ROW: swipeable coupon strip ----------
+  .promo-row {
+    display: flex;
+    gap: var(--space-md);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--space-lg);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin: 0 calc(var(--space-lg) * -1);
+    padding-inline: var(--space-lg);
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .promo-card {
+    flex: 0 0 80%;
+    scroll-snap-align: start;
+    padding: 1.5rem;
+  }
+
+  // ---------- HOW IT WORKS: compact 2x2 ----------
+  .how-section {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-sm);
+  }
+
+  .step-card {
+    text-align: left;
+    padding: var(--space-md);
+    border-radius: 16px;
+
+    span {
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      font-size: 1rem;
+      margin-bottom: var(--space-sm);
+    }
+
+    h3 {
+      font-size: 0.95rem;
+      margin-bottom: var(--space-xs);
+    }
+
+    p {
+      font-size: 0.8rem;
+    }
+  }
+
+  // ---------- STORES: compact horizontal cards ----------
+  .store-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  .store-card {
+    grid-template-columns: 96px 1fr;
+    align-items: stretch;
+    border-radius: 16px;
+
+    .store-card__visual {
+      min-height: auto;
+
+      .material-symbols-outlined {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+        font-size: 1.7rem;
+      }
+    }
+
+    >div {
+      padding: var(--space-md);
+
+      .store-badge {
+        margin-bottom: var(--space-xs);
+        font-size: 0.68rem;
+      }
+
+      h3 {
+        font-size: 1.05rem;
+        margin-bottom: var(--space-xs);
+      }
+
+      .store-address {
+        margin-bottom: var(--space-sm);
+        font-size: 0.84rem;
+      }
+
+      .store-meta-list {
+        gap: var(--space-xs);
+        margin-bottom: var(--space-sm);
+      }
+
+      small {
+        font-size: 0.76rem;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      button {
+        padding: 0.7rem 1.25rem;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// Tablet refinement: a little more breathing room once there is
+// room for it — same single mobile system, just wider columns.
+@media (min-width: 600px) and (max-width: 1023px) {
+  .hero-section .hero-visual .main-drink {
+    width: min(40vw, 320px);
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .how-section {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .store-card {
+    grid-template-columns: 132px 1fr;
+  }
+}
+
+// Small phones: tighten further, stack the CTAs for thumb reach.
+@media (max-width: 479px) {
+  .hero-section {
+    padding: var(--space-md) var(--space-md) var(--space-lg);
+  }
+
+  .hero-section .hero-copy .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-section .hero-copy .hero-actions .primary-button,
+  .hero-section .hero-copy .hero-actions .secondary-button {
+    flex: unset;
+    width: 100%;
+  }
+
+  .hero-section .hero-visual .main-drink {
+    width: min(64vw, 240px);
+  }
+
+  .quick-order {
+    margin-inline: var(--space-md);
+  }
+
+  .section-block {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .product-section,
+  .how-section {
+    padding: var(--space-lg) var(--space-md) !important;
+  }
+
+  .store-card {
+    grid-template-columns: 72px 1fr;
+  }
+
+  .store-card .store-card__visual {
+    min-height: 84px;
+
+    .material-symbols-outlined {
+      width: 42px;
+      height: 42px;
+      font-size: 1.3rem;
+      border-radius: 10px;
+    }
   }
 }
 
@@ -2055,4 +1828,3 @@ button,
     display: none !important;
   }
 }
-

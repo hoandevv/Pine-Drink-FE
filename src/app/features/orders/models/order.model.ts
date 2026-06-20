@@ -109,5 +109,9 @@ export interface Order {
   cancelledAt?: string;
   rejectedAt?: string;
   cancelReason?: string;
+  rejectReason?: string;
+  expiryReason?: string;
+  expiresAt?: string;
+  autoRejected?: boolean;
 }
 

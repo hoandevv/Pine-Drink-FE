@@ -119,6 +119,28 @@
           </span>
           {{ currentOrder.orderType === 'DELIVERY' ? 'Giao hàng' : 'Lấy tại cửa hàng' }}
         </div>
+
+        <div class="order-realtime-notice" *ngIf="realtimeNotice">
+          <span class="material-symbols-outlined">bolt</span>
+          <span>{{ realtimeNotice }}</span>
+        </div>
+      </div>
+
+      <div class="expiry-countdown-card" *ngIf="currentOrder.status === 'PENDING' && expiryCountdownText">
+        <div class="countdown-icon">
+          <span class="material-symbols-outlined">hourglass_top</span>
+        </div>
+        <div class="countdown-main">
+          <div class="countdown-label">Thời gian còn lại để cửa hàng xác nhận</div>
+          <div class="countdown-time">{{ expiryCountdownText }}</div>
+          <div class="countdown-progress">
+            <span [style.width.%]="expiryProgress"></span>
+          </div>
+          <p>Quá thời gian này, đơn có thể được hệ thống tự động từ chối để hoàn tồn kho.</p>
+        </div>
+        <div class="countdown-deadline" *ngIf="getExpiryTime(currentOrder) as expiryTime">
+          Hạn xác nhận: <strong>{{ formatDate(expiryTime) }}</strong>
+        </div>
       </div>
 
       <!-- Order Status Timeline -->
@@ -151,12 +173,22 @@
         </div>
       </div>
 
-      <!-- Cancelled Order Message -->
+      <!-- Cancelled / Rejected Order Message -->
       <div class="cancelled-message-card" *ngIf="currentOrder.status === 'CANCELLED'">
         <span class="material-symbols-outlined">cancel</span>
         <h3>Đơn hàng đã bị hủy</h3>
         <p *ngIf="currentOrder.note">{{ currentOrder.note }}</p>
         <p *ngIf="!currentOrder.note">Đơn hàng này đã bị hủy bởi khách hàng hoặc cửa hàng</p>
+      </div>
+
+      <div class="rejected-message-card" *ngIf="currentOrder.status === 'REJECTED'">
+        <span class="material-symbols-outlined">timer_off</span>
+        <h3>Đơn hàng đã quá hạn xác nhận</h3>
+        <p>{{ getRejectionReason(currentOrder) }}</p>
+        <div class="rejected-meta">
+          <span *ngIf="currentOrder.rejectedAt">Từ chối lúc: <strong>{{ formatDate(currentOrder.rejectedAt) }}</strong></span>
+          <span *ngIf="currentOrder.expiresAt">Hạn xác nhận: <strong>{{ formatDate(currentOrder.expiresAt) }}</strong></span>
+        </div>
       </div>
 
       <div class="order-content-grid">
