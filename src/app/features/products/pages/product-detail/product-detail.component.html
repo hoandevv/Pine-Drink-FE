@@ -1,0 +1,14 @@
+<app-page-header
+  [title]="isEditMode ? 'Cập nhật sản phẩm' : 'Thêm sản phẩm mới'"
+  [description]="isEditMode ? 'Tinh chỉnh thông tin, giá bán và trạng thái hiển thị của sản phẩm.' : 'Tạo sản phẩm mới cho menu Pine Drink với thông tin rõ ràng, dễ quản lý.'">
+</app-page-header>
+
+<app-product-form
+  [form]="form"
+  [categories]="categoryOptions"
+  [submitting]="submitting"
+  [isEditMode]="isEditMode"
+  (submitted)="submit()"
+  (cancelled)="cancel()"
+  (imageSelected)="onImageSelected($event)">
+</app-product-form>

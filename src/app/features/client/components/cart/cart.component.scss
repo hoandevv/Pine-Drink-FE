@@ -1,0 +1,576 @@
+.cart-page {
+  min-height: 100vh;
+  background: #f4fafd;
+  padding: 2rem 0;
+}
+
+.cart-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.cart-header {
+  margin-bottom: 2rem;
+
+  .back-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: #635e53;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    transition: color 0.2s;
+
+    &:hover {
+      color: #164A2F;
+    }
+
+    .material-symbols-outlined {
+      font-size: 1.25rem;
+    }
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1c1b1f;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: #635e53;
+  }
+}
+
+.empty-cart {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+
+  .material-symbols-outlined {
+    font-size: 5rem;
+    color: #635e53;
+    opacity: 0.3;
+  }
+
+  h2 {
+    margin-top: 1rem;
+    font-size: 1.5rem;
+    color: #1c1b1f;
+  }
+
+  p {
+    margin: 1rem 0 2rem;
+    color: #635e53;
+  }
+
+  .primary-button {
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, #164A2F 0%, #2F6B46 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(22, 74, 47, 0.2);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22, 74, 47, 0.3);
+    }
+  }
+}
+
+.cart-content {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 2rem;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cart-items-section {
+  .cart-items-list {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    .cart-item {
+      display: grid;
+      grid-template-columns: 100px 1fr auto;
+      gap: 1.5rem;
+      padding: 1.5rem 0;
+      border-bottom: 1px solid #e8eff1;
+
+      &:first-child {
+        padding-top: 0;
+      }
+
+      &:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+      }
+
+      img {
+        width: 100px;
+        height: 100px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+
+      .item-details {
+        h3 {
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+          color: #1c1b1f;
+        }
+
+        .item-options {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+          margin-bottom: 0.5rem;
+
+          .option-tag {
+            padding: 0.25rem 0.75rem;
+            background: #f4fafd;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #635e53;
+          }
+        }
+
+        .item-toppings {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+          align-items: center;
+          margin-bottom: 0.5rem;
+
+          .topping-label {
+            font-size: 0.875rem;
+            color: #635e53;
+          }
+
+          .topping-tag {
+            padding: 0.25rem 0.75rem;
+            background: #e9e2d3;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: #635e53;
+          }
+        }
+
+        .item-note {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.875rem;
+          color: #635e53;
+          font-style: italic;
+
+          .material-symbols-outlined {
+            font-size: 1rem;
+          }
+        }
+      }
+
+      .item-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 1rem;
+
+        .quantity-control {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          border: 1px solid #e8eff1;
+          border-radius: 8px;
+          padding: 0.25rem;
+
+          button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+
+            &:hover:not(:disabled) {
+              background: #f4fafd;
+            }
+
+            &:disabled {
+              opacity: 0.3;
+              cursor: not-allowed;
+            }
+
+            .material-symbols-outlined {
+              font-size: 1.25rem;
+              color: #1c1b1f;
+            }
+          }
+
+          .quantity {
+            min-width: 32px;
+            text-align: center;
+            font-weight: 600;
+          }
+        }
+
+        .item-price {
+          strong {
+            font-size: 1.25rem;
+            color: #164A2F;
+            font-weight: 700;
+          }
+        }
+
+        .remove-button {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #635e53;
+          transition: color 0.2s;
+
+          &:hover {
+            color: #ba1a1a;
+          }
+
+          .material-symbols-outlined {
+            font-size: 1.5rem;
+          }
+        }
+      }
+    }
+  }
+
+  .voucher-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1c1b1f;
+
+      .material-symbols-outlined {
+        color: #164A2F;
+      }
+    }
+
+    .voucher-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+
+      input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid #e8eff1;
+        border-radius: 8px;
+        font-size: 1rem;
+        outline: none;
+
+        &:focus {
+          border-color: #164A2F;
+        }
+
+        &:disabled {
+          background: #f4fafd;
+        }
+      }
+
+      .apply-button {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #164A2F 0%, #2F6B46 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(22, 74, 47, 0.2);
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(22, 74, 47, 0.3);
+        }
+      }
+
+      .remove-voucher-button {
+        width: 40px;
+        background: #ffdad7;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+
+        &:hover {
+          background: #ffb4ab;
+        }
+
+        .material-symbols-outlined {
+          color: #ba1a1a;
+        }
+      }
+    }
+
+    .applied-voucher {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: #e8f5df;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+
+      .material-symbols-outlined {
+        color: #166534;
+        font-size: 1.5rem;
+      }
+
+      div {
+        flex: 1;
+
+        strong {
+          display: block;
+          color: #166534;
+          margin-bottom: 0.25rem;
+        }
+
+        p {
+          font-size: 0.875rem;
+          color: #635e53;
+        }
+      }
+
+      .discount-amount {
+        font-weight: 600;
+        color: #166534;
+      }
+    }
+
+    .available-vouchers {
+      h4 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #635e53;
+        margin-bottom: 0.75rem;
+      }
+
+      .voucher-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .voucher-card {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1rem;
+          border: 1px solid #e8eff1;
+          border-radius: 8px;
+          transition: all 0.2s;
+
+          &:hover:not(.disabled) {
+            border-color: #164A2F;
+            box-shadow: 0 2px 8px rgba(22, 74, 47, 0.1);
+          }
+
+          &.disabled {
+            opacity: 0.5;
+          }
+
+          .voucher-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #FFF0B8 0%, #FFEBA3 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            .material-symbols-outlined {
+              color: #D99A16;
+            }
+          }
+
+          .voucher-info {
+            flex: 1;
+
+            strong {
+              display: block;
+              font-size: 0.875rem;
+              color: #1c1b1f;
+              margin-bottom: 0.25rem;
+            }
+
+            p {
+              font-size: 0.75rem;
+              color: #635e53;
+              margin-bottom: 0.25rem;
+            }
+
+            small {
+              font-size: 0.75rem;
+              color: #ba1a1a;
+            }
+          }
+
+          .apply-voucher-button {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 2px solid #164A2F;
+            color: #164A2F;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+
+            &:hover:not(:disabled) {
+              background: #164A2F;
+              color: white;
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(22, 74, 47, 0.2);
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.order-summary {
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #1c1b1f;
+  }
+
+  .summary-details {
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+
+      &.discount {
+        color: #166534;
+      }
+
+      &.total {
+        font-size: 1.125rem;
+        padding-top: 1rem;
+
+        strong {
+          color: #1c1b1f;
+        }
+      }
+    }
+
+    .summary-divider {
+      height: 1px;
+      background: #e8eff1;
+      margin: 1rem 0;
+    }
+  }
+
+  .checkout-button {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #164A2F 0%, #2F6B46 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(22, 74, 47, 0.25);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22, 74, 47, 0.35);
+    }
+  }
+
+  .payment-methods {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e8eff1;
+
+    p {
+      font-size: 0.875rem;
+      color: #635e53;
+      margin-bottom: 0.75rem;
+    }
+
+    .payment-icons {
+      display: flex;
+      gap: 0.5rem;
+
+      .payment-icon {
+        font-size: 1.5rem;
+      }
+    }
+  }
+
+  .security-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f4fafd;
+    border-radius: 8px;
+
+    .material-symbols-outlined {
+      color: #166534;
+      font-size: 1.25rem;
+    }
+
+    p {
+      font-size: 0.75rem;
+      color: #635e53;
+    }
+  }
+}

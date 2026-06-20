@@ -1,0 +1,17 @@
+.google-button-shell {
+  min-height: 44px;
+  position: relative;
+}
+
+.google-button-host:not(:empty) + .google-fallback-button {
+  display: none;
+}
+
+.google-button-host {
+  display: flex;
+  width: 100%;
+}
+
+.google-button-host > div {
+  width: 100% !important;
+}

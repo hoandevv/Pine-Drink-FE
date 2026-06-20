@@ -1,0 +1,24 @@
+<div class="empty-state-container">
+  <div class="visual-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+  
+  <div class="empty-content">
+    <div class="icon-wrapper">
+      <div class="icon-ring"></div>
+      <div class="icon-core">
+        <span class="material-symbols-outlined">{{ icon || 'inventory_2' }}</span>
+      </div>
+    </div>
+    
+    <div class="text-content" *ngIf="title || description">
+      <h3 *ngIf="title">{{ title }}</h3>
+      <p *ngIf="description">{{ description }}</p>
+    </div>
+    
+    <div class="action-slot">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,90 @@
+<div class="admin-shell" [class.sidebar-open]="sidebarOpen" [class.sidebar-collapsed]="sidebarCollapsed" [class.delivery-mode]="isDeliveryOnly">
+  <aside class="admin-sidebar">
+    <button type="button" class="sidebar-toggle" [attr.aria-label]="sidebarCollapsed ? 'Hiện sidebar' : 'Ẩn sidebar'"
+      (click)="toggleSidebarCollapse()">
+      <span class="material-symbols-outlined">{{ sidebarCollapsed ? 'keyboard_double_arrow_right' : 'keyboard_double_arrow_left' }}</span>
+    </button>
+
+    <div class="brand-card">
+      <a routerLink="/admin/dashboard" class="brand-logo" aria-label="Pine Drink Admin">
+        <span class="brand-logo__mark">🍍</span>
+        <span>
+          <strong>{{ isDeliveryOnly ? 'Pine Delivery' : 'Pine Drink' }}</strong>
+          <small>{{ isDeliveryOnly ? 'Courier Workspace' : 'Admin Console' }}</small>
+        </span>
+      </a>
+    </div>
+
+    <div *ngIf="isDeliveryOnly" class="delivery-status-card">
+      <span class="material-symbols-outlined">electric_moped</span>
+      <div>
+        <strong>Ca giao hàng đang mở</strong>
+        <small>Sẵn sàng nhận đơn mới</small>
+      </div>
+      <i></i>
+    </div>
+
+    <nav class="module-nav" aria-label="Admin modules">
+      <section *ngFor="let section of visibleNavSections" class="module-group">
+        <h3 class="module-group__title">{{ section.title }}</h3>
+        <a *ngFor="let item of section.items" [routerLink]="item.route" class="module-link"
+          [class.is-active]="isActive(item.route)" [class.module-link--compact]="item.compact">
+          <span class="material-symbols-outlined module-link__icon">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+          <em *ngIf="item.badge">{{ item.badge }}</em>
+        </a>
+      </section>
+    </nav>
+
+    <button type="button" class="logout-button" (click)="logout()">
+      <span class="material-symbols-outlined">logout</span>
+      Đăng xuất
+    </button>
+  </aside>
+
+  <button type="button" class="sidebar-backdrop" aria-label="Đóng menu" (click)="toggleSidebar()"></button>
+
+  <main class="admin-main">
+    <header class="admin-topbar">
+      <div class="topbar-left">
+        <button type="button" class="menu-button" aria-label="Mở menu" (click)="toggleSidebar()">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+        <div class="search-box">
+          <span class="material-symbols-outlined">search</span>
+          <input type="text"
+            [placeholder]="isDeliveryOnly ? 'Tìm mã đơn, khách hàng, số điện thoại...' : 'Tìm đơn hàng, sản phẩm, khách hàng...'" />
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <a routerLink="/" class="client-link" aria-label="Xem trang khách">
+          <span class="material-symbols-outlined">storefront</span>
+          <span>{{ isDeliveryOnly ? 'Bản đồ giao' : 'Xem trang khách' }}</span>
+        </a>
+        <span class="live-chip"><i></i> {{ isDeliveryOnly ? 'Online' : 'Live' }}</span>
+        <div *ngIf="isDeliveryOnly" class="delivery-quick-stats" aria-label="Delivery quick stats">
+          <span><strong>4</strong><small>Đang giao</small></span>
+          <span><strong>12</strong><small>Hoàn tất</small></span>
+        </div>
+        <button type="button" class="icon-button" aria-label="Thông báo">
+          <span class="material-symbols-outlined">notifications</span>
+        </button>
+        <div class="user-card">
+          <div>
+            <strong>{{ currentUser?.fullName || currentUser?.username || 'Admin Pine' }}</strong>
+            <small>{{ currentUser?.email || 'admin@pinedrink.vn' }}</small>
+          </div>
+          <span class="avatar">
+            <img *ngIf="getAvatarUrl()" [src]="getAvatarUrl()" alt="Avatar" class="avatar-image" />
+            <span *ngIf="!getAvatarUrl()">{{ getUserInitials() }}</span>
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <section class="admin-content">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

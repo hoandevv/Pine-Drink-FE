@@ -1,0 +1,161 @@
+<app-page-header title="Vouchers" description="Quản trị mã giảm giá, thời gian chạy, giới hạn sử dụng và phạm vi chi nhánh.">
+  <button id="createVoucherBtn" type="button" class="voucher-main-btn create" (click)="openCreate()"><span>＋</span> Tạo voucher</button>
+</app-page-header>
+
+<section class="voucher-toolbar">
+  <input id="voucherKeyword" type="search" placeholder="Tìm mã / tên voucher..." [(ngModel)]="keyword" (keyup.enter)="applyFilters()" />
+  <select id="voucherStatus" [(ngModel)]="status" (change)="applyFilters()">
+    <option value="">Tất cả trạng thái</option>
+    <option value="ACTIVE">ACTIVE</option>
+    <option value="INACTIVE">INACTIVE</option>
+    <option value="EXPIRED">EXPIRED</option>
+  </select>
+  <select id="voucherDiscountType" [(ngModel)]="discountType" (change)="applyFilters()">
+    <option value="">Tất cả loại giảm</option>
+    <option value="PERCENTAGE">Theo %</option>
+    <option value="FIXED_AMOUNT">Tiền cố định</option>
+  </select>
+  <button id="voucherFilterBtn" type="button" class="voucher-main-btn filter" (click)="applyFilters()"><span>⌕</span> Lọc</button>
+</section>
+
+<section *ngIf="showForm" class="voucher-form-panel">
+  <div class="form-head">
+    <div>
+      <span class="eyebrow">{{ editing ? 'Chỉnh sửa' : 'Tạo mới' }}</span>
+      <h2>{{ editing ? editing.code : 'Voucher campaign' }}</h2>
+    </div>
+    <button id="closeVoucherFormBtn" type="button" class="ghost-btn" (click)="showForm = false">✕</button>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="voucher-form">
+    <label>Mã voucher<input id="voucherCode" formControlName="code" placeholder="PINE20" /></label>
+    <label>Tên chiến dịch<input id="voucherName" formControlName="name" placeholder="Giảm 20% trà dứa" /></label>
+    <label class="wide">Mô tả<input id="voucherDescription" formControlName="description" placeholder="Áp dụng cho đơn từ..." /></label>
+    <label>Loại giảm<select id="voucherFormDiscountType" formControlName="discountType"><option value="PERCENTAGE">PERCENTAGE</option><option value="FIXED_AMOUNT">FIXED_AMOUNT</option></select></label>
+    <label>Giá trị giảm<input id="voucherDiscountValue" type="number" formControlName="discountValue" min="0.01" step="0.01" /></label>
+    <label>Giảm tối đa<input id="voucherMaxDiscount" type="number" formControlName="maxDiscountAmount" min="0" /></label>
+    <label>Đơn tối thiểu<input id="voucherMinOrder" type="number" formControlName="minOrderAmount" min="0" /></label>
+    <label>Giới hạn lượt<input id="voucherUsageLimit" type="number" formControlName="usageLimit" min="1" /></label>
+    <label>Lượt / khách<input id="voucherPerCustomer" type="number" formControlName="usageLimitPerCustomer" min="1" /></label>
+    <label>Bắt đầu<input id="voucherStartAt" type="datetime-local" formControlName="startAt" /></label>
+    <label>Kết thúc<input id="voucherEndAt" type="datetime-local" formControlName="endAt" /></label>
+    <div class="branch-scope wide" [class.open]="branchScopeOpen">
+      <div class="branch-scope-head">
+        <div>
+          <span>Phạm vi chi nhánh</span>
+          <small>{{ selectedBranchIds.length ? ('Áp dụng cho ' + selectedBranchIds.length + ' chi nhánh') : 'Toàn hệ thống' }}</small>
+        </div>
+        <button id="clearVoucherBranchesBtn" type="button" class="scope-clear" (click)="clearBranchScope()" [disabled]="!selectedBranchIds.length">Clear</button>
+      </div>
+
+      <button id="openVoucherBranchesBtn" type="button" class="branch-select-trigger" (click)="branchScopeOpen = !branchScopeOpen">
+        <span>{{ selectedBranchLabels.length ? selectedBranchLabels.join(', ') : 'Chọn chi nhánh áp dụng' }}</span>
+        <strong>{{ branchScopeOpen ? '⌃' : '⌄' }}</strong>
+      </button>
+
+      <div *ngIf="branchScopeOpen" class="branch-dropdown">
+        <input id="voucherBranchSearch" type="search" [(ngModel)]="branchKeyword" [ngModelOptions]="{ standalone: true }" placeholder="Tìm theo tên, mã, địa chỉ chi nhánh..." />
+
+        <div *ngIf="loadingBranches" class="branch-loading">Đang tải chi nhánh...</div>
+
+        <div *ngIf="!loadingBranches" class="branch-choice-grid">
+          <button
+            *ngFor="let branch of filteredBranches"
+            type="button"
+            class="branch-choice"
+            [class.selected]="isBranchSelected(branch.id)"
+            (click)="toggleBranch(branch.id)"
+          >
+            <span class="check">{{ isBranchSelected(branch.id) ? '✓' : '+' }}</span>
+            <strong>{{ branch.name }}</strong>
+            <small>{{ branch.address || branch.code || 'Chi nhánh Pine Drink' }}</small>
+          </button>
+        </div>
+
+        <div *ngIf="!loadingBranches && !filteredBranches.length" class="branch-loading">Không tìm thấy chi nhánh</div>
+      </div>
+
+      <input id="voucherBranchIds" type="hidden" formControlName="branchIdsText" />
+    </div>
+    <button id="saveVoucherBtn" type="submit" class="voucher-main-btn save wide" [disabled]="saving"><span>{{ saving ? '⏳' : '✓' }}</span> {{ saving ? 'Đang lưu...' : 'Lưu voucher' }}</button>
+  </form>
+</section>
+
+<div *ngIf="loading" class="loading-card">Đang tải vouchers...</div>
+
+<section class="voucher-list" *ngIf="!loading && vouchers.length">
+  <div class="voucher-list-head">
+    <span>Voucher</span>
+    <span>Giảm giá</span>
+    <span>Điều kiện</span>
+    <span>Sử dụng</span>
+    <span>Hiệu lực</span>
+    <span>Trạng thái</span>
+    <span>Thao tác</span>
+  </div>
+
+  <article class="voucher-row" *ngFor="let voucher of vouchers" [class.is-muted]="voucher.status !== 'ACTIVE'">
+    <div class="voucher-main-info">
+      <span class="ticket-code">{{ voucher.code }}</span>
+      <div>
+        <h3>{{ voucher.name }}</h3>
+        <p>{{ voucher.description || 'Không có mô tả' }}</p>
+      </div>
+    </div>
+
+    <div class="voucher-cell discount-cell">
+      <strong>{{ formatDiscount(voucher) }}</strong>
+      <small>{{ voucher.discountType === 'PERCENTAGE' ? 'Theo phần trăm' : 'Tiền cố định' }}</small>
+    </div>
+
+    <div class="voucher-cell">
+      <span>Đơn từ {{ voucher.minOrderAmount || 0 | number:'1.0-0' }}đ</span>
+      <small>Giảm tối đa {{ voucher.maxDiscountAmount || 0 | number:'1.0-0' }}đ</small>
+    </div>
+
+    <div class="voucher-cell usage-cell">
+      <div class="usage-text"><strong>{{ voucher.usedCount }}</strong><span>/ {{ voucher.usageLimit || '∞' }}</span></div>
+      <div class="usage"><span [style.width.%]="usagePercent(voucher)"></span></div>
+    </div>
+
+    <div class="voucher-cell time-cell">
+      <span>{{ voucher.startAt | date:'dd/MM/yyyy' }}</span>
+      <small>→ {{ voucher.endAt | date:'dd/MM/yyyy' }}</small>
+    </div>
+
+    <div class="voucher-cell">
+      <span class="status-pill" [class.active]="voucher.status === 'ACTIVE'" [class.inactive]="voucher.status === 'INACTIVE'" [class.expired]="voucher.status === 'EXPIRED'">{{ voucher.status }}</span>
+    </div>
+
+    <div class="ticket-actions">
+      <button type="button" class="ticket-btn edit" (click)="openEdit(voucher)"><span>✎</span> Sửa</button>
+      <button type="button" class="ticket-btn toggle" (click)="updateStatus(voucher, voucher.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')"><span>{{ voucher.status === 'ACTIVE' ? '⏸' : '▶' }}</span> {{ voucher.status === 'ACTIVE' ? 'Tắt' : 'Bật' }}</button>
+      <button type="button" class="ticket-btn danger" (click)="remove(voucher)"><span>🗑</span></button>
+    </div>
+  </article>
+</section>
+
+<app-empty-state *ngIf="!loading && !vouchers.length" icon="confirmation_number" title="Chưa có voucher" description="Tạo campaign đầu tiên để bắt đầu chạy ưu đãi."></app-empty-state>
+
+<div class="pagination-bar" *ngIf="totalElements > 0">
+  <div class="page-size-control">
+    <span>Hiển thị</span>
+    <select id="voucher-page-size-select" [ngModel]="size" (ngModelChange)="changePageSize($event)">
+      <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+    </select>
+    <span>/ trang</span>
+  </div>
+
+  <div class="page-status">
+    Trang {{ page + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} voucher
+  </div>
+
+  <div class="page-actions">
+    <button id="voucher-prev-page-btn" type="button" (click)="changePage(page - 1)" [disabled]="page === 0 || loading">
+      <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <button id="voucher-next-page-btn" type="button" (click)="changePage(page + 1)" [disabled]="page + 1 >= totalPages || loading">
+      <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+  </div>
+</div>

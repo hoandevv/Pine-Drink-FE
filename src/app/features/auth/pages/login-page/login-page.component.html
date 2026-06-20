@@ -1,0 +1,100 @@
+<div class="space-y-lg">
+  <div>
+    <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-xs">Đăng nhập</h2>
+    <p class="font-body-md text-body-md text-secondary">Chào mừng bạn trở lại! Vui lòng nhập thông tin.</p>
+  </div>
+
+  <form [formGroup]="loginForm" (ngSubmit)="submit()" class="space-y-md">
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface">Email hoặc Tên đăng nhập</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">mail</span>
+        <input type="text" formControlName="username" placeholder="Nhập email của bạn"
+          class="w-full pl-12 pr-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+      </div>
+      <p *ngIf="loginForm.get('username')?.touched && loginForm.get('username')?.invalid"
+        class="text-error text-label-sm mt-1">Trường này là bắt buộc.</p>
+    </div>
+
+    <div class="space-y-xs">
+      <label class="block font-label-lg text-on-surface">Mật khẩu</label>
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">lock</span>
+        <input [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="Nhập mật khẩu"
+          class="w-full pl-12 pr-12 py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md font-body-md transition-all outline-none" />
+        <button type="button" class="password-toggle absolute right-md top-1/2 -translate-y-1/2"
+          [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          [attr.title]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'" (click)="togglePasswordVisibility()">
+          <span class="material-symbols-outlined">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+        </button>
+      </div>
+      <p *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid"
+        class="text-error text-label-sm mt-1">Trường này là bắt buộc.</p>
+    </div>
+
+    <div class="flex items-center justify-between pt-xs">
+      <label class="remember-me flex items-center gap-3 cursor-pointer group">
+        <input id="login-remember-me" type="checkbox" class="remember-me__input peer" aria-label="Ghi nhớ tôi">
+        <span class="remember-me__box" aria-hidden="true">
+          <span class="material-symbols-outlined">check</span>
+        </span>
+        <span class="text-label-lg text-secondary group-hover:text-on-surface transition-colors">Ghi nhớ tôi</span>
+      </label>
+      <a routerLink="/auth/forgot-password" class="text-label-lg text-primary font-bold hover:underline">Quên mật
+        khẩu?</a>
+    </div>
+
+    <button type="submit"
+      class="w-full py-sm mt-md bg-primary text-white rounded-xl font-headline-md text-label-lg shadow-md hover:bg-primary-container hover:text-on-primary-container hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 disabled:hover:shadow-md"
+      [disabled]="submitting || loginForm.invalid">
+      {{ submitting ? 'Đang đăng nhập...' : 'Đăng nhập' }}
+    </button>
+  </form>
+
+  <div class="relative py-sm">
+    <div class="absolute inset-0 flex items-center">
+      <div class="w-full border-t border-outline-variant"></div>
+    </div>
+    <div class="relative flex justify-center">
+      <span class="bg-background px-md text-label-sm text-secondary uppercase tracking-widest">Hoặc tiếp tục với</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-md">
+    <div class="relative flex items-center justify-center overflow-hidden rounded-xl">
+      <button id="login-google-button" type="button"
+        class="pointer-events-none flex w-full items-center justify-center gap-2 py-sm border border-outline-variant rounded-xl hover:bg-surface-container-low transition-colors text-label-lg font-bold text-on-surface disabled:opacity-60 disabled:cursor-not-allowed">
+        <svg class="w-5 h-5" viewBox="0 0 24 24">
+          <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            fill="#4285F4" />
+          <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853" />
+          <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            fill="#FBBC05" />
+          <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            fill="#EA4335" />
+        </svg>
+        Google
+      </button>
+      <div id="google-signin-button" class="absolute inset-0 opacity-0" aria-label="Tiếp tục với Google"></div>
+    </div>
+    <button type="button"
+      class="flex items-center justify-center gap-2 py-sm bg-black text-white rounded-xl opacity-50 cursor-not-allowed text-label-lg font-bold"
+      disabled title="Apple login chưa hỗ trợ">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+        <path
+          d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.04 2.26-.79 3.69-.66 1.76.15 3.09.84 3.91 2.05-3.23 1.98-2.69 5.89.5 7.15-.71 1.57-1.57 3.09-3.18 3.63zm-3.71-13.62c-.15-2.3 1.77-4.22 4.02-4.32.28 2.5-2.09 4.49-4.02 4.32z" />
+      </svg>
+      Apple
+    </button>
+  </div>
+
+  <p class="text-center text-body-md text-secondary mt-lg">
+    Chưa có tài khoản?
+    <a routerLink="/auth/register" class="text-primary font-bold hover:underline">Đăng ký ngay</a>
+  </p>
+</div>

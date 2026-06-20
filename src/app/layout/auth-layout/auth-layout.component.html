@@ -1,0 +1,49 @@
+<div class="auth-shell">
+  <section class="auth-hero" aria-label="Pine Drink brand story">
+    <div class="auth-orb auth-orb--sun"></div>
+    <div class="auth-orb auth-orb--mint"></div>
+    <div class="auth-orb auth-orb--pine"></div>
+
+    <div class="auth-hero__content">
+      <a routerLink="/" class="auth-brand" aria-label="Pine Drink home">
+        <span class="auth-brand__mark">🍍</span>
+        <span>Pine Drink</span>
+      </a>
+
+      <div class="auth-badge">
+        <span class="material-symbols-outlined">eco</span>
+        Fresh F&B Management
+      </div>
+
+      <h1>Hương vị nhiệt đới, vận hành chuẩn chỉnh.</h1>
+      <p>
+        Quản lý đồ uống, đơn hàng và trải nghiệm khách hàng trong một không gian
+        xanh mát, hiện đại và đầy năng lượng.
+      </p>
+
+      <div class="auth-hero__stats">
+        <div>
+          <strong>24/7</strong>
+          <span>Realtime service</span>
+        </div>
+        <div>
+          <strong>98%</strong>
+          <span>Order accuracy</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="auth-panel" aria-label="Authentication form">
+    <div class="auth-mobile-brand">
+      <a routerLink="/" class="auth-brand auth-brand--compact">
+        <span class="auth-brand__mark">🍍</span>
+        <span>Pine Drink</span>
+      </a>
+    </div>
+
+    <div class="auth-card">
+      <router-outlet></router-outlet>
+    </div>
+  </section>
+</div>

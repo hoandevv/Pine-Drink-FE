@@ -1,0 +1,285 @@
+<app-page-header title="Chi nhánh" description="Quản lý hệ thống cửa hàng, trạng thái và vị trí bản đồ.">
+  <div class="header-actions">
+    <button id="branch-refresh-btn" type="button" class="ghost-action-btn" (click)="loadBranches()">
+      <span class="material-symbols-outlined">refresh</span>
+      Làm mới
+    </button>
+    <button id="branch-create-btn" *ngIf="accessControl.can('BRANCH_CREATE')" type="button" class="primary-action-btn" (click)="openCreateForm()">
+      <span class="material-symbols-outlined">add</span>
+      Thêm chi nhánh
+    </button>
+  </div>
+</app-page-header>
+
+<section class="branch-stats-row" aria-label="Thống kê chi nhánh">
+  <article class="branch-stat-card total">
+    <span class="material-symbols-outlined">storefront</span>
+    <div><small>Tổng chi nhánh</small><strong>{{ pageData.totalElements }}</strong></div>
+  </article>
+  <article class="branch-stat-card active">
+    <span class="material-symbols-outlined">verified</span>
+    <div><small>Đang hoạt động</small><strong>{{ activeCount }}</strong></div>
+  </article>
+  <article class="branch-stat-card maintenance">
+    <span class="material-symbols-outlined">engineering</span>
+    <div><small>Bảo trì / tạm ngưng</small><strong>{{ maintenanceCount }}</strong></div>
+  </article>
+</section>
+
+<section class="branch-toolbar" [formGroup]="filterForm">
+  <label class="search-box" for="branch-search">
+    <span class="material-symbols-outlined">search</span>
+    <input id="branch-search" type="search" formControlName="keyword" placeholder="Tìm tên, mã, địa chỉ chi nhánh..." (keyup.enter)="search()">
+  </label>
+
+  <select id="branch-status-filter" formControlName="status" (change)="search()">
+    <option *ngFor="let status of statusOptions" [value]="status === 'ALL' ? '' : status">
+      {{ status === 'ALL' ? 'Tất cả trạng thái' : statusLabel(status) }}
+    </option>
+  </select>
+
+  <button id="branch-search-btn" type="button" class="soft-btn" (click)="search()">Tìm</button>
+  <button id="branch-reset-btn" type="button" class="ghost-btn" (click)="reset()">Xóa lọc</button>
+</section>
+
+<div class="form-overlay" *ngIf="formOpen" (click)="closeForm()"></div>
+<aside class="form-drawer" *ngIf="formOpen">
+  <div class="form-head">
+    <div>
+      <span class="eyebrow">{{ editingBranch ? 'Cập nhật' : 'Tạo mới' }}</span>
+      <h2>{{ editingBranch ? editingBranch.name : 'Chi nhánh mới' }}</h2>
+    </div>
+    <button id="branch-close-form-btn" type="button" class="icon-action" (click)="closeForm()" aria-label="Đóng form">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+
+  <form class="branch-form" [formGroup]="branchForm" (ngSubmit)="saveBranch()">
+    <div class="form-card details-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">storefront</span>
+        <div>
+          <strong>Thông tin chi nhánh</strong>
+          <small>Nhập dữ liệu thật sẽ gửi về backend.</small>
+        </div>
+      </div>
+
+      <label class="wide">
+        <span>Tên chi nhánh *</span>
+        <input id="branch-name-input" type="text" formControlName="name" placeholder="Ví dụ: Pine Drink Nguyễn Trãi">
+      </label>
+      <label class="wide">
+        <span>Địa chỉ *</span>
+        <input id="branch-address-input" type="text" formControlName="address" placeholder="Chọn trên bản đồ hoặc nhập địa chỉ">
+      </label>
+      <div class="field-row">
+        <label>
+          <span>Số điện thoại</span>
+          <input id="branch-phone-input" type="tel" formControlName="phone" placeholder="0901 234 567">
+        </label>
+        <label>
+          <span>Email</span>
+          <input id="branch-email-input" type="email" formControlName="email" placeholder="branch@pinedrink.vn">
+        </label>
+      </div>
+    </div>
+
+    <div class="form-card ops-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">tune</span>
+        <div>
+          <strong>Cài đặt vận hành</strong>
+          <small>Chọn dịch vụ và trạng thái hiển thị.</small>
+        </div>
+      </div>
+
+      <div class="service-options">
+        <label class="toggle-card">
+          <input id="branch-pickup-input" type="checkbox" formControlName="supportsPickup">
+          <span class="material-symbols-outlined">shopping_bag</span>
+          <strong>Nhận tại quầy</strong>
+        </label>
+        <label class="toggle-card">
+          <input id="branch-delivery-input" type="checkbox" formControlName="supportsDelivery">
+          <span class="material-symbols-outlined">local_shipping</span>
+          <strong>Giao hàng</strong>
+        </label>
+      </div>
+
+      <div class="field-row single">
+        <label>
+          <span>Thời gian chuẩn bị</span>
+          <input id="branch-prep-input" type="number" min="1" max="180" formControlName="averagePreparationMinutes">
+        </label>
+      </div>
+    </div>
+
+    <div class="form-card wide branch-map-field">
+      <div class="section-title">
+        <span class="material-symbols-outlined">map</span>
+        <div>
+          <strong>Vị trí bản đồ *</strong>
+          <small>Tìm địa chỉ, chọn vị trí; tọa độ sẽ tự lưu.</small>
+        </div>
+      </div>
+      <app-map-picker (locationSelected)="onLocationSelected($event)"></app-map-picker>
+      <div class="coordinate-preview" *ngIf="branchForm.controls.latitude.value && branchForm.controls.longitude.value">
+        <span class="material-symbols-outlined">my_location</span>
+        <strong>{{ branchForm.controls.latitude.value | number:'1.6-6' }}, {{ branchForm.controls.longitude.value | number:'1.6-6' }}</strong>
+      </div>
+    </div>
+
+    <div class="form-card branch-hours-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">schedule</span>
+        <div>
+          <strong>Giờ mở cửa</strong>
+          <small>{{ editingBranch ? 'Cấu hình lịch theo ngày, dữ liệu lưu vào BranchHours backend.' : 'Thiết lập trước lịch mở cửa; hệ thống sẽ lưu sau khi tạo chi nhánh.' }}</small>
+        </div>
+      </div>
+
+      <div class="hours-guide">
+        <span class="material-symbols-outlined">info</span>
+        <p>Mỗi ngày cần một dòng lịch riêng. Nếu chi nhánh mở giống nhau từ Thứ 2 đến Thứ 7, nhập giờ rồi bấm <strong>Áp dụng T2 - T7</strong>.</p>
+      </div>
+
+      <div class="week-strip" *ngIf="!loadingHours">
+        <span *ngFor="let day of dayOptions" [class.configured]="hasBranchHours(day.value)">
+          {{ day.label }}
+          <small>{{ hasBranchHours(day.value) ? 'Đã có' : 'Chưa có' }}</small>
+        </span>
+      </div>
+
+      <div class="hours-list" *ngIf="!loadingHours && branchHours.length > 0">
+        <article class="hours-item" *ngFor="let hours of branchHours">
+          <div>
+            <strong>{{ dayLabel(hours.dayOfWeek) }}</strong>
+            <span>{{ hours.closed ? 'Đóng cửa' : (hours.openTime | slice:0:5) + ' - ' + (hours.closeTime | slice:0:5) }}</span>
+          </div>
+          <div class="hours-actions">
+            <button type="button" class="icon-action" (click)="editBranchHours(hours)" aria-label="Sửa giờ mở cửa">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <button type="button" class="icon-action danger" (click)="deleteBranchHours(hours)" aria-label="Xóa giờ mở cửa">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <div class="hours-empty" *ngIf="!loadingHours && branchHours.length === 0">
+        <span class="material-symbols-outlined">event_busy</span>
+        <p>Chưa có lịch. Chọn giờ bên dưới rồi dùng nút áp dụng nhanh để tạo nhiều ngày cùng lúc.</p>
+      </div>
+      <div class="loading-strip inline" *ngIf="loadingHours">Đang tải giờ mở cửa...</div>
+
+      <form class="hours-form" [formGroup]="branchHoursForm" (ngSubmit)="saveBranchHours()">
+        <label>
+          <span>Ngày</span>
+          <select id="branch-hours-day-input" formControlName="dayOfWeek">
+            <option *ngFor="let day of dayOptions" [ngValue]="day.value">{{ day.label }}</option>
+          </select>
+        </label>
+        <label>
+          <span>Mở cửa</span>
+          <input id="branch-hours-open-input" type="time" formControlName="openTime">
+        </label>
+        <label>
+          <span>Đóng cửa</span>
+          <input id="branch-hours-close-input" type="time" formControlName="closeTime">
+        </label>
+        <label class="closed-toggle">
+          <input id="branch-hours-closed-input" type="checkbox" formControlName="closed">
+          <span>Đóng cả ngày</span>
+        </label>
+        <div class="preset-actions">
+          <button *ngFor="let preset of schedulePresets" type="button" class="preset-btn" [disabled]="savingHours" (click)="applySchedulePreset(preset.days)">
+            {{ preset.label }}
+          </button>
+        </div>
+        <div class="hours-submit">
+          <button type="button" class="ghost-btn" (click)="resetBranchHoursForm()" *ngIf="editingBranchHours">Hủy sửa</button>
+          <button id="branch-hours-save-btn" type="submit" class="soft-btn" [disabled]="savingHours">
+            {{ savingHours ? 'Đang lưu...' : (editingBranchHours ? 'Cập nhật giờ' : 'Thêm giờ') }}
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="form-actions wide">
+      <button id="branch-cancel-btn" type="button" class="ghost-btn" (click)="closeForm()">Hủy</button>
+      <button id="branch-save-btn" type="submit" class="btn btn-primary" [disabled]="saving">
+        {{ saving ? 'Đang lưu...' : 'Lưu chi nhánh' }}
+      </button>
+    </div>
+  </form>
+</aside>
+
+<section class="branch-table-card">
+  <div class="loading-strip" *ngIf="loading">Đang tải chi nhánh...</div>
+
+  <div class="table-head">
+    <div>Chi nhánh</div>
+    <div>Liên hệ</div>
+    <div>Dịch vụ</div>
+    <div>Vận hành</div>
+    <div>Trạng thái</div>
+    <div style="text-align: right;">Thao tác</div>
+  </div>
+
+  <article class="branch-row" *ngFor="let branch of branches">
+    <div class="branch-main">
+      <div class="avatar">{{ branch.name.charAt(0) }}</div>
+      <div>
+        <h3>{{ branch.name }}</h3>
+        <p>{{ branch.code || branch.id }}</p>
+        <small>{{ branch.address || 'Chưa có địa chỉ' }}</small>
+      </div>
+    </div>
+    <div class="contact-cell">
+      <strong>{{ branch.phone || 'Chưa có SĐT' }}</strong>
+      <span>{{ branch.email || 'Chưa có email' }}</span>
+    </div>
+    <div class="service-chips">
+      <span *ngIf="branch.supportsPickup" class="chip">Pickup</span>
+      <span *ngIf="branch.supportsDelivery" class="chip delivery">Delivery</span>
+      <span *ngIf="!branch.supportsPickup && !branch.supportsDelivery" class="muted">Chưa bật</span>
+    </div>
+    <div class="ops-cell">
+      <strong>{{ branch.averagePreparationMinutes || 15 }} phút</strong>
+      <span class="hours-summary"><span class="material-symbols-outlined">schedule</span>{{ branchHoursSummary(branch) }}</span>
+      <span *ngIf="branch.latitude && branch.longitude">Có vị trí bản đồ</span>
+      <span *ngIf="!branch.latitude || !branch.longitude">Thiếu vị trí</span>
+    </div>
+    <em [class]="branch.status.toLowerCase()">{{ statusLabel(branch.status) }}</em>
+    <div class="row-actions">
+      <button *ngIf="accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action" (click)="openEditForm(branch)" aria-label="Sửa chi nhánh" title="Sửa chi nhánh">
+        <span class="material-symbols-outlined">edit</span>
+      </button>
+      <button *ngIf="branch.status === 'INACTIVE' && accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action restore" (click)="restoreBranch(branch)" aria-label="Mở lại chi nhánh" title="Mở lại chi nhánh">
+        <span class="material-symbols-outlined">restart_alt</span>
+      </button>
+      <button *ngIf="branch.status !== 'INACTIVE' && accessControl.can('BRANCH_UPDATE')" type="button" class="icon-action danger" (click)="closeBranch(branch)" aria-label="Đóng chi nhánh" title="Đóng chi nhánh">
+        <span class="material-symbols-outlined">lock</span>
+      </button>
+    </div>
+  </article>
+
+  <div class="empty-state" *ngIf="!loading && branches.length === 0">
+    <span class="material-symbols-outlined">storefront</span>
+    <strong>Chưa có chi nhánh</strong>
+    <p>Thêm chi nhánh đầu tiên để map backend hiển thị lên admin.</p>
+  </div>
+
+  <app-admin-pagination
+    [page]="pageData.page"
+    [totalPages]="pageData.totalPages"
+    [totalItems]="pageData.totalElements"
+    [pageSize]="pageData.size"
+    [pageSizeOptions]="pageSizeOptions"
+    itemLabel="chi nhánh"
+    [disabled]="loading"
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="changePageSize($event)">
+  </app-admin-pagination>
+</section>

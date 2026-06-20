@@ -1,0 +1,289 @@
+{
+  "nav": {
+    "home": "Home",
+    "menu": "Menu",
+    "stores": "Stores",
+    "about": "About Us",
+    "contact": "Contact",
+    "cart": "Cart",
+    "profile": "Account",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Fresh brewed. Fast pickup.",
+      "title": "Order your favorite drinks in minutes",
+      "description": "Choose items, customize toppings, pre-order and pick up at a store near you with the new Pine Drink experience.",
+      "orderNow": "Order Now",
+      "selectBranch": "Select Branch",
+      "rating": "rating",
+      "branches": "branches",
+      "readyTime": "ready",
+      "noQueue": "Pick up at store without queuing"
+    },
+    "quickOrder": {
+      "nearestBranch": "Nearest to you",
+      "pickupAtStore": "Pickup at store",
+      "delivery": "Delivery",
+      "startOrder": "Start ordering"
+    },
+    "categories": {
+      "eyebrow": "Explore menu",
+      "title": "Drink Categories",
+      "viewAll": "View all items",
+      "itemsAvailable": "items available"
+    },
+    "bestSellers": {
+      "eyebrow": "Best sellers",
+      "title": "Most Loved Items",
+      "getPromo": "Get Offers"
+    },
+    "promos": {
+      "eyebrow": "Sip deals",
+      "title": "Exclusive Offers",
+      "getOffer": "Get Offer"
+    },
+    "howItWorks": {
+      "step1Title": "Select Branch",
+      "step1Desc": "Automatically suggests stores near you.",
+      "step2Title": "Choose Drinks",
+      "step2Desc": "Full menu with many options.",
+      "step3Title": "Customize Toppings",
+      "step3Desc": "Choose size, sugar, ice and toppings.",
+      "step4Title": "Pick Up",
+      "step4Desc": "Track status and pick up at counter."
+    },
+    "stores": {
+      "eyebrow": "Nearby stores",
+      "title": "Featured Stores",
+      "viewAll": "View All",
+      "orderHere": "Order at this branch"
+    }
+  },
+  "menu": {
+    "title": "Menu",
+    "search": "Search drinks...",
+    "bestSeller": "Best Seller",
+    "newest": "Newest",
+    "priceLow": "Price Low",
+    "all": "All",
+    "changeBranch": "Change Branch",
+    "emptyTitle": "No products found",
+    "emptyDesc": "Try searching with different keywords or select another category",
+    "cart": {
+      "title": "Your Cart",
+      "items": "items",
+      "subtotal": "Subtotal",
+      "viewCart": "View Cart",
+      "voucher": "Save 20K for orders from 100K"
+    }
+  },
+  "product": {
+    "detail": "Product Details",
+    "backButton": "Back",
+    "size": "Select Size",
+    "sizeSmall": "Small",
+    "sizeMedium": "Medium",
+    "sizeLarge": "Large",
+    "ice": "Ice Level",
+    "sugar": "Sugar Level",
+    "toppings": "Add Toppings",
+    "note": "Note",
+    "notePlaceholder": "E.g: Less ice, more sugar...",
+    "optional": "(Optional)",
+    "addToCart": "Add to Cart",
+    "total": "Total",
+    "quantity": "Quantity",
+    "basePrice": "Product",
+    "toppingPrice": "Toppings",
+    "notFound": "Product not found"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Cart is empty",
+    "emptyDesc": "Add products to cart to continue",
+    "continueShopping": "Continue Shopping",
+    "checkout": "Checkout",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping Fee",
+    "discount": "Discount",
+    "total": "Total",
+    "applyVoucher": "Apply voucher code",
+    "voucherPlaceholder": "Enter voucher code",
+    "apply": "Apply",
+    "remove": "Remove",
+    "size": "Size",
+    "ice": "Ice",
+    "sugar": "Sugar",
+    "note": "Note"
+  },
+  "stores": {
+    "title": "Stores",
+    "search": "Search stores...",
+    "nearMe": "Near Me",
+    "openNow": "Open Now",
+    "distance": "Distance",
+    "openingHours": "Opening Hours",
+    "closed": "Closed",
+    "open": "Open",
+    "getDirections": "Get Directions",
+    "selectStore": "Select this store",
+    "phone": "Phone",
+    "address": "Address"
+  },
+  "profile": {
+    "title": "Profile",
+    "memberSince": "Member since",
+    "loyaltyPoints": "Loyalty Points",
+    "tabs": {
+      "info": "Information",
+      "orders": "Orders",
+      "favorites": "Favorites",
+      "settings": "Settings"
+    },
+    "personalInfo": {
+      "title": "Personal Information",
+      "edit": "Edit",
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "birthday": "Birthday"
+    },
+    "address": {
+      "title": "Delivery Address",
+      "add": "Add Address",
+      "default": "Default",
+      "home": "Home",
+      "office": "Office",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "orders": {
+      "title": "Order History",
+      "all": "All",
+      "completed": "Completed",
+      "processing": "Processing",
+      "cancelled": "Cancelled",
+      "items": "items",
+      "total": "Total",
+      "viewDetail": "View Details",
+      "reorder": "Reorder"
+    },
+    "favorites": {
+      "title": "Favorite Items",
+      "empty": "No favorites yet",
+      "emptyDesc": "Add your favorite items for faster ordering",
+      "exploreMenu": "Explore Menu"
+    },
+    "settings": {
+      "title": "Account Settings",
+      "changePassword": "Change Password",
+      "changePasswordDesc": "Update your password for security",
+      "notifications": "Notifications",
+      "notificationsDesc": "Manage order and promotion notifications",
+      "language": "Language",
+      "languageDesc": "Select display language",
+      "help": "Help & Support",
+      "helpDesc": "FAQs and contact support",
+      "logout": "Logout",
+      "logoutDesc": "Sign out of your account"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Welcome back!",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "loginButton": "Login",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register now"
+    },
+    "register": {
+      "title": "Register",
+      "subtitle": "Create new account",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "phone": "Phone Number",
+      "phonePlaceholder": "Enter your phone number",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "agreeTerms": "I agree to the",
+      "termsLink": "Terms of Service",
+      "and": "and",
+      "privacyLink": "Privacy Policy",
+      "registerButton": "Register",
+      "haveAccount": "Already have an account?",
+      "loginLink": "Login now"
+    },
+    "forgotPassword": {
+      "title": "Forgot Password",
+      "subtitle": "Enter email to reset password",
+      "email": "Email",
+      "emailPlaceholder": "Enter your email",
+      "sendButton": "Send reset link",
+      "backToLogin": "Back to login"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "view": "View",
+    "update": "Update",
+    "create": "Create",
+    "select": "Select",
+    "clear": "Clear",
+    "apply": "Apply",
+    "reset": "Reset",
+    "download": "Download",
+    "upload": "Upload",
+    "print": "Print",
+    "share": "Share",
+    "copy": "Copy",
+    "paste": "Paste",
+    "cut": "Cut",
+    "undo": "Undo",
+    "redo": "Redo",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "done": "Done"
+  },
+  "language": {
+    "vietnamese": "Tiếng Việt",
+    "english": "English",
+    "select": "Select Language"
+  },
+  "footer": {
+    "about": "About Pine Drink",
+    "aboutDesc": "Leading beverage chain in Vietnam",
+    "quickLinks": "Quick Links",
+    "contact": "Contact",
+    "followUs": "Follow Us",
+    "copyright": "© 2024 Pine Drink. All rights reserved."
+  }
+}

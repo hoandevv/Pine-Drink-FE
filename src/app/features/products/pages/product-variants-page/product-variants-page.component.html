@@ -1,0 +1,189 @@
+<section class="variants-page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Product variants</span>
+      <h1>Biến thể sản phẩm</h1>
+      <p>Quản lý size, giá cộng thêm và trạng thái hiển thị theo từng sản phẩm.</p>
+    </div>
+    <div class="header-actions">
+      <button id="refresh-variants-btn" type="button" class="btn ghost" (click)="refresh()" [disabled]="loading || productLoading">
+        <span class="material-symbols-outlined">refresh</span>
+        Làm mới
+      </button>
+      <button id="create-default-sizes-btn" type="button" class="btn soft" (click)="createDefaultSizeSet()" [disabled]="!selectedProductId || saving || loading">
+        <span class="material-symbols-outlined">auto_awesome</span>
+        Tạo size mẫu M/L/XL
+      </button>
+      <button id="open-create-variant-btn" type="button" class="btn primary" (click)="openCreateDrawer()" [disabled]="!selectedProductId">
+        <span class="material-symbols-outlined">add</span>
+        Thêm biến thể
+      </button>
+    </div>
+  </header>
+
+  <div class="alert" *ngIf="errorMessage">
+    <span class="material-symbols-outlined">error</span>
+    {{ errorMessage }}
+  </div>
+
+  <section class="product-panel">
+    <label class="product-picker">
+      <span>Sản phẩm</span>
+      <select id="variant-product-select" [ngModel]="selectedProductId" (ngModelChange)="onProductChange($event)" [disabled]="productLoading || !products.length">
+        <option value="" disabled>{{ productLoading ? 'Đang tải sản phẩm...' : 'Chọn sản phẩm' }}</option>
+        <option *ngFor="let product of products; trackBy: trackProduct" [ngValue]="product.id">
+          {{ product.name }} · {{ product.code }}
+        </option>
+      </select>
+    </label>
+
+    <div class="selected-product" *ngIf="selectedProduct as product">
+      <div>
+        <strong>{{ product.name }}</strong>
+        <span>{{ product.categoryName || 'Chưa gắn danh mục' }} · Giá gốc {{ formatCurrency(product.price) }}</span>
+      </div>
+      <em>{{ product.code }}</em>
+    </div>
+  </section>
+
+  <section class="empty-inline" *ngIf="!productLoading && !products.length">
+    <span class="material-symbols-outlined">local_cafe</span>
+    <div>
+      <h2>Chưa có sản phẩm</h2>
+      <p>Bạn cần tạo sản phẩm trước khi cấu hình biến thể.</p>
+    </div>
+    <a class="btn primary" routerLink="/admin/products">
+      <span class="material-symbols-outlined">arrow_forward</span>
+      Đi tới trang sản phẩm
+    </a>
+  </section>
+
+  <section class="stats-row">
+    <article><span>Tổng</span><strong>{{ pageData.totalElements }}</strong></article>
+    <article><span>Đang bật</span><strong>{{ activeCount }}</strong></article>
+    <article><span>Đang ẩn</span><strong>{{ inactiveCount }}</strong></article>
+  </section>
+
+  <section class="variants-card" [class.is-loading]="loading">
+    <div class="table-headline">
+      <div>
+        <h2>Danh sách biến thể</h2>
+        <p *ngIf="selectedProduct">{{ selectedProduct.name }} · {{ pageData.totalElements }} biến thể</p>
+        <p *ngIf="!selectedProduct">Chọn sản phẩm để xem biến thể.</p>
+      </div>
+      <span class="loading-pill" *ngIf="loading || productLoading">Đang tải...</span>
+    </div>
+
+    <div class="compact-empty" *ngIf="!loading && selectedProductId && !variants.length && products.length">
+      <span class="material-symbols-outlined">tune</span>
+      <h3>Chưa có biến thể</h3>
+      <p>Thêm size hoặc biến thể để khách hàng lựa chọn khi đặt món.</p>
+      <div>
+        <button type="button" class="btn primary" (click)="openCreateDrawer()">
+          <span class="material-symbols-outlined">add</span>
+          Thêm biến thể
+        </button>
+        <button type="button" class="btn soft" (click)="createDefaultSizeSet()" [disabled]="saving">
+          <span class="material-symbols-outlined">auto_awesome</span>
+          Tạo size mẫu M/L/XL
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap" *ngIf="variants.length">
+      <table class="variants-table">
+        <thead>
+          <tr>
+            <th>Tên biến thể</th>
+            <th>Giá cộng thêm</th>
+            <th>Thứ tự hiển thị</th>
+            <th>Trạng thái</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let variant of variants; trackBy: trackVariant">
+            <td data-label="Tên biến thể">
+              <div class="variant-name">
+                <span class="variant-avatar">{{ variant.sizeLabel || variant.variantName.charAt(0) }}</span>
+                <div>
+                  <strong>{{ variant.variantName }}</strong>
+                  <small>{{ variant.variantCode }} · Giá cuối {{ formatCurrency(variant.finalPrice) }}</small>
+                </div>
+              </div>
+            </td>
+            <td data-label="Giá cộng thêm"><strong>{{ formatCurrency(variant.priceDelta) }}</strong></td>
+            <td data-label="Thứ tự"><span class="order-pill">#{{ variant.displayOrder }}</span></td>
+            <td data-label="Trạng thái">
+              <span class="status-badge" [class.inactive]="variant.status === 'INACTIVE'">
+                {{ variant.status === 'ACTIVE' ? 'Bật' : 'Ẩn' }}
+              </span>
+            </td>
+            <td data-label="Thao tác">
+              <div class="row-actions">
+                <button id="edit-variant-{{ variant.id }}" type="button" class="action-btn" (click)="openEditDrawer(variant)">Sửa</button>
+                <button id="toggle-variant-{{ variant.id }}" type="button" class="action-btn" (click)="toggleStatus(variant)">{{ variant.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}</button>
+                <button id="delete-variant-{{ variant.id }}" type="button" class="action-btn danger" (click)="deleteVariant(variant)">Xóa</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination-bar" *ngIf="pageData.totalElements > 0">
+      <div class="page-size-control">
+        <span>Hiển thị</span>
+        <select id="variant-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
+          <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+        </select>
+        <span>/ trang</span>
+      </div>
+      <div class="page-status">Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} biến thể</div>
+      <div class="page-actions">
+        <button id="variant-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading"><span class="material-symbols-outlined">chevron_left</span></button>
+        <button id="variant-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading"><span class="material-symbols-outlined">chevron_right</span></button>
+      </div>
+    </div>
+  </section>
+</section>
+
+<div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>
+<aside class="variant-drawer" [class.open]="drawerOpen" aria-label="Form biến thể">
+  <form [formGroup]="form" (ngSubmit)="saveVariant()">
+    <div class="drawer-head">
+      <div>
+        <span class="eyebrow">{{ selectedVariant ? 'Cập nhật' : 'Tạo mới' }}</span>
+        <h2>{{ selectedVariant ? selectedVariant.variantName : 'Thêm biến thể' }}</h2>
+      </div>
+      <button id="close-variant-drawer-btn" type="button" class="icon-btn" (click)="closeDrawer()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <label>Tên biến thể
+      <input id="variant-name-input" type="text" formControlName="variantName" placeholder="Ví dụ: Size L" />
+      <small *ngIf="form.controls.variantName.touched && form.controls.variantName.invalid">Tên biến thể bắt buộc, tối đa 100 ký tự.</small>
+    </label>
+
+    <label>Nhãn size
+      <input id="variant-size-input" type="text" formControlName="sizeLabel" placeholder="M / L / XL" />
+    </label>
+
+    <label>Giá cộng thêm
+      <input id="variant-price-delta-input" type="number" min="0" formControlName="priceDelta" placeholder="5000" />
+    </label>
+
+    <label>Thứ tự hiển thị
+      <input id="variant-display-order-input" type="number" min="0" formControlName="displayOrder" />
+    </label>
+
+    <div class="drawer-actions">
+      <button type="button" class="btn ghost" (click)="closeDrawer()" [disabled]="saving">Hủy</button>
+      <button id="save-variant-btn" type="submit" class="btn primary" [disabled]="saving">
+        <span class="material-symbols-outlined">save</span>
+        {{ saving ? 'Đang lưu...' : 'Lưu biến thể' }}
+      </button>
+    </div>
+  </form>
+</aside>

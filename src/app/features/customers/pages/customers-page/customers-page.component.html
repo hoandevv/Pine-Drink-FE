@@ -1,0 +1,97 @@
+<app-page-header title="Customers" description="Quản lý khách hàng và trạng thái tài khoản.">
+</app-page-header>
+
+<section class="customer-toolbar" aria-label="Customer tools">
+  <label class="search-box" for="customer-search">
+    <span class="material-symbols-outlined">search</span>
+    <input id="customer-search" type="search" [(ngModel)]="searchTerm" (keyup.enter)="onSearch()" placeholder="Tìm theo tên, username, email hoặc mã khách...">
+  </label>
+  <button type="button" class="toolbar-action" (click)="onSearch()">
+    <span class="material-symbols-outlined">manage_search</span>
+    Tìm kiếm
+  </button>
+  <button type="button" class="toolbar-ghost" (click)="refresh()">
+    <span class="material-symbols-outlined">refresh</span>
+    Làm mới
+  </button>
+  <div class="status-filter" aria-label="Customer status filter">
+    <button
+      *ngFor="let status of statuses"
+      type="button"
+      [class.active]="selectedStatus === status"
+      (click)="filterByStatus(status)">
+      {{ status }}
+    </button>
+  </div>
+  <div class="toolbar-summary" aria-label="Customer overview">
+    <span class="material-symbols-outlined">insights</span>
+    <strong>{{ customers.length }}</strong> khách hàng
+    <span class="dot"></span>
+    {{ activeCount }} hoạt động
+    <span class="dot"></span>
+    {{ pendingCount }} chờ
+    <span class="dot"></span>
+    {{ lockedCount }} khóa
+  </div>
+</section>
+
+<section class="customer-table-card">
+  <div class="table-head">
+    <div>Khách hàng</div>
+    <div>Username</div>
+    <div>Email</div>
+    <div>Mã khách</div>
+    <div>Lần đăng nhập</div>
+    <div>Trạng thái</div>
+    <div>Thao tác</div>
+  </div>
+
+  <article class="customer-row" *ngFor="let customer of customers">
+    <div class="identity-cell">
+      <div class="avatar">{{ customer.initials }}</div>
+      <div>
+        <h3>{{ customer.displayName }}</h3>
+        <p>{{ customer.roleCode || 'CUSTOMER' }}</p>
+      </div>
+    </div>
+
+    <div class="data-cell strong">{{ customer.username || '—' }}</div>
+    <div class="data-cell email">{{ customer.displayEmail }}</div>
+    <div class="data-cell code">{{ customer.customerCode }}</div>
+    <div class="data-cell muted">{{ customer.formattedLastLogin }}</div>
+    <em [class]="customer.statusClass">{{ customer.statusLabel }}</em>
+
+    <button type="button" class="icon-action" (click)="toggleCustomerLock(customer)" [attr.aria-label]="customer.status === 'LOCKED' ? 'Mở khóa khách hàng' : 'Khóa khách hàng'">
+      <span class="material-symbols-outlined">{{ customer.status === 'LOCKED' ? 'lock_open' : 'lock' }}</span>
+    </button>
+  </article>
+
+  <div class="empty-state" *ngIf="customers.length === 0 && !isLoading">
+    <span class="material-symbols-outlined">person_search</span>
+    <strong>Không tìm thấy khách hàng</strong>
+    <p>Thử đổi từ khóa tìm kiếm.</p>
+  </div>
+
+  <div class="pagination-bar" *ngIf="totalElements > 0">
+    <div class="page-size-control">
+      <span>Hiển thị</span>
+      <select [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
+        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+      </select>
+      <span>/ trang</span>
+    </div>
+
+    <div class="page-status">
+      Trang {{ currentPage + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} khách hàng
+    </div>
+
+    <div class="page-actions">
+      <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0 || isLoading">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage + 1 >= totalPages || isLoading">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+    </div>
+  </div>
+</section>

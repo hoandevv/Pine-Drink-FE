@@ -1,0 +1,90 @@
+<div class="admin-orders-container">
+  <!-- Header Section -->
+  <header class="page-header-saas">
+    <div class="header-main">
+      <div class="title-group">
+        <div class="title-row">
+          <h1>Orders</h1>
+          <div class="live-status">
+            <span class="pulse-dot"></span>
+            <span class="status-text">LIVE</span>
+            <span class="last-update">Updated 2m ago</span>
+          </div>
+        </div>
+        <p class="subtitle">Realtime order operations, payment tracking and fulfillment workflow.</p>
+      </div>
+      
+      <div class="header-actions">
+        <button class="btn-secondary" (click)="refreshData()">
+          <span class="material-symbols-outlined">refresh</span>
+          Refresh
+        </button>
+        <button class="btn-secondary">
+          <span class="material-symbols-outlined">ios_share</span>
+          Export
+        </button>
+        <button class="btn-primary">
+          <span class="material-symbols-outlined">add_circle</span>
+          Create Order
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- KPI Stats -->
+  <app-order-stats [stats]="stats"></app-order-stats>
+
+  <!-- View Controls & Tabs -->
+  <div class="view-controls-row">
+    <nav class="order-tabs">
+      <button *ngFor="let tab of tabs" 
+              class="tab-btn" 
+              [class.active]="activeTab === tab.value"
+              (click)="onTabChange(tab.value)">
+        {{ tab.label }}
+        <span class="count-badge">{{ tab.count }}</span>
+      </button>
+    </nav>
+
+    <div class="view-toggle">
+      <button [class.active]="viewMode === 'table'" (click)="toggleView('table')" title="Table View">
+        <span class="material-symbols-outlined">table_chart</span>
+      </button>
+      <button [class.active]="viewMode === 'kanban'" (click)="toggleView('kanban')" title="Kanban View">
+        <span class="material-symbols-outlined">view_kanban</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Advanced Filters -->
+  <app-order-filter-bar (filterChange)="onFilterChange($event)"></app-order-filter-bar>
+
+  <!-- Main Content Area -->
+  <main class="orders-main-content">
+    <ng-container [ngSwitch]="viewMode">
+      <!-- Table View -->
+      <app-order-table 
+        *ngSwitchCase="'table'"
+        [orders]="orders"
+        (rowClick)="openDetail($event)"
+        (actionClick)="openDetail($event.order)">
+      </app-order-table>
+
+      <!-- Kanban View -->
+      <app-order-kanban
+        *ngSwitchCase="'kanban'"
+        [orders]="orders"
+        (cardClick)="openDetail($event)"
+        (statusChange)="onStatusChange($event)">
+      </app-order-kanban>
+    </ng-container>
+  </main>
+</div>
+
+<!-- Detail Drawer -->
+<app-order-detail-drawer
+  [order]="selectedOrder"
+  [isOpen]="isDrawerOpen"
+  (close)="closeDrawer()"
+  (statusChange)="onStatusChange($event)">
+</app-order-detail-drawer>

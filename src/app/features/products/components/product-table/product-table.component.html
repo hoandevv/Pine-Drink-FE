@@ -1,0 +1,38 @@
+<div class="table-card card-surface">
+  <div class="table-scroll" *ngIf="products.length > 0; else emptyBlock">
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Status</th>
+          <th>Updated</th>
+          <th class="actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let product of products; trackBy: trackById">
+          <td>{{ product.code }}</td>
+          <td>
+            <strong>{{ product.name }}</strong>
+            <p>{{ product.description || 'No description' }}</p>
+          </td>
+          <td>{{ product.categoryName || product.categoryId }}</td>
+          <td>{{ product.price | number }} VND</td>
+          <td><span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status }}</span></td>
+          <td>{{ product.updatedAt || product.createdAt || '-' }}</td>
+          <td class="actions-col">
+            <button type="button" class="btn btn-secondary btn-small" (click)="edit.emit(product.id)">Edit</button>
+            <button type="button" class="btn btn-danger btn-small" (click)="delete.emit(product.id)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #emptyBlock>
+    <app-empty-state title="Chua co product" description="Tao san pham dau tien hoac thu lai voi bo loc khac."></app-empty-state>
+  </ng-template>
+</div>

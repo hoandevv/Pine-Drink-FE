@@ -1,0 +1,27 @@
+<nav class="admin-pagination" aria-label="Phân trang quản trị">
+  <div class="admin-pagination__status" aria-live="polite">
+    <span class="desktop-status">{{ statusText }}</span>
+    <span class="mobile-status">
+      <strong>{{ mobilePageText }}</strong>
+      <small *ngIf="mobileCountText">{{ mobileCountText }}</small>
+    </span>
+  </div>
+
+  <label class="admin-pagination__size" *ngIf="showPageSize">
+    <span>Hiển thị</span>
+    <select aria-label="Số dòng mỗi trang" [ngModel]="pageSize" (ngModelChange)="changePageSize($event)"
+      [disabled]="disabled">
+      <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+    </select>
+    <span>/ trang</span>
+  </label>
+
+  <div class="admin-pagination__actions">
+    <button type="button" aria-label="Trang trước" (click)="previous()" [disabled]="previousDisabled">
+      <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+    </button>
+    <button type="button" aria-label="Trang sau" (click)="next()" [disabled]="nextDisabled">
+      <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+    </button>
+  </div>
+</nav>

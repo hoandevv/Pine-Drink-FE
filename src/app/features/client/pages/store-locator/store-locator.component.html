@@ -1,0 +1,205 @@
+<div class="store-locator-page">
+  <!-- Left Panel: Branch List -->
+  <div class="branch-list-panel">
+    <div class="panel-header">
+      <h1>Chọn chi nhánh gần bạn</h1>
+      <p>Tìm cửa hàng Pine Drink gần nhất để đặt hàng</p>
+    </div>
+
+    <!-- Search Box -->
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input 
+        type="text" 
+        placeholder="Nhập quận, đường hoặc tên chi nhánh..." 
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange()"
+      />
+    </div>
+
+    <!-- Filter Chips -->
+    <div class="filter-chips">
+      <button 
+        type="button" 
+        [class.active]="filterNearby"
+        (click)="toggleFilter('nearby')"
+        [title]="userLocation ? 'Sắp xếp chi nhánh gần vị trí của bạn' : 'Bấm để định vị và sắp xếp chi nhánh gần bạn'"
+      >
+        <span class="material-symbols-outlined">near_me</span>
+        Gần tôi
+      </button>
+      <button 
+        type="button" 
+        [class.active]="filterOpen"
+        (click)="toggleFilter('open')"
+      >
+        <span class="material-symbols-outlined">schedule</span>
+        Đang mở cửa
+      </button>
+      <button 
+        type="button" 
+        [class.active]="filterPickup"
+        (click)="toggleFilter('pickup')"
+      >
+        <span class="material-symbols-outlined">shopping_bag</span>
+        Có pickup
+      </button>
+      <button 
+        type="button" 
+        [class.active]="filterDelivery"
+        (click)="toggleFilter('delivery')"
+      >
+        <span class="material-symbols-outlined">local_shipping</span>
+        Có delivery
+      </button>
+    </div>
+
+    <div *ngIf="filterNearby" class="nearby-insight">
+      <span class="material-symbols-outlined">my_location</span>
+      <div>
+        <strong>Đang ưu tiên chi nhánh gần bạn</strong>
+        <p>{{ userLocation ? 'Danh sách đã được sắp xếp theo khoảng cách.' : 'Cho phép trình duyệt truy cập vị trí để Pine Drink gợi ý chính xác hơn.' }}</p>
+      </div>
+    </div>
+
+    <!-- Branch Cards -->
+    <div class="branch-cards">
+      <article 
+        *ngFor="let branch of filteredBranches" 
+        class="branch-card"
+        [class.selected]="selectedBranch?.id === branch.id"
+        (click)="selectBranch(branch)"
+      >
+        <div class="branch-header">
+          <div>
+            <h3>{{ branch.name }}</h3>
+            <span class="distance-badge" [class.has-distance]="userLocation">{{ distanceLabel(branch) }}</span>
+          </div>
+          <div class="branch-actions-top">
+            <span class="status-badge" [class]="getStatusClass(branch)">
+              {{ getStatusText(branch) }}
+            </span>
+            <button type="button" class="branch-chat-btn" (click)="openBranchChat(branch, $event)" aria-label="Chat với chi nhánh">
+              <span class="material-symbols-outlined">support_agent</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="branch-info">
+          <div class="info-row">
+            <span class="material-symbols-outlined">location_on</span>
+            <p>{{ branch.address || 'Chưa cập nhật địa chỉ' }}</p>
+          </div>
+          <div class="info-row hours-row">
+            <span class="material-symbols-outlined">schedule</span>
+            <p>{{ getTodayHoursLabel(branch) }}</p>
+          </div>
+          <div class="info-row">
+            <span class="material-symbols-outlined">timer</span>
+            <p>Chuẩn bị khoảng {{ getPreparationText(branch) }}</p>
+          </div>
+          <div class="info-row">
+            <span class="material-symbols-outlined">phone</span>
+            <p>{{ branch.phone || branch.email || 'Chưa cập nhật liên hệ' }}</p>
+          </div>
+        </div>
+
+        <div class="branch-services">
+          <span *ngIf="branch.supportsPickup" class="service-tag">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            Pickup
+          </span>
+          <span *ngIf="branch.supportsDelivery" class="service-tag">
+            <span class="material-symbols-outlined">local_shipping</span>
+            Delivery
+          </span>
+          <span class="service-tag time">
+            <span class="material-symbols-outlined">timer</span>
+            {{ getPreparationText(branch) }}
+          </span>
+        </div>
+
+        <button class="hours-toggle" type="button" (click)="toggleHours(branch, $event)">
+          <span class="material-symbols-outlined">calendar_month</span>
+          {{ isHoursExpanded(branch) ? 'Ẩn giờ mở cửa' : 'Xem giờ mở cửa' }}
+          <span class="material-symbols-outlined chevron" [class.open]="isHoursExpanded(branch)">expand_more</span>
+        </button>
+
+        <div *ngIf="isHoursExpanded(branch)" class="weekly-hours" (click)="$event.stopPropagation()">
+          <div class="weekly-hours-title">Giờ mở cửa tuần này</div>
+          <div
+            *ngFor="let hours of getWeeklyHours(branch)"
+            class="weekly-hours-row"
+            [class.today]="isToday(hours)"
+            [class.closed]="hours.closed"
+          >
+            <span>{{ getDayLabel(hours.dayOfWeek) }}</span>
+            <strong>{{ getHoursRangeLabel(hours) }}</strong>
+          </div>
+          <p *ngIf="getWeeklyHours(branch).length === 0" class="hours-empty">Chi nhánh chưa cập nhật lịch tuần.</p>
+        </div>
+
+        <button 
+          class="primary-button full-width" 
+          (click)="confirmBranch(branch); $event.stopPropagation()"
+        >
+          Chọn chi nhánh này
+        </button>
+      </article>
+
+      <!-- Empty State -->
+      <div *ngIf="loading" class="empty-state">
+        <span class="material-symbols-outlined">progress_activity</span>
+        <h3>Đang tải chi nhánh</h3>
+        <p>Dữ liệu đang được đồng bộ từ hệ thống.</p>
+      </div>
+
+      <div *ngIf="!loading && filteredBranches.length === 0" class="empty-state">
+        <span class="material-symbols-outlined">location_off</span>
+        <h3>Không tìm thấy chi nhánh</h3>
+        <p>Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Map -->
+  <div class="map-panel">
+    <div class="map-container">
+      <div class="map-mode-bar" aria-label="Chế độ bản đồ">
+        <button type="button" [class.active]="activeMapMode === 'street'" (click)="setMapMode('street')">
+          <span class="material-symbols-outlined">map</span>
+          Phố
+        </button>
+        <button type="button" [class.active]="activeMapMode === 'satellite'" (click)="setMapMode('satellite')">
+          <span class="material-symbols-outlined">satellite_alt</span>
+          Vệ tinh
+        </button>
+        <button type="button" [class.active]="activeMapMode === 'light'" (click)="setMapMode('light')">
+          <span class="material-symbols-outlined">light_mode</span>
+          Sáng
+        </button>
+        <button type="button" [class.active]="activeMapMode === 'dark'" (click)="setMapMode('dark')">
+          <span class="material-symbols-outlined">dark_mode</span>
+          Tối
+        </button>
+      </div>
+
+      <div class="map-toolbox" aria-label="Điều khiển bản đồ">
+        <button type="button" (click)="zoomIn()" aria-label="Phóng to bản đồ">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+        <button type="button" (click)="zoomOut()" aria-label="Thu nhỏ bản đồ">
+          <span class="material-symbols-outlined">remove</span>
+        </button>
+        <button type="button" (click)="locateUser()" aria-label="Định vị tôi">
+          <span class="material-symbols-outlined">my_location</span>
+        </button>
+        <button type="button" (click)="resetMapView()" aria-label="Xem toàn bộ chi nhánh">
+          <span class="material-symbols-outlined">fullscreen</span>
+        </button>
+      </div>
+
+      <div id="store-locator-map" class="interactive-map"></div>
+    </div>
+  </div>
+</div>

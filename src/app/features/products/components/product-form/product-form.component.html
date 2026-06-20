@@ -1,0 +1,181 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="product-editor">
+  <section class="editor-panel form-panel">
+    <div class="panel-heading">
+      <span class="heading-icon material-symbols-outlined">inventory_2</span>
+      <div>
+        <p>{{ isEditMode ? 'Product update' : 'New product' }}</p>
+        <h3>{{ isEditMode ? 'Chỉnh thông tin sản phẩm' : 'Thông tin sản phẩm' }}</h3>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">badge</span>
+        <div>
+          <h4>Thông tin chính</h4>
+          <p>Tên, danh mục và giá bán hiển thị trên menu. Mã sản phẩm do hệ thống tự sinh.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Tên sản phẩm</span>
+          <input id="product-name-input" type="text" formControlName="name" placeholder="VD: Matcha Latte Dứa" />
+          <small *ngIf="form.get('name')?.touched && form.get('name')?.invalid">Vui lòng nhập tên sản phẩm.</small>
+        </label>
+
+        <label>
+          <span>Giá bán</span>
+          <input id="product-price-input" type="number" min="0" formControlName="price" placeholder="45000" />
+          <small *ngIf="form.get('price')?.touched && form.get('price')?.invalid">Giá bán phải lớn hơn 0.</small>
+        </label>
+
+        <label>
+          <span>Danh mục</span>
+          <select id="product-category-select" formControlName="categoryId">
+            <option value="">Chọn danh mục</option>
+            <option *ngFor="let category of categories" [value]="category.value">{{ category.label }}</option>
+          </select>
+          <small *ngIf="form.get('categoryId')?.touched && form.get('categoryId')?.invalid">Vui lòng chọn danh mục.</small>
+        </label>
+      </div>
+    </div>
+
+    <div class="section-card accent-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">tune</span>
+        <div>
+          <h4>Cấu hình bán hàng</h4>
+          <p>Thiết lập thời gian pha chế, mức đá, mức đường và nhãn nổi bật.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <label>
+          <span>Thời gian pha chế (phút)</span>
+          <input id="product-preparation-input" type="number" min="0" formControlName="preparationMinutes" placeholder="5" />
+        </label>
+
+        <label *ngIf="isEditMode">
+          <span>Trạng thái</span>
+          <select id="product-status-select" formControlName="status">
+            <option value="ACTIVE">Đang bán</option>
+            <option value="INACTIVE">Tạm ẩn</option>
+            <option value="OUT_OF_STOCK">Hết hàng</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Mức đá hỗ trợ</span>
+          <input id="product-ice-levels-input" type="text" formControlName="availableIceLevels" placeholder="0,30,50,70,100" />
+        </label>
+
+        <label>
+          <span>Mức đường hỗ trợ</span>
+          <input id="product-sugar-levels-input" type="text" formControlName="availableSugarLevels" placeholder="0,30,50,70,100" />
+        </label>
+      </div>
+
+      <div class="toggle-grid">
+        <label class="toggle-card">
+          <input id="product-featured-toggle" type="checkbox" formControlName="featured" />
+          <span class="toggle-visual material-symbols-outlined">workspace_premium</span>
+          <strong>Nổi bật</strong>
+          <em>Đẩy sản phẩm lên khu vực highlight.</em>
+        </label>
+
+        <label class="toggle-card">
+          <input id="product-best-seller-toggle" type="checkbox" formControlName="bestSeller" />
+          <span class="toggle-visual material-symbols-outlined">local_fire_department</span>
+          <strong>Bán chạy</strong>
+          <em>Gắn nhãn best seller trên menu.</em>
+        </label>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span class="material-symbols-outlined">image</span>
+        <div>
+          <h4>Nội dung hiển thị</h4>
+          <p>Ảnh và mô tả giúp card sản phẩm trông chuyên nghiệp hơn.</p>
+        </div>
+      </div>
+
+      <div class="image-uploader">
+        <label class="upload-preview" for="product-image-file-input">
+          <img *ngIf="previewSource; else uploadPlaceholder" [src]="previewSource" [alt]="form.get('name')?.value || 'Ảnh sản phẩm'" />
+          <ng-template #uploadPlaceholder>
+            <span class="material-symbols-outlined">add_photo_alternate</span>
+            <strong>Chưa có ảnh</strong>
+            <em>Nhấn để chọn ảnh</em>
+          </ng-template>
+        </label>
+
+        <div class="upload-controls">
+          <div class="upload-copy">
+            <span class="eyebrow">Product media</span>
+            <h5>Upload ảnh sản phẩm</h5>
+            <p>Ảnh vuông hoặc ngang nhẹ giúp card menu sắc nét và chuyên nghiệp hơn.</p>
+          </div>
+          <label class="upload-button" for="product-image-file-input">
+            <span class="material-symbols-outlined">upload</span>
+            Tải ảnh lên
+          </label>
+          <input id="product-image-file-input" class="file-input" type="file" accept="image/*" (change)="selectImage($event)" />
+          <p class="upload-hint">Hỗ trợ JPG, PNG, WebP. Nên dùng ảnh rõ nét, nền sạch.</p>
+        </div>
+      </div>
+
+      <label>
+        <span>Mô tả</span>
+        <textarea id="product-description-input" rows="5" formControlName="description" placeholder="Mô tả hương vị, size, topping gợi ý..."></textarea>
+      </label>
+    </div>
+
+    <div class="form-actions">
+      <button id="cancel-product-button" type="button" class="btn ghost-btn" (click)="cancel()" [disabled]="submitting">
+        Hủy
+      </button>
+      <button id="save-product-button" type="submit" class="btn save-btn" [disabled]="submitting">
+        <span class="material-symbols-outlined">{{ submitting ? 'progress_activity' : 'check_circle' }}</span>
+        {{ submitting ? 'Đang lưu...' : (isEditMode ? 'Lưu thay đổi' : 'Tạo sản phẩm') }}
+      </button>
+    </div>
+  </section>
+
+  <aside class="editor-panel preview-panel" aria-label="Xem trước sản phẩm">
+    <div class="preview-card">
+      <div class="preview-media">
+        <img *ngIf="previewSource; else previewIcon" [src]="previewSource" [alt]="form.get('name')?.value || 'Product preview'" />
+        <ng-template #previewIcon>
+          <div class="preview-mark">
+            <span class="material-symbols-outlined">local_cafe</span>
+          </div>
+        </ng-template>
+        <em>
+          {{ isEditMode && form.get('status')?.value === 'INACTIVE' ? 'Tạm ẩn' : (isEditMode && form.get('status')?.value === 'OUT_OF_STOCK' ? 'Hết hàng' : 'Đang bán') }}
+        </em>
+      </div>
+      <div class="preview-body">
+        <span>{{ selectedCategoryLabel }}</span>
+        <h3>{{ form.get('name')?.value || 'Tên sản phẩm' }}</h3>
+        <p>{{ form.get('description')?.value || 'Mô tả ngắn sẽ hiển thị tại đây để nhân viên xem nhanh trước khi lưu.' }}</p>
+        <strong>{{ (form.get('price')?.value || 0) | number }} VND</strong>
+        <div class="preview-tags">
+          <small *ngIf="form.get('preparationMinutes')?.value">{{ form.get('preparationMinutes')?.value }} phút</small>
+          <small *ngIf="form.get('featured')?.value">Nổi bật</small>
+          <small *ngIf="form.get('bestSeller')?.value">Best seller</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips-box">
+      <span class="material-symbols-outlined">tips_and_updates</span>
+      <div>
+        <h4>Gợi ý nhập nhanh</h4>
+        <p>Mã sản phẩm được backend tự sinh. Mức đá/đường nhập dạng số cách nhau bằng dấu phẩy, ví dụ 0,30,50,70,100.</p>
+      </div>
+    </div>
+  </aside>
+</form>

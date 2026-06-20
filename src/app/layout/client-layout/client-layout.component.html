@@ -1,0 +1,139 @@
+<header class="client-nav" [class.mobile-open]="isMobileNavOpen">
+  <a routerLink="/" class="brand" (click)="closeMobileNav()"><span>Pine Drink</span></a>
+
+  <nav class="nav-links" [class.is-open]="isMobileNavOpen" aria-label="Điều hướng chính">
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileNav()">Trang chủ</a>
+    <a routerLink="/menu" routerLinkActive="active" (click)="closeMobileNav()">Menu</a>
+    <a routerLink="/promotions" routerLinkActive="active" (click)="closeMobileNav()">Khuyến mãi</a>
+    <a routerLink="/track-order" routerLinkActive="active" (click)="closeMobileNav()">Theo dõi đơn</a>
+    <a routerLink="/stores" routerLinkActive="active" (click)="closeMobileNav()">Cửa hàng</a>
+    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị" (click)="closeMobileNav()">
+      <span class="material-symbols-outlined">admin_panel_settings</span>
+      <span>Quản trị</span>
+    </a>
+
+    <div class="mobile-user-panel">
+      <ng-container *ngIf="isLoggedIn; else mobileGuestActions">
+        <a class="user-chip" routerLink="/profile" (click)="closeMobileNav()">
+          <span class="material-symbols-outlined">account_circle</span>
+          <span>{{ userDisplayName }}</span>
+        </a>
+        <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
+      </ng-container>
+      <ng-template #mobileGuestActions>
+        <a routerLink="/auth/login" class="login-button" (click)="closeMobileNav()">Login</a>
+      </ng-template>
+    </div>
+  </nav>
+
+  <div class="nav-actions">
+    <button class="cart-button" type="button" aria-label="Giỏ hàng" routerLink="/cart" (click)="closeMobileNav()">
+      <span class="material-symbols-outlined">shopping_bag</span>
+      <strong [attr.data-count]="cartCount">{{ cartCount }}</strong>
+    </button>
+    <ng-container *ngIf="isLoggedIn; else guestActions">
+      <a class="user-chip" routerLink="/profile" aria-label="Tài khoản" (click)="closeMobileNav()">
+        <span class="material-symbols-outlined">account_circle</span>
+        <span>{{ userDisplayName }}</span>
+        <span class="material-symbols-outlined user-chip__chevron">expand_more</span>
+      </a>
+      <button class="ghost-button" type="button" (click)="logout()">Đăng xuất</button>
+    </ng-container>
+    <ng-template #guestActions>
+      <a routerLink="/auth/login" class="login-button">Login</a>
+    </ng-template>
+    <button class="mobile-menu-button" type="button" aria-label="Mở menu" [attr.aria-expanded]="isMobileNavOpen" (click)="toggleMobileNav()">
+      <span class="material-symbols-outlined">{{ isMobileNavOpen ? 'close' : 'menu' }}</span>
+    </button>
+  </div>
+</header>
+<div class="mobile-nav-overlay" [class.is-open]="isMobileNavOpen" (click)="closeMobileNav()" aria-hidden="true"></div>
+
+<main class="client-page">
+  <router-outlet></router-outlet>
+</main>
+
+
+<footer class="client-footer">
+  <div class="footer-content">
+    <!-- Brand Section -->
+    <div class="footer-brand">
+      <div class="brand-logo">
+        <span class="brand-mark">P</span>
+        <strong>Pine Drink</strong>
+      </div>
+      <p>Thương hiệu F&B hiện đại cho thế hệ mới. Đem lại trải nghiệm thưởng thức đồ uống nhanh chóng và chất lượng nhất.</p>
+      <div class="social-links">
+        <a href="#" aria-label="Facebook" target="_blank">
+          <span class="material-symbols-outlined">facebook</span>
+        </a>
+        <a href="#" aria-label="Instagram" target="_blank">
+          <span class="material-symbols-outlined">photo_camera</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <div class="footer-section">
+      <h4>Menu</h4>
+      <ul>
+        <li><a routerLink="/menu">Thực đơn</a></li>
+        <li><a routerLink="/promotions">Khuyến mãi</a></li>
+        <li><a routerLink="/track-order">Theo dõi đơn hàng</a></li>
+        <li><a routerLink="/stores">Cửa hàng</a></li>
+      </ul>
+    </div>
+
+    <!-- About Section -->
+    <div class="footer-section">
+      <h4>Về chúng tôi</h4>
+      <ul>
+        <li><a href="#">About Us</a></li>
+        <li><a href="#">Sustainability</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Blog</a></li>
+      </ul>
+    </div>
+
+    <!-- Policies Section -->
+    <div class="footer-section">
+      <h4>Chính sách</h4>
+      <ul>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+        <li><a href="#">Refund Policy</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="footer-section">
+      <h4>Liên hệ</h4>
+      <ul class="contact-info">
+        <li>
+          <span class="material-symbols-outlined">call</span>
+          <span>Hotline: 1900 1234</span>
+        </li>
+        <li>
+          <span class="material-symbols-outlined">mail</span>
+          <span>hello@pinedrink.com</span>
+        </li>
+        <li>
+          <span class="material-symbols-outlined">schedule</span>
+          <span>7:00 - 22:00 hàng ngày</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Copyright -->
+  <div class="footer-bottom">
+    <p>© 2024 Pine Drink F&B Startup. All rights reserved.</p>
+  </div>
+</footer>
+
+<a *ngIf="!isChatPage" class="client-chat-fab" [routerLink]="['/chat']" [queryParams]="chatQueryParams" aria-label="Nhắn tin với Pine Drink">
+  <span class="material-symbols-outlined">support_agent</span>
+</a>
+
+<button class="mobile-cart" type="button" routerLink="/cart"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>
