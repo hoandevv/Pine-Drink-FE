@@ -102,8 +102,8 @@ import { Order, OrderStatus } from '../models/order.model';
         </div>
 
         <footer class="drawer-footer" *ngIf="order">
-          <button class="btn-secondary danger" (click)="statusChange.emit({order: order, status: 'CANCELLED'})">
-            Cancel Order
+          <button class="btn-secondary danger" (click)="statusChange.emit({order: order, status: 'REJECTED'})">
+            Reject Order
           </button>
           <div class="main-actions">
             <button class="btn-secondary">
