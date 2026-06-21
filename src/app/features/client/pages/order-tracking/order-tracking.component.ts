@@ -39,6 +39,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   realtimeNotice = '';
   expiryCountdownText = '';
   expiryProgress = 0;
+  infoExpanded = false;
   private readonly orderExpireMinutes = 15;
   private countdownTimerId?: ReturnType<typeof setInterval>;
   private readonly subscriptions = new Subscription();
@@ -78,6 +79,10 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
 
   get isLoggedIn(): boolean {
     return this.authService.isAuthenticated();
+  }
+
+  toggleInfoExpanded(): void {
+    this.infoExpanded = !this.infoExpanded;
   }
 
   loadRecentOrders(): void {
@@ -151,6 +156,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.searchOrderNumber = trackingOrder.orderNumber;
     this.searchError = '';
     this.realtimeNotice = '';
+    this.infoExpanded = false;
     this.buildOrderStatuses(trackingOrder);
     this.subscribeCurrentOrder(previousOrderId);
     this.startExpiryCountdown();
@@ -351,26 +357,26 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     const colors: { [key: string]: string } = {
       PENDING: '#f59e0b',
       CONFIRMED: '#3b82f6',
-      PREPARING: '#8b5cf6',
-      READY: '#10b981',
+      PREPARING: '#f97316',
+      READY: '#a855f7',
       DELIVERING: '#06b6d4',
-      COMPLETED: '#22c55e',
+      COMPLETED: '#10b981',
       CANCELLED: '#ef4444',
-      REJECTED: '#ef4444'
+      REJECTED: '#ec4899'
     };
     return colors[status] || '#69725F';
   }
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      PENDING: 'Chờ xác nhận',
+      PENDING: 'Đã đặt hàng',
       CONFIRMED: 'Đã xác nhận',
       PREPARING: 'Đang chuẩn bị',
       READY: 'Sẵn sàng',
       DELIVERING: 'Đang giao',
       COMPLETED: 'Hoàn thành',
       CANCELLED: 'Đã hủy',
-      REJECTED: 'Đã từ chối'
+      REJECTED: 'Tự động từ chối'
     };
     return labels[status] || status;
   }
@@ -407,6 +413,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     this.realtimeNotice = '';
     this.expiryCountdownText = '';
     this.expiryProgress = 0;
+    this.infoExpanded = false;
     this.stopExpiryCountdown();
     this.orderStatuses = [];
   }
