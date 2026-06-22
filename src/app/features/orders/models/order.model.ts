@@ -38,6 +38,9 @@ export interface OrderItemTopping {
   toppingName?: string;
   name?: string;
   price: number;
+  unitPrice?: number;
+  totalPrice?: number;
+  quantity?: number;
 }
 
 export interface OrderItem {
@@ -64,8 +67,10 @@ export interface OrderItem {
   toppings: OrderItemTopping[];
 }
 
+export type TimelineStatus = OrderStatus | 'PAID';
+
 export interface OrderTimeline {
-  status: OrderStatus;
+  status: TimelineStatus;
   time: string;
   note?: string;
 }
@@ -109,5 +114,9 @@ export interface Order {
   cancelledAt?: string;
   rejectedAt?: string;
   cancelReason?: string;
+  rejectReason?: string;
+  expiryReason?: string;
+  expiresAt?: string;
+  autoRejected?: boolean;
 }
 

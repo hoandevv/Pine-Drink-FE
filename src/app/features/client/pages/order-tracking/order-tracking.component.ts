@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { finalize } from 'rxjs';
+import { Subscription, finalize } from 'rxjs';
 
 import { Order, OrderItem } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
+import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../../orders/services/order-realtime.service';
 import { AuthService } from '../../../../core/services/auth.service';
 
 interface OrderStatusStep {
@@ -28,17 +29,25 @@ type TrackingOrder = Order & {
   templateUrl: './order-tracking.component.html',
   styleUrls: ['./order-tracking.component.scss']
 })
-export class OrderTrackingComponent implements OnInit {
+export class OrderTrackingComponent implements OnInit, OnDestroy {
   searchOrderNumber = '';
   currentOrder: TrackingOrder | null = null;
   recentOrders: TrackingOrder[] = [];
   orderStatuses: OrderStatusStep[] = [];
   searchError = '';
   loading = false;
+  realtimeNotice = '';
+  expiryCountdownText = '';
+  expiryProgress = 0;
+  infoExpanded = false;
+  private readonly orderExpireMinutes = 15;
+  private countdownTimerId?: ReturnType<typeof setInterval>;
+  private readonly subscriptions = new Subscription();
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly orderService: OrderService,
+    private readonly orderRealtimeService: OrderRealtimeService,
     private readonly authService: AuthService
   ) {}
 
@@ -48,17 +57,32 @@ export class OrderTrackingComponent implements OnInit {
     }
 
     this.loadRecentOrders();
+    this.listenOrderRealtime();
 
-    this.route.paramMap.subscribe(params => {
-      const orderId = params.get('orderId');
-      if (orderId) {
-        this.searchByOrderId(orderId);
-      }
-    });
+    this.subscriptions.add(
+      this.route.paramMap.subscribe(params => {
+        const orderId = params.get('orderId');
+        if (orderId) {
+          this.searchByOrderId(orderId);
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.stopExpiryCountdown();
+    this.subscriptions.unsubscribe();
+    if (this.currentOrder?.id) {
+      this.orderRealtimeService.unsubscribeOrder(this.currentOrder.id);
+    }
   }
 
   get isLoggedIn(): boolean {
     return this.authService.isAuthenticated();
+  }
+
+  toggleInfoExpanded(): void {
+    this.infoExpanded = !this.infoExpanded;
   }
 
   loadRecentOrders(): void {
@@ -126,11 +150,16 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   private setCurrentOrder(order: Order): void {
+    const previousOrderId = this.currentOrder?.id;
     const trackingOrder = this.toTrackingOrder(order);
     this.currentOrder = trackingOrder;
     this.searchOrderNumber = trackingOrder.orderNumber;
     this.searchError = '';
+    this.realtimeNotice = '';
+    this.infoExpanded = false;
     this.buildOrderStatuses(trackingOrder);
+    this.subscribeCurrentOrder(previousOrderId);
+    this.startExpiryCountdown();
   }
 
   private toTrackingOrder(order: Order): TrackingOrder {
@@ -169,9 +198,120 @@ export class OrderTrackingComponent implements OnInit {
     if (order.status === 'CANCELLED' || order.status === 'REJECTED') {
       this.orderStatuses = [
         { key: 'PENDING', label: 'Đã đặt hàng', icon: 'receipt_long', completed: true },
-        { key: order.status, label: order.status === 'CANCELLED' ? 'Đã hủy' : 'Đã từ chối', icon: 'cancel', completed: true }
+        {
+          key: order.status,
+          label: order.status === 'CANCELLED' ? 'Đã hủy' : 'Tự động từ chối',
+          icon: order.status === 'CANCELLED' ? 'cancel' : 'timer_off',
+          completed: true
+        }
       ];
     }
+  }
+
+  getRejectionReason(order: TrackingOrder): string {
+    return order.rejectReason || order.expiryReason || order.cancelReason || order.note || 'Đơn hàng quá thời gian xác nhận nên hệ thống đã tự động từ chối và hoàn lại tồn kho.';
+  }
+
+  getExpiryTime(order: TrackingOrder): Date | null {
+    const source = order.expiresAt || order.createdAt;
+    if (!source) {
+      return null;
+    }
+
+    const baseTime = new Date(source).getTime();
+    if (Number.isNaN(baseTime)) {
+      return null;
+    }
+
+    return order.expiresAt
+      ? new Date(baseTime)
+      : new Date(baseTime + this.orderExpireMinutes * 60 * 1000);
+  }
+
+  private startExpiryCountdown(): void {
+    this.stopExpiryCountdown();
+    this.updateExpiryCountdown();
+
+    if (this.currentOrder?.status === 'PENDING') {
+      this.countdownTimerId = setInterval(() => this.updateExpiryCountdown(), 1000);
+    }
+  }
+
+  private stopExpiryCountdown(): void {
+    if (this.countdownTimerId) {
+      clearInterval(this.countdownTimerId);
+      this.countdownTimerId = undefined;
+    }
+  }
+
+  private updateExpiryCountdown(): void {
+    if (!this.currentOrder || this.currentOrder.status !== 'PENDING') {
+      this.expiryCountdownText = '';
+      this.expiryProgress = 0;
+      this.stopExpiryCountdown();
+      return;
+    }
+
+    const expiresAt = this.getExpiryTime(this.currentOrder);
+    if (!expiresAt) {
+      this.expiryCountdownText = '';
+      this.expiryProgress = 0;
+      return;
+    }
+
+    const now = Date.now();
+    const remainingMs = Math.max(0, expiresAt.getTime() - now);
+    const totalMs = this.orderExpireMinutes * 60 * 1000;
+    const minutes = Math.floor(remainingMs / 60000);
+    const seconds = Math.floor((remainingMs % 60000) / 1000);
+
+    this.expiryCountdownText = remainingMs > 0
+      ? `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      : '00:00';
+    this.expiryProgress = Math.min(100, Math.max(0, ((totalMs - remainingMs) / totalMs) * 100));
+  }
+
+  private listenOrderRealtime(): void {
+    this.subscriptions.add(
+      this.orderRealtimeService.orderEvents$.subscribe(event => this.applyRealtimeEvent(event))
+    );
+
+    this.orderRealtimeService.connect();
+  }
+
+  private subscribeCurrentOrder(previousOrderId?: string): void {
+    const currentOrderId = this.currentOrder?.id;
+    if (!currentOrderId) {
+      return;
+    }
+
+    if (previousOrderId && previousOrderId !== currentOrderId) {
+      this.orderRealtimeService.unsubscribeOrder(previousOrderId);
+    }
+
+    this.orderRealtimeService.subscribeOrder(currentOrderId);
+  }
+
+  private applyRealtimeEvent(event: OrderRealtimeEnvelope): void {
+    const incoming = (event.payload || event.data || {}) as Partial<Order>;
+    const incomingId = incoming.id || event.targetId;
+    if (!this.currentOrder || incomingId !== this.currentOrder.id) {
+      return;
+    }
+
+    const merged = this.toTrackingOrder({ ...this.currentOrder, ...incoming } as Order);
+    this.currentOrder = merged;
+    this.buildOrderStatuses(merged);
+
+    if (merged.status === 'REJECTED') {
+      this.realtimeNotice = 'Đơn hàng đã quá hạn xác nhận và vừa được hệ thống tự động từ chối.';
+    }
+
+    this.startExpiryCountdown();
+
+    this.recentOrders = this.recentOrders.map(order =>
+      order.id === merged.id ? merged : order
+    );
   }
 
   getItemName(item: OrderItem): string {
@@ -201,9 +341,9 @@ export class OrderTrackingComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN').format(price || 0) + 'đ';
   }
 
-  formatDate(dateString?: string): string {
+  formatDate(dateString?: string | Date): string {
     if (!dateString) return 'Chưa cập nhật';
-    const date = new Date(dateString);
+    const date = dateString instanceof Date ? dateString : new Date(dateString);
     return date.toLocaleString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
@@ -217,26 +357,26 @@ export class OrderTrackingComponent implements OnInit {
     const colors: { [key: string]: string } = {
       PENDING: '#f59e0b',
       CONFIRMED: '#3b82f6',
-      PREPARING: '#8b5cf6',
-      READY: '#10b981',
+      PREPARING: '#f97316',
+      READY: '#a855f7',
       DELIVERING: '#06b6d4',
-      COMPLETED: '#22c55e',
+      COMPLETED: '#10b981',
       CANCELLED: '#ef4444',
-      REJECTED: '#ef4444'
+      REJECTED: '#ec4899'
     };
     return colors[status] || '#69725F';
   }
 
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      PENDING: 'Chờ xác nhận',
+      PENDING: 'Đã đặt hàng',
       CONFIRMED: 'Đã xác nhận',
       PREPARING: 'Đang chuẩn bị',
       READY: 'Sẵn sàng',
       DELIVERING: 'Đang giao',
       COMPLETED: 'Hoàn thành',
       CANCELLED: 'Đã hủy',
-      REJECTED: 'Đã từ chối'
+      REJECTED: 'Tự động từ chối'
     };
     return labels[status] || status;
   }
@@ -264,9 +404,17 @@ export class OrderTrackingComponent implements OnInit {
   }
 
   clearSearch(): void {
+    if (this.currentOrder?.id) {
+      this.orderRealtimeService.unsubscribeOrder(this.currentOrder.id);
+    }
     this.searchOrderNumber = '';
     this.currentOrder = null;
     this.searchError = '';
+    this.realtimeNotice = '';
+    this.expiryCountdownText = '';
+    this.expiryProgress = 0;
+    this.infoExpanded = false;
+    this.stopExpiryCountdown();
     this.orderStatuses = [];
   }
 }

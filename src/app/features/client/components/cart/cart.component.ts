@@ -211,12 +211,15 @@ export class CartComponent implements OnInit {
   }
 
   removeItem(item: CartItem): void {
-    const index = this.cartItems.findIndex(i => i.id === item.id);
-    if (index > -1) {
-      this.cartItems.splice(index, 1);
-      this.calculateTotal();
-      this.cartService.syncCart(this.cartItems);
-    }
+    this.cartService.removeItem(item.id).subscribe({
+      next: cart => {
+        this.cartItems = cart.items || [];
+        this.calculateTotal();
+      },
+      error: err => {
+        alert(err?.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.');
+      }
+    });
   }
 
   applyVoucher(voucher?: VoucherResponse): void {

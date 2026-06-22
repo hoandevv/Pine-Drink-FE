@@ -11,6 +11,9 @@ export interface CartItemTopping {
   toppingId: string;
   toppingName: string;
   price: number;
+  unitPrice?: number;
+  totalPrice?: number;
+  quantity?: number;
 }
 
 export interface CartItem {
@@ -81,6 +84,13 @@ export class CartService {
     );
   }
 
+  removeItem(itemId: string): Observable<Cart> {
+    return this.http.delete<BaseResponse<Cart>>(`${this.apiUrl}/items/${itemId}`).pipe(
+      map(res => this.normalizeCart(res.data)),
+      tap(cart => this.cartSubject.next(cart))
+    );
+  }
+
   syncCart(items: CartItem[], branchId = sessionStorage.getItem('selectedBranchId') || ''): void {
     const normalizedItems = items.map(item => ({
       ...item,
@@ -109,7 +119,19 @@ export class CartService {
       unitPrice: Number(item.unitPrice) || 0,
       toppingAmount: Number(item.toppingAmount) || 0,
       totalPrice: Number(item.totalPrice) || 0,
-      toppings: (item.toppings || []).map(topping => ({ ...topping, price: Number(topping.price) || 0 }))
+      toppings: (item.toppings || []).map(topping => {
+        const quantity = Number(topping.quantity) || 1;
+        const unitPrice = Number(topping.unitPrice) || Number(topping.price) || 0;
+        const totalPrice = Number(topping.totalPrice) || unitPrice * quantity;
+
+        return {
+          ...topping,
+          quantity,
+          unitPrice,
+          totalPrice,
+          price: unitPrice
+        };
+      })
     }));
 
     return {
