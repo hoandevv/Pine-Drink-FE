@@ -1,90 +1,400 @@
-<div class="admin-orders-container">
-  <!-- Header Section -->
-  <header class="page-header-saas">
-    <div class="header-main">
-      <div class="title-group">
-        <div class="title-row">
-          <h1>Orders</h1>
-          <div class="live-status">
-            <span class="pulse-dot"></span>
-            <span class="status-text">LIVE</span>
-            <span class="last-update">Updated 2m ago</span>
-          </div>
-        </div>
-        <p class="subtitle">Realtime order operations, payment tracking and fulfillment workflow.</p>
+<div class="pos-container" [class.has-selection]="selectedOrder !== null" [class.timeline-open]="showTimelineDrawer">
+  
+  <!-- BACKDROP FOR TABLET/DESKTOP TIMELINE DRAWER -->
+  <div class="timeline-backdrop" *ngIf="showTimelineDrawer" (click)="toggleTimelineDrawer()"></div>
+
+  <!-- COLUMN 1: ORDER INBOX -->
+  <aside class="col-inbox">
+    <!-- Inbox Header -->
+    <div class="inbox-header">
+      <div class="inbox-search">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" 
+               [value]="searchQuery" 
+               (input)="onSearch($event)" 
+               placeholder="Search code, customer, phone...">
       </div>
       
-      <div class="header-actions">
-        <button class="btn-secondary" (click)="refreshData()">
-          <span class="material-symbols-outlined">refresh</span>
-          Refresh
-        </button>
-        <button class="btn-secondary">
-          <span class="material-symbols-outlined">ios_share</span>
-          Export
-        </button>
-        <button class="btn-primary">
-          <span class="material-symbols-outlined">add_circle</span>
-          Create Order
+      <!-- Filters list (Horizontal Scrollable Chips) -->
+      <div class="inbox-filters">
+        <button *ngFor="let tab of tabs" 
+                class="filter-chip" 
+                [class.active]="activeTab === tab.value"
+                (click)="onTabChange(tab.value)">
+          <span class="chip-label">{{ tab.label }}</span>
+          <span class="chip-count">{{ tab.count }}</span>
         </button>
       </div>
     </div>
-  </header>
 
-  <!-- KPI Stats -->
-  <app-order-stats [stats]="stats"></app-order-stats>
+    <!-- Inbox List -->
+    <div class="inbox-list">
+      <div *ngIf="isLoading && orders.length === 0" class="list-state">
+        <div class="spinner"></div>
+        <p>Loading orders...</p>
+      </div>
+      <div *ngIf="!isLoading && orders.length === 0" class="list-state">
+        <span class="material-symbols-outlined state-icon">inbox_customize</span>
+        <p>No orders found</p>
+      </div>
+      
+      <div *ngFor="let order of orders" 
+           class="inbox-item"
+           [class.active]="selectedOrder?.id === order.id"
+           [class.unread]="!readOrderIds.has(order.id)"
+           (click)="openDetail(order)">
+        
+        <!-- Dot indicator at start -->
+        <span class="status-dot-indicator" [class]="order.status.toLowerCase()"></span>
 
-  <!-- View Controls & Tabs -->
-  <div class="view-controls-row">
-    <nav class="order-tabs">
-      <button *ngFor="let tab of tabs" 
-              class="tab-btn" 
-              [class.active]="activeTab === tab.value"
-              (click)="onTabChange(tab.value)">
-        {{ tab.label }}
-        <span class="count-badge">{{ tab.count }}</span>
-      </button>
-    </nav>
+        <div class="item-main-content">
+          <!-- Top row: Code & Time -->
+          <div class="item-row item-header-row">
+            <span class="item-code">{{ order.orderCode }}</span>
+            <span class="item-time">{{ getRelativeTime(order.createdAt) }}</span>
+          </div>
 
-    <div class="view-toggle">
-      <button [class.active]="viewMode === 'table'" (click)="toggleView('table')" title="Table View">
-        <span class="material-symbols-outlined">table_chart</span>
-      </button>
-      <button [class.active]="viewMode === 'kanban'" (click)="toggleView('kanban')" title="Kanban View">
-        <span class="material-symbols-outlined">view_kanban</span>
+          <!-- Middle row: Customer & Type Badge -->
+          <div class="item-row item-customer-row">
+            <span class="item-customer">{{ order.customerName || 'Walk-in Customer' }}</span>
+            <span class="type-badge" [class]="order.type?.toLowerCase() || ''">
+              <span class="material-symbols-outlined">{{ getTypeIcon(order.type) }}</span>
+              {{ order.type }}
+            </span>
+          </div>
+
+          <!-- Item brief summary -->
+          <div class="item-brief">
+            {{ getItemsBrief(order) }}
+          </div>
+
+          <!-- Bottom row: Total & Payment Badge -->
+          <div class="item-row item-footer-row">
+            <span class="item-amount">{{ order.totalAmount | number }} đ</span>
+            <div class="item-badges">
+              <span class="p-badge-mini" [class]="order.paymentStatus.toLowerCase()">
+                {{ order.paymentStatus }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- COLUMN 2: ORDER DETAIL -->
+  <main class="col-detail">
+    <div *ngIf="!selectedOrder" class="detail-empty-state">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <h3>Select an Order</h3>
+      <p>Choose an order from the list to start processing and tracking details.</p>
+    </div>
+
+    <div *ngIf="selectedOrder" class="detail-content-wrapper">
+      <!-- Detail Header -->
+      <header class="detail-header">
+        <div class="header-left">
+          <!-- Mobile Back Button -->
+          <button class="btn-icon mobile-only" (click)="clearSelection()" title="Back to inbox">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          
+          <div class="order-identity">
+            <div class="code-row">
+              <h2>{{ selectedOrder.orderCode }}</h2>
+              <button class="btn-icon-small" (click)="copyToClipboard(selectedOrder.orderCode)" title="Copy Code">
+                <span class="material-symbols-outlined">content_copy</span>
+              </button>
+            </div>
+            <div class="meta-row">
+              <span class="type-badge" [class]="selectedOrder.type?.toLowerCase() || ''">
+                <span class="material-symbols-outlined">{{ getTypeIcon(selectedOrder.type) }}</span>
+                {{ selectedOrder.type }}
+              </span>
+              <span class="time-meta">Created: {{ selectedOrder.createdAt | date:'medium' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn-icon" (click)="printReceipt(selectedOrder)" title="Print Receipt">
+            <span class="material-symbols-outlined">print</span>
+          </button>
+          <!-- Drawer toggle button on tablet/desktop -->
+          <button class="btn-icon tablet-desktop-only" 
+                  [class.active]="showTimelineDrawer"
+                  (click)="toggleTimelineDrawer()" 
+                  title="Toggle Timeline">
+            <span class="material-symbols-outlined">history</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Stage Rail -->
+      <section class="stage-rail-section">
+        <!-- Normal active workflows -->
+        <div class="stage-rail" *ngIf="selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REJECTED'">
+          <div class="stage-progress-bar">
+            <div class="stage-progress-line" [style.width.%]="getStageProgressPercent(selectedOrder)"></div>
+          </div>
+          <div class="stage-steps">
+            <div class="stage-step" 
+                 *ngFor="let step of getStagesForOrder(selectedOrder)"
+                 [class.completed]="isStepCompleted(selectedOrder, step.value)"
+                 [class.active]="selectedOrder.status === step.value">
+              <div class="stage-dot">
+                <span class="material-symbols-outlined" *ngIf="isStepCompleted(selectedOrder, step.value) && selectedOrder.status !== step.value">check</span>
+              </div>
+              <span class="stage-label">{{ step.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cancelled / Rejected Banner -->
+        <div class="stage-rail-cancelled" *ngIf="selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REJECTED'">
+          <div class="cancelled-banner">
+            <span class="material-symbols-outlined">error</span>
+            <div class="banner-text">
+              <strong>Đơn hàng đã bị {{ selectedOrder.status === 'CANCELLED' ? 'Huỷ' : 'Từ chối' }}</strong>
+              <span>Lý do: {{ selectedOrder.rejectReason || selectedOrder.cancelReason || selectedOrder.expiryReason || 'Không có lý do' }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="detail-body-scroll">
+        <!-- Customer Info Box -->
+        <section class="detail-section customer-section">
+          <h3>Thông tin khách hàng</h3>
+          <div class="customer-info-grid">
+            <!-- Dine In table number -->
+            <div class="info-block" *ngIf="selectedOrder.type === 'WALK_IN'">
+              <span class="info-icon material-symbols-outlined">table_restaurant</span>
+              <div class="info-text">
+                <span class="label">Bàn số</span>
+                <span class="value">Bàn {{ getTableNumber(selectedOrder) }}</span>
+              </div>
+            </div>
+
+            <!-- Take Away hours -->
+            <div class="info-block" *ngIf="selectedOrder.type === 'PICKUP'">
+              <span class="info-icon material-symbols-outlined">schedule</span>
+              <div class="info-text">
+                <span class="label">Giờ hẹn lấy</span>
+                <span class="value">{{ selectedOrder.pickupTime ? (selectedOrder.pickupTime | date:'shortTime') : 'Lấy ngay' }}</span>
+              </div>
+            </div>
+
+            <!-- Delivery address -->
+            <div class="info-block full-width" *ngIf="selectedOrder.type === 'DELIVERY'">
+              <span class="info-icon material-symbols-outlined">location_on</span>
+              <div class="info-text">
+                <span class="label">Địa chỉ giao hàng</span>
+                <span class="value address-line">{{ selectedOrder.customerAddress || 'N/A' }}</span>
+              </div>
+            </div>
+
+            <!-- Standard Customer Contact Info -->
+            <div class="info-block">
+              <span class="info-icon material-symbols-outlined">person</span>
+              <div class="info-text">
+                <span class="label">Khách hàng</span>
+                <span class="value">{{ selectedOrder.customerName || 'Khách vãng lai' }}</span>
+              </div>
+            </div>
+
+            <div class="info-block">
+              <span class="info-icon material-symbols-outlined">call</span>
+              <div class="info-text">
+                <span class="label">Số điện thoại</span>
+                <span class="value">{{ selectedOrder.customerPhone || 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Order Items List -->
+        <section class="detail-section items-section">
+          <h3>Danh sách món ăn</h3>
+          <div class="items-list-container">
+            <div *ngFor="let item of selectedOrder.items" class="order-item-row">
+              <div class="item-primary-info">
+                <div class="item-qty">x{{ item.quantity }}</div>
+                <div class="item-details">
+                  <div class="item-name">{{ item.name }}</div>
+                  <div class="item-size-variant" *ngIf="item.size || item.variant">
+                    Size: {{ item.size }} <span *ngIf="item.variant">· {{ item.variant }}</span>
+                  </div>
+                  <!-- Toppings nested list -->
+                  <div class="item-toppings-list" *ngIf="item.toppings && item.toppings.length">
+                    <span class="topping-prefix">+</span>
+                    <span class="topping-item" *ngFor="let t of item.toppings; let last = last">
+                      {{ t.name || t.toppingName }} ({{ t.price | number }} đ){{ !last ? ', ' : '' }}
+                    </span>
+                  </div>
+                  <!-- Item note -->
+                  <div class="item-note" *ngIf="item.note">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    <span>{{ item.note }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="item-pricing">
+                <span class="item-unit-price">{{ item.price | number }} đ</span>
+                <strong class="item-row-total">{{ item.totalPrice | number }} đ</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Order Note -->
+          <div class="order-note-block" *ngIf="selectedOrder.note">
+            <div class="note-header">
+              <span class="material-symbols-outlined">description</span>
+              <strong>Ghi chú đơn hàng:</strong>
+            </div>
+            <p>{{ selectedOrder.note }}</p>
+          </div>
+        </section>
+
+        <!-- Payment Info Section -->
+        <section class="detail-section payment-section">
+          <div class="payment-block-header">
+            <h3>Thanh toán</h3>
+            <div class="payment-badges-row">
+              <!-- Method Badge -->
+              <span class="method-badge" [class]="selectedOrder.paymentMethod.toLowerCase()">
+                {{ selectedOrder.paymentMethod }}
+              </span>
+              <!-- Status Badge -->
+              <span class="status-badge" [class]="selectedOrder.paymentStatus.toLowerCase()">
+                {{ selectedOrder.paymentStatus }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Thu tiền tại quầy interface -->
+          <div class="counter-payment-action" *ngIf="selectedOrder.paymentStatus !== 'PAID' && (selectedOrder.type === 'WALK_IN' || selectedOrder.type === 'PICKUP') && selectedOrder.status !== 'COMPLETED' && selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REJECTED'">
+            <div class="payment-panel">
+              <div class="panel-header">
+                <span class="material-symbols-outlined">payments</span>
+                <strong>Thu tiền tại quầy</strong>
+              </div>
+              <p>Chọn phương thức thanh toán của khách hàng để xác nhận thu tiền trực tiếp:</p>
+              <div class="payment-options">
+                <button class="btn-pay-option cash" (click)="confirmCounterPayment(selectedOrder, 'CASH')">
+                  <span class="material-symbols-outlined">payments</span> Tiền mặt
+                </button>
+                <button class="btn-pay-option momo" (click)="confirmCounterPayment(selectedOrder, 'MOMO')">
+                  <span class="momo-logo-placeholder">M</span> MoMo
+                </button>
+                <button class="btn-pay-option vnpay" (click)="confirmCounterPayment(selectedOrder, 'VNPAY')">
+                  <span class="vnpay-logo-placeholder">V</span> VNPay
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Financial Summary -->
+        <section class="detail-section summary-section">
+          <div class="financial-summary-table">
+            <div class="summary-row">
+              <span class="label">Tạm tính</span>
+              <span class="value">{{ selectedOrder.subtotal | number }} đ</span>
+            </div>
+            <div class="summary-row" *ngIf="selectedOrder.discount">
+              <span class="label">Giảm giá</span>
+              <span class="value discount-value">-{{ selectedOrder.discount | number }} đ</span>
+            </div>
+            <div class="summary-row" *ngIf="selectedOrder.deliveryFee">
+              <span class="label">Phí giao hàng</span>
+              <span class="value">{{ selectedOrder.deliveryFee | number }} đ</span>
+            </div>
+            <div class="summary-row grand-total">
+              <span class="label">Tổng cộng</span>
+              <strong class="value">{{ selectedOrder.totalAmount | number }} đ</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Mobile timeline version (accordion / bottom list) -->
+        <section class="detail-section mobile-only mobile-timeline-section">
+          <h3>Lịch sử hoạt động</h3>
+          <div class="mobile-timeline-list">
+            <div *ngFor="let step of selectedOrder.timeline" class="mobile-timeline-item">
+              <div class="item-circle" [class]="step.status.toLowerCase()"></div>
+              <div class="item-info">
+                <div class="status-name">{{ step.status }}</div>
+                <div class="status-time">{{ step.time | date:'short' }}</div>
+                <div class="status-note" *ngIf="step.note">{{ step.note }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Footer Sticky Action Bar -->
+      <footer class="detail-footer-actions">
+        <!-- If order is ended (completed, cancelled, rejected) -->
+        <div class="ended-status-msg" *ngIf="selectedOrder.status === 'COMPLETED' || selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REJECTED'">
+          <span class="material-symbols-outlined">info</span>
+          <span>Đơn hàng đã kết thúc với trạng thái: <strong>{{ selectedOrder.status }}</strong></span>
+          <button class="btn-print-receipt-secondary" (click)="printReceipt(selectedOrder)">
+            <span class="material-symbols-outlined">print</span> In hoá đơn
+          </button>
+        </div>
+
+        <!-- Normal actions -->
+        <div class="action-buttons-group" *ngIf="selectedOrder.status !== 'COMPLETED' && selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REJECTED'">
+          <!-- Secondary Action (Cancel/Reject) -->
+          <button class="btn-action-secondary" (click)="handleSecondaryAction(selectedOrder)">
+            {{ selectedOrder.status === 'PENDING' ? 'Từ chối đơn' : 'Huỷ đơn hàng' }}
+          </button>
+
+          <!-- Primary Action -->
+          <button class="btn-action-primary" (click)="handlePrimaryAction(selectedOrder)">
+            {{ getPrimaryActionLabel(selectedOrder) }}
+          </button>
+        </div>
+      </footer>
+    </div>
+  </main>
+
+  <!-- COLUMN 3: ACTIVITY TIMELINE -->
+  <aside class="col-timeline" [class.open]="showTimelineDrawer">
+    <div class="timeline-header">
+      <h3>Activity Timeline</h3>
+      <button class="btn-icon drawer-close-btn" (click)="toggleTimelineDrawer()" title="Close Timeline">
+        <span class="material-symbols-outlined">close</span>
       </button>
     </div>
-  </div>
+    
+    <div class="timeline-scroll-container" *ngIf="selectedOrder">
+      <div class="vertical-timeline">
+        <div *ngFor="let step of selectedOrder.timeline" class="timeline-event-item">
+          <!-- Timeline connector line -->
+          <div class="timeline-line"></div>
+          
+          <!-- Event dot colored by status -->
+          <div class="timeline-dot" [class]="step.status.toLowerCase()">
+            <span class="material-symbols-outlined" *ngIf="step.status === 'COMPLETED' || step.status === 'PAID'">check</span>
+            <span class="material-symbols-outlined" *ngIf="step.status === 'CANCELLED' || step.status === 'REJECTED'">close</span>
+          </div>
 
-  <!-- Advanced Filters -->
-  <app-order-filter-bar (filterChange)="onFilterChange($event)"></app-order-filter-bar>
-
-  <!-- Main Content Area -->
-  <main class="orders-main-content">
-    <ng-container [ngSwitch]="viewMode">
-      <!-- Table View -->
-      <app-order-table 
-        *ngSwitchCase="'table'"
-        [orders]="orders"
-        (rowClick)="openDetail($event)"
-        (actionClick)="openDetail($event.order)">
-      </app-order-table>
-
-      <!-- Kanban View -->
-      <app-order-kanban
-        *ngSwitchCase="'kanban'"
-        [orders]="orders"
-        (cardClick)="openDetail($event)"
-        (statusChange)="onStatusChange($event)">
-      </app-order-kanban>
-    </ng-container>
-  </main>
+          <!-- Event Content -->
+          <div class="timeline-event-content">
+            <div class="event-header">
+              <span class="event-title">{{ step.status }}</span>
+              <span class="event-time">{{ step.time | date:'mediumTime' }}</span>
+            </div>
+            <div class="event-date">{{ step.time | date:'mediumDate' }}</div>
+            <p class="event-note" *ngIf="step.note">{{ step.note }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="timeline-empty" *ngIf="!selectedOrder">
+      <p>No order selected</p>
+    </div>
+  </aside>
 </div>
-
-<!-- Detail Drawer -->
-<app-order-detail-drawer
-  [order]="selectedOrder"
-  [isOpen]="isDrawerOpen"
-  (close)="closeDrawer()"
-  (statusChange)="onStatusChange($event)">
-</app-order-detail-drawer>

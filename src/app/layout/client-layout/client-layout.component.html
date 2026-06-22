@@ -136,4 +136,4 @@
   <span class="material-symbols-outlined">support_agent</span>
 </a>
 
-<button class="mobile-cart" type="button" routerLink="/cart"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>
+<button class="mobile-cart" type="button" (click)="goToCart()"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>

@@ -1,26 +1,19 @@
 <div class="order-tracking-page">
-  <!-- Header -->
-  <header class="page-header">
-    <div class="header-content">
-      <div>
-        <h1 class="page-title">Theo dõi đơn hàng</h1>
-        <p class="page-subtitle">Tra cứu và theo dõi tình trạng đơn hàng của bạn</p>
+  <!-- Header & Search Combined -->
+  <header class="page-header-compact">
+    <div class="header-container">
+      <div class="header-title-area">
+        <h1 class="page-title-compact">Theo dõi đơn hàng</h1>
+        <p class="page-subtitle-compact">Tra cứu trạng thái đơn hàng của bạn</p>
       </div>
-      <div class="header-icon">
-        <span class="material-symbols-outlined">package_2</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Search Section -->
-  <section class="search-section">
-    <div class="search-container">
-      <div class="search-box">
+      
+      <!-- Search Box inside Header for compact layout -->
+      <div class="search-box-compact" *ngIf="isLoggedIn">
         <span class="material-symbols-outlined search-icon">search</span>
         <input
           type="text"
           class="search-input"
-          placeholder="Nhập mã đơn hàng (VD: PD-9842)"
+          placeholder="Nhập mã đơn hàng..."
           [(ngModel)]="searchOrderNumber"
           (keyup.enter)="searchOrder()"
         />
@@ -31,276 +24,370 @@
           (click)="clearSearch()">
           <span class="material-symbols-outlined">close</span>
         </button>
-        <button type="button" class="search-button" (click)="searchOrder()">
-          Tra cứu
+        <button type="button" class="search-button" (click)="searchOrder()" [disabled]="loading">
+          {{ loading ? '...' : 'Tra cứu' }}
         </button>
       </div>
-      <p class="search-error" *ngIf="searchError">
-        <span class="material-symbols-outlined">error</span>
-        {{ searchError }}
-      </p>
     </div>
+  </header>
+
+  <!-- Error display -->
+  <div class="search-error-container" *ngIf="isLoggedIn && searchError">
+    <p class="search-error">
+      <span class="material-symbols-outlined">error</span>
+      {{ searchError }}
+    </p>
+  </div>
+
+  <section class="empty-state" *ngIf="!isLoggedIn">
+    <span class="material-symbols-outlined">lock</span>
+    <h3>Vui lòng đăng nhập để xem đơn hàng</h3>
+    <p>Trang theo dõi đơn hàng chỉ dành cho khách hàng đã đăng nhập.</p>
   </section>
 
-  <!-- Recent Orders (shown when no order is selected) -->
-  <section class="recent-orders-section" *ngIf="!currentOrder && recentOrders.length > 0">
-    <div class="section-container">
-      <h2 class="section-title">
-        <span class="material-symbols-outlined">history</span>
-        Đơn hàng gần đây
-      </h2>
-      <div class="recent-orders-grid">
-        <article 
-          *ngFor="let order of recentOrders" 
-          class="recent-order-card"
-          (click)="selectRecentOrder(order)">
-          <div class="order-card-header">
-            <div class="order-number">
-              <span class="material-symbols-outlined">receipt_long</span>
-              {{ order.orderNumber }}
-            </div>
-            <span 
-              class="order-status-badge" 
-              [style.background-color]="getStatusColor(order.status)">
-              {{ getStatusLabel(order.status) }}
-            </span>
-          </div>
-          <div class="order-card-body">
-            <div class="order-info-row">
-              <span class="material-symbols-outlined">store</span>
-              <span>{{ order.branchName }}</span>
-            </div>
-            <div class="order-info-row">
-              <span class="material-symbols-outlined">schedule</span>
-              <span>{{ formatDate(order.createdAt) }}</span>
-            </div>
-            <div class="order-total">
-              <span>Tổng tiền:</span>
-              <strong>{{ formatPrice(order.total) }}</strong>
-            </div>
-          </div>
-          <div class="order-card-footer">
-            <span class="material-symbols-outlined">arrow_forward</span>
-            Xem chi tiết
-          </div>
-        </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- Order Details (shown when order is found) -->
-  <section class="order-details-section" *ngIf="currentOrder">
-    <div class="section-container">
-      <!-- Order Header -->
-      <div class="order-header-card">
-        <div class="order-header-top">
-          <div>
-            <h2 class="order-number-title">{{ currentOrder.orderNumber }}</h2>
-            <p class="order-date">Đặt lúc: {{ formatDate(currentOrder.createdAt) }}</p>
-          </div>
-          <span 
-            class="order-status-badge large" 
-            [style.background-color]="getStatusColor(currentOrder.status)">
-            {{ getStatusLabel(currentOrder.status) }}
-          </span>
-        </div>
-
-        <!-- Order Type Badge -->
-        <div class="order-type-badge" [class.delivery]="currentOrder.orderType === 'DELIVERY'">
-          <span class="material-symbols-outlined">
-            {{ currentOrder.orderType === 'DELIVERY' ? 'local_shipping' : 'shopping_bag' }}
-          </span>
-          {{ currentOrder.orderType === 'DELIVERY' ? 'Giao hàng' : 'Lấy tại cửa hàng' }}
-        </div>
-      </div>
-
-      <!-- Order Status Timeline -->
-      <div class="status-timeline-card" *ngIf="currentOrder.status !== 'CANCELLED'">
-        <h3 class="card-title">
-          <span class="material-symbols-outlined">timeline</span>
-          Trạng thái đơn hàng
-        </h3>
-        <div class="timeline">
-          <div 
-            *ngFor="let status of orderStatuses; let i = index; let last = last"
-            class="timeline-item"
-            [class.completed]="status.completed"
-            [class.active]="status.key === currentOrder.status">
-            <div class="timeline-marker">
-              <span class="material-symbols-outlined">{{ status.icon }}</span>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-label">{{ status.label }}</div>
-              <div class="timeline-time" *ngIf="status.completed && status.key === currentOrder.status">
-                {{ formatDate(currentOrder.updatedAt) }}
+  <ng-container *ngIf="isLoggedIn">
+    <!-- Recent Orders (shown when no order is selected) -->
+    <section class="recent-orders-section" *ngIf="!currentOrder && recentOrders.length > 0">
+      <div class="section-container">
+        <h2 class="section-title">
+          <span class="material-symbols-outlined">history</span>
+          Đơn hàng gần đây
+        </h2>
+        <div class="recent-orders-grid">
+          <article 
+            *ngFor="let order of recentOrders" 
+            class="recent-order-card"
+            (click)="selectRecentOrder(order)">
+            <div class="order-card-header">
+              <div class="order-number">
+                <span class="material-symbols-outlined">receipt_long</span>
+                {{ order.orderNumber }}
               </div>
-            </div>
-            <div class="timeline-line" *ngIf="!last"></div>
-          </div>
-        </div>
-        <div class="estimated-time" *ngIf="currentOrder.estimatedTime && currentOrder.status !== 'COMPLETED'">
-          <span class="material-symbols-outlined">schedule</span>
-          <span>Thời gian dự kiến: <strong>{{ currentOrder.estimatedTime }}</strong></span>
-        </div>
-      </div>
-
-      <!-- Cancelled Order Message -->
-      <div class="cancelled-message-card" *ngIf="currentOrder.status === 'CANCELLED'">
-        <span class="material-symbols-outlined">cancel</span>
-        <h3>Đơn hàng đã bị hủy</h3>
-        <p *ngIf="currentOrder.note">{{ currentOrder.note }}</p>
-        <p *ngIf="!currentOrder.note">Đơn hàng này đã bị hủy bởi khách hàng hoặc cửa hàng</p>
-      </div>
-
-      <div class="order-content-grid">
-        <!-- Order Items -->
-        <div class="order-items-card">
-          <h3 class="card-title">
-            <span class="material-symbols-outlined">shopping_cart</span>
-            Sản phẩm đã đặt
-          </h3>
-          <div class="items-list">
-            <article *ngFor="let item of currentOrder.items" class="order-item">
-              <div class="item-image" [style.background-image]="'url(' + item.productImage + ')'"></div>
-              <div class="item-details">
-                <h4 class="item-name">{{ item.productName }}</h4>
-                <div class="item-specs">
-                  <span class="spec-badge">{{ item.size }}</span>
-                  <span class="spec-badge">Đá {{ item.iceLevel }}%</span>
-                  <span class="spec-badge">Đường {{ item.sugarLevel }}%</span>
-                </div>
-                <div class="item-toppings" *ngIf="item.toppings.length > 0">
-                  <span class="material-symbols-outlined">add_circle</span>
-                  <span>{{ item.toppings.join(', ') }}</span>
-                </div>
-                <p class="item-note" *ngIf="item.note">
-                  <span class="material-symbols-outlined">note</span>
-                  {{ item.note }}
-                </p>
-              </div>
-              <div class="item-pricing">
-                <div class="item-quantity">x{{ item.quantity }}</div>
-                <div class="item-price">{{ formatPrice(item.price * item.quantity) }}</div>
-              </div>
-            </article>
-          </div>
-
-          <!-- Order Summary -->
-          <div class="order-summary">
-            <div class="summary-row">
-              <span>Tạm tính</span>
-              <span>{{ formatPrice(currentOrder.subtotal) }}</span>
-            </div>
-            <div class="summary-row" *ngIf="currentOrder.shippingFee > 0">
-              <span>Phí giao hàng</span>
-              <span>{{ formatPrice(currentOrder.shippingFee) }}</span>
-            </div>
-            <div class="summary-row discount" *ngIf="currentOrder.discount > 0">
-              <span>
-                <span class="material-symbols-outlined">local_offer</span>
-                Giảm giá
-                <span class="voucher-code" *ngIf="currentOrder.voucherCode">({{ currentOrder.voucherCode }})</span>
+              <span 
+                class="order-status-badge" 
+                [class]="order.status.toLowerCase()">
+                {{ getStatusLabel(order.status) }}
               </span>
-              <span>-{{ formatPrice(currentOrder.discount) }}</span>
             </div>
-            <div class="summary-row total">
-              <span>Tổng cộng</span>
-              <span>{{ formatPrice(currentOrder.total) }}</span>
+            <div class="order-card-body">
+              <div class="order-info-row">
+                <span class="material-symbols-outlined">store</span>
+                <span>{{ order.branchName }}</span>
+              </div>
+              <div class="order-info-row">
+                <span class="material-symbols-outlined">schedule</span>
+                <span>{{ formatDate(order.createdAt) }}</span>
+              </div>
+              <div class="order-total">
+                <span>Tổng tiền:</span>
+                <strong>{{ formatPrice(order.total) }}</strong>
+              </div>
             </div>
-          </div>
+            <div class="order-card-footer">
+              <span class="material-symbols-outlined">arrow_forward</span>
+              Xem chi tiết
+            </div>
+          </article>
         </div>
+      </div>
+    </section>
 
-        <!-- Order Information -->
-        <div class="order-info-cards">
-          <!-- Customer Info -->
-          <div class="info-card">
-            <h3 class="card-title">
-              <span class="material-symbols-outlined">person</span>
-              Thông tin khách hàng
-            </h3>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="info-label">Họ tên</span>
-                <span class="info-value">{{ currentOrder.customerName }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Số điện thoại</span>
-                <span class="info-value">{{ currentOrder.customerPhone }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Email</span>
-                <span class="info-value">{{ currentOrder.customerEmail }}</span>
-              </div>
+    <!-- Order Details (shown when order is found) -->
+    <section class="order-details-section" *ngIf="currentOrder">
+      <div class="section-container">
+        
+        <!-- Main Status Card -->
+        <div class="order-header-card">
+          <div class="order-header-top">
+            <div class="order-code-time">
+              <h2 class="order-number-title">{{ currentOrder.orderNumber }}</h2>
+              <p class="order-date">Đặt lúc: {{ formatDate(currentOrder.createdAt) }}</p>
+            </div>
+            <div class="order-status-actions">
+              <span 
+                class="order-status-badge large" 
+                [class]="currentOrder.status.toLowerCase()">
+                {{ getStatusLabel(currentOrder.status) }}
+              </span>
+              <button type="button" class="btn-check-other" (click)="clearSearch()">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Tra cứu đơn khác
+              </button>
             </div>
           </div>
 
-          <!-- Delivery/Pickup Info -->
-          <div class="info-card">
-            <h3 class="card-title">
+          <div class="order-header-bottom">
+            <div class="order-type-badge" [class.delivery]="currentOrder.orderType === 'DELIVERY'">
               <span class="material-symbols-outlined">
-                {{ currentOrder.orderType === 'DELIVERY' ? 'location_on' : 'store' }}
+                {{ currentOrder.orderType === 'DELIVERY' ? 'local_shipping' : 'shopping_bag' }}
               </span>
-              {{ currentOrder.orderType === 'DELIVERY' ? 'Địa chỉ giao hàng' : 'Cửa hàng' }}
-            </h3>
-            <div class="info-list">
-              <div class="info-item" *ngIf="currentOrder.orderType === 'DELIVERY'">
-                <span class="info-label">Địa chỉ</span>
-                <span class="info-value">{{ currentOrder.deliveryAddress }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Chi nhánh</span>
-                <span class="info-value">{{ currentOrder.branchName }}</span>
-              </div>
+              {{ currentOrder.orderType === 'DELIVERY' ? 'Giao hàng' : 'Lấy tại cửa hàng' }}
             </div>
-          </div>
 
-          <!-- Payment Info -->
-          <div class="info-card">
-            <h3 class="card-title">
-              <span class="material-symbols-outlined">payment</span>
-              Thanh toán
-            </h3>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="info-label">Phương thức</span>
-                <span class="info-value">{{ getPaymentMethodLabel(currentOrder.paymentMethod) }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Trạng thái</span>
-                <span 
-                  class="payment-status-badge"
-                  [class.paid]="currentOrder.paymentStatus === 'PAID'"
-                  [class.pending]="currentOrder.paymentStatus === 'PENDING'"
-                  [class.failed]="currentOrder.paymentStatus === 'FAILED'">
-                  {{ getPaymentStatusLabel(currentOrder.paymentStatus) }}
-                </span>
-              </div>
+            <div class="order-realtime-notice" *ngIf="realtimeNotice">
+              <span class="material-symbols-outlined">bolt</span>
+              <span>{{ realtimeNotice }}</span>
             </div>
-          </div>
-
-          <!-- Order Note -->
-          <div class="info-card" *ngIf="currentOrder.note && currentOrder.status !== 'CANCELLED'">
-            <h3 class="card-title">
-              <span class="material-symbols-outlined">note</span>
-              Ghi chú
-            </h3>
-            <p class="note-content">{{ currentOrder.note }}</p>
           </div>
         </div>
+
+        <!-- Expiry countdown timer (if pending) -->
+        <div class="expiry-countdown-card" *ngIf="currentOrder.status === 'PENDING' && expiryCountdownText">
+          <div class="countdown-icon">
+            <span class="material-symbols-outlined">hourglass_top</span>
+          </div>
+          <div class="countdown-main">
+            <div class="countdown-label">Thời gian còn lại để cửa hàng xác nhận</div>
+            <div class="countdown-time">{{ expiryCountdownText }}</div>
+            <div class="countdown-progress">
+              <span [style.width.%]="expiryProgress"></span>
+            </div>
+            <p>Quá thời gian này, đơn có thể được hệ thống tự động từ chối để hoàn tồn kho.</p>
+          </div>
+          <div class="countdown-deadline" *ngIf="getExpiryTime(currentOrder) as expiryTime">
+            Hạn xác nhận: <strong>{{ formatDate(expiryTime) }}</strong>
+          </div>
+        </div>
+
+        <!-- Order Status Timeline (Only for normal progress) -->
+        <div class="status-timeline-card" *ngIf="currentOrder.status !== 'CANCELLED' && currentOrder.status !== 'REJECTED'">
+          <h3 class="card-title">
+            <span class="material-symbols-outlined">timeline</span>
+            Trạng thái đơn hàng
+          </h3>
+          <div class="timeline-container">
+            <div class="timeline">
+              <div 
+                *ngFor="let status of orderStatuses; let i = index; let last = last"
+                class="timeline-item"
+                [class.completed]="status.completed"
+                [class.active]="status.key === currentOrder.status">
+                <div class="timeline-marker">
+                  <span class="material-symbols-outlined">{{ status.icon }}</span>
+                </div>
+                <div class="timeline-content">
+                  <div class="timeline-label">{{ status.label }}</div>
+                  <div class="timeline-time" *ngIf="status.completed && status.key === currentOrder.status">
+                    {{ formatDate(currentOrder.updatedAt || currentOrder.createdAt) }}
+                  </div>
+                </div>
+                <div class="timeline-line" *ngIf="!last"></div>
+              </div>
+            </div>
+          </div>
+          <div class="estimated-time" *ngIf="currentOrder.estimatedTime && currentOrder.status !== 'COMPLETED'">
+            <span class="material-symbols-outlined">schedule</span>
+            <span>Thời gian dự kiến: <strong>{{ currentOrder.estimatedTime }}</strong></span>
+          </div>
+        </div>
+
+        <!-- Cancelled Banner -->
+        <div class="abnormal-status-card cancelled" *ngIf="currentOrder.status === 'CANCELLED'">
+          <div class="abnormal-icon">
+            <span class="material-symbols-outlined">cancel</span>
+          </div>
+          <div class="abnormal-content">
+            <h3>Đơn hàng đã bị hủy</h3>
+            <p class="reason" *ngIf="currentOrder.cancelReason || currentOrder.rejectReason || currentOrder.note">
+              Lý do: <strong>{{ currentOrder.cancelReason || currentOrder.rejectReason || currentOrder.note }}</strong>
+            </p>
+            <p class="reason" *ngIf="!currentOrder.cancelReason && !currentOrder.rejectReason && !currentOrder.note">
+              Đơn hàng này đã bị hủy bởi khách hàng hoặc cửa hàng
+            </p>
+            <div class="abnormal-meta" *ngIf="currentOrder.cancelledAt || currentOrder.updatedAt">
+              <span>Hủy lúc: <strong>{{ formatDate(currentOrder.cancelledAt || currentOrder.updatedAt) }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rejected/Expiry Banner -->
+        <div class="abnormal-status-card rejected" *ngIf="currentOrder.status === 'REJECTED'">
+          <div class="abnormal-icon">
+            <span class="material-symbols-outlined">timer_off</span>
+          </div>
+          <div class="abnormal-content">
+            <h3>Đơn hàng đã quá hạn xác nhận</h3>
+            <p class="reason">Lý do: <strong>{{ getRejectionReason(currentOrder) }}</strong></p>
+            <div class="abnormal-meta">
+              <span *ngIf="currentOrder.rejectedAt">Từ chối lúc: <strong>{{ formatDate(currentOrder.rejectedAt) }}</strong></span>
+              <span *ngIf="currentOrder.expiresAt">Hạn xác nhận: <strong>{{ formatDate(currentOrder.expiresAt) }}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Column Layout (Products & Summary vs Sidebar Metadata) -->
+        <div class="order-content-grid">
+          
+          <!-- Column 1 (Left / Main): Products List & Total Summary -->
+          <div class="main-column">
+            <!-- Order Items -->
+            <div class="order-items-card">
+              <h3 class="card-title">
+                <span class="material-symbols-outlined">shopping_cart</span>
+                Sản phẩm đã đặt
+              </h3>
+              <div class="items-list">
+                <article *ngFor="let item of currentOrder.items" class="order-item">
+                  <div class="item-image" [style.background]="getItemImageStyle(item)"></div>
+                  <div class="item-details">
+                    <h4 class="item-name">{{ getItemName(item) }}</h4>
+                    <div class="item-specs">
+                      <span class="spec-badge">{{ getItemSize(item) }}</span>
+                      <span class="spec-badge" *ngIf="item.iceLevel">Đá {{ item.iceLevel }}</span>
+                      <span class="spec-badge" *ngIf="item.sugarLevel">Đường {{ item.sugarLevel }}</span>
+                    </div>
+                    <div class="item-toppings" *ngIf="getItemToppings(item)">
+                      <span class="material-symbols-outlined">add_circle</span>
+                      <span>{{ getItemToppings(item) }}</span>
+                    </div>
+                    <p class="item-note" *ngIf="item.note">
+                      <span class="material-symbols-outlined">note</span>
+                      {{ item.note }}
+                    </p>
+                  </div>
+                  <div class="item-pricing">
+                    <div class="item-quantity">x{{ item.quantity }}</div>
+                    <div class="item-price">{{ formatPrice(getItemLineTotal(item)) }}</div>
+                  </div>
+                </article>
+              </div>
+
+              <!-- Total Amount Block (Signature Green/Yellow) -->
+              <div class="order-summary">
+                <div class="summary-row">
+                  <span>Tạm tính</span>
+                  <span>{{ formatPrice(currentOrder.subtotal) }}</span>
+                </div>
+                <div class="summary-row" *ngIf="currentOrder.shippingFee > 0">
+                  <span>Phí giao hàng</span>
+                  <span>{{ formatPrice(currentOrder.shippingFee) }}</span>
+                </div>
+                <div class="summary-row discount" *ngIf="currentOrder.discount > 0">
+                  <span>
+                    <span class="material-symbols-outlined">local_offer</span>
+                    Giảm giá
+                    <span class="voucher-code" *ngIf="currentOrder.voucherCode">({{ currentOrder.voucherCode }})</span>
+                  </span>
+                  <span>-{{ formatPrice(currentOrder.discount) }}</span>
+                </div>
+                <div class="summary-row total">
+                  <span>Tổng cộng</span>
+                  <span>{{ formatPrice(currentOrder.total) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2 (Right / Sidebar): Grouped Information -->
+          <div class="sidebar-column">
+            <div class="order-meta-group">
+              <!-- Mobile Accordion Header -->
+              <button type="button" class="meta-accordion-header mobile-only" (click)="toggleInfoExpanded()">
+                <div class="accordion-title">
+                  <span class="material-symbols-outlined">info</span>
+                  <span>Thông tin nhận hàng & Thanh toán</span>
+                </div>
+                <span class="material-symbols-outlined expand-icon" [class.expanded]="infoExpanded">
+                  {{ infoExpanded ? 'expand_less' : 'expand_more' }}
+                </span>
+              </button>
+
+              <!-- Accordion Content / Sidebar Cards -->
+              <div class="meta-group-content" [class.expanded]="infoExpanded">
+                
+                <!-- Customer Info -->
+                <div class="info-card">
+                  <h3 class="info-card-title">
+                    <span class="material-symbols-outlined">person</span>
+                    Thông tin khách hàng
+                  </h3>
+                  <div class="info-list">
+                    <div class="info-item">
+                      <span class="info-label">Họ tên</span>
+                      <span class="info-value">{{ currentOrder.customerName }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Số điện thoại</span>
+                      <span class="info-value">{{ currentOrder.customerPhone }}</span>
+                    </div>
+                    <div class="info-item" *ngIf="currentOrder.customerEmail">
+                      <span class="info-label">Email</span>
+                      <span class="info-value">{{ currentOrder.customerEmail }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Delivery/Pickup Info -->
+                <div class="info-card">
+                  <h3 class="info-card-title">
+                    <span class="material-symbols-outlined">
+                      {{ currentOrder.orderType === 'DELIVERY' ? 'location_on' : 'store' }}
+                    </span>
+                    {{ currentOrder.orderType === 'DELIVERY' ? 'Địa chỉ giao hàng' : 'Cửa hàng' }}
+                  </h3>
+                  <div class="info-list">
+                    <div class="info-item" *ngIf="currentOrder.orderType === 'DELIVERY'">
+                      <span class="info-label">Địa chỉ</span>
+                      <span class="info-value">{{ currentOrder.deliveryAddress || currentOrder.customerAddress || 'Chưa cập nhật' }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Chi nhánh</span>
+                      <span class="info-value">{{ currentOrder.branchName || 'Chưa cập nhật' }}</span>
+                    </div>
+                    <div class="info-item" *ngIf="currentOrder.branchAddress">
+                      <span class="info-label">Địa chỉ CN</span>
+                      <span class="info-value">{{ currentOrder.branchAddress }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Payment Info -->
+                <div class="info-card">
+                  <h3 class="info-card-title">
+                    <span class="material-symbols-outlined">payment</span>
+                    Thanh toán
+                  </h3>
+                  <div class="info-list">
+                    <div class="info-item">
+                      <span class="info-label">Phương thức</span>
+                      <span class="info-value">{{ getPaymentMethodLabel(currentOrder.paymentMethod) }}</span>
+                    </div>
+                    <div class="info-item">
+                      <span class="info-label">Trạng thái</span>
+                      <span 
+                        class="payment-status-badge"
+                        [class.paid]="currentOrder.paymentStatus === 'PAID'"
+                        [class.pending]="currentOrder.paymentStatus === 'PENDING' || currentOrder.paymentStatus === 'UNPAID'"
+                        [class.failed]="currentOrder.paymentStatus === 'FAILED'">
+                        {{ getPaymentStatusLabel(currentOrder.paymentStatus) }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Note Card -->
+                <div class="info-card note-card" *ngIf="currentOrder.note && currentOrder.status !== 'CANCELLED' && currentOrder.status !== 'REJECTED'">
+                  <h3 class="info-card-title">
+                    <span class="material-symbols-outlined">note</span>
+                    Ghi chú
+                  </h3>
+                  <p class="note-content">{{ currentOrder.note }}</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
+    </section>
 
-      <!-- Back Button -->
-      <button type="button" class="back-button" (click)="clearSearch()">
-        <span class="material-symbols-outlined">arrow_back</span>
-        Tra cứu đơn hàng khác
-      </button>
-    </div>
-  </section>
-
-  <!-- Empty State -->
-  <section class="empty-state" *ngIf="!currentOrder && recentOrders.length === 0">
-    <span class="material-symbols-outlined">search_off</span>
-    <h3>Chưa có đơn hàng nào</h3>
-    <p>Nhập mã đơn hàng ở trên để tra cứu</p>
-  </section>
+    <!-- Empty State -->
+    <section class="empty-state" *ngIf="!currentOrder && recentOrders.length === 0">
+      <span class="material-symbols-outlined">search_off</span>
+      <h3>Chưa có đơn hàng nào</h3>
+      <p>Nhập mã đơn hàng ở trên để tra cứu</p>
+    </section>
+  </ng-container>
 </div>

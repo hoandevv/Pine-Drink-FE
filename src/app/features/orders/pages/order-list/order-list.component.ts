@@ -1,48 +1,132 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder } from '@angular/forms';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus } from '../../models/order.model';
-import { OrderStat } from '../../components/order-stats.component';
+import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
+import { OrderService } from '../../services/order.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-order-list',
   templateUrl: './order-list.component.html',
   styleUrls: ['./order-list.component.scss']
+  // We can write the custom CSS directly in order-list.component.scss
 })
-export class OrderListComponent implements OnInit {
-  viewMode: 'table' | 'kanban' = 'table';
-  isDrawerOpen = false;
+export class OrderListComponent implements OnInit, OnDestroy {
+  viewMode: 'table' | 'kanban' = 'table'; // Kept for compatibility, though we don't use it anymore
+  isDrawerOpen = false; // Kept for compatibility
+  isLoading = false;
   selectedOrder: Order | null = null;
   activeTab: OrderStatus | 'ALL' = 'ALL';
+  showTimelineDrawer = false;
+  searchQuery = '';
 
-  stats: OrderStat[] = [];
+  private readonly subscriptions = new Subscription();
+  private readonly subscribedBranchIds = new Set<string>();
+  private readonly STORAGE_KEY = 'pine_drink_read_orders';
+  
+  readOrderIds = new Set<string>();
+  stats: any[] = []; // Replaced by simpler stats representation if needed
   orders: Order[] = [];
+  allOrders: Order[] = [];
   pageData: PageResponse<Order> = {
     content: [], page: 0, size: 10, totalElements: 0, totalPages: 0, first: true, last: true
   };
 
   readonly tabs: { label: string; value: OrderStatus | 'ALL'; count: number }[] = [
     { label: 'All', value: 'ALL', count: 0 },
-    { label: 'New', value: 'NEW', count: 0 },
+    { label: 'Pending', value: 'PENDING', count: 0 },
     { label: 'Confirmed', value: 'CONFIRMED', count: 0 },
     { label: 'Preparing', value: 'PREPARING', count: 0 },
     { label: 'Ready', value: 'READY', count: 0 },
+    { label: 'Delivering', value: 'DELIVERING', count: 0 },
     { label: 'Completed', value: 'COMPLETED', count: 0 },
-    { label: 'Cancelled', value: 'CANCELLED', count: 0 }
+    { label: 'Cancelled', value: 'CANCELLED', count: 0 },
+    { label: 'Rejected', value: 'REJECTED', count: 0 }
   ];
 
-  constructor(private readonly fb: FormBuilder) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly orderRealtimeService: OrderRealtimeService,
+    private readonly toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
+    this.loadReadOrders();
+    this.listenOrderRealtime();
     this.refreshData();
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
+  loadReadOrders(): void {
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEY);
+      if (data) {
+        this.readOrderIds = new Set<string>(JSON.parse(data));
+      }
+    } catch (e) {
+      console.error('Error loading read orders', e);
+    }
+  }
+
+  saveReadOrders(): void {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(Array.from(this.readOrderIds)));
+    } catch (e) {
+      console.error('Error saving read orders', e);
+    }
+  }
+
+  markAsRead(orderId: string): void {
+    if (!this.readOrderIds.has(orderId)) {
+      this.readOrderIds.add(orderId);
+      this.saveReadOrders();
+    }
+  }
+
   refreshData(): void {
-    this.orders = this.mockOrders;
-    this.updateStats();
-    this.updateTabCounts();
-    this.filterOrders();
+    this.isLoading = true;
+    // Fetch all orders (page 0, size 200) to filter locally and keep counts accurate
+    this.orderService.getOrders(0, 200, 'ALL').subscribe({
+      next: (response) => {
+        this.pageData = response;
+        this.allOrders = (response.content ?? [])
+          .map(o => this.normalizeOrder(o))
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        // Initialize readOrderIds on first load so old orders aren't all highlighted
+        if (this.readOrderIds.size === 0 && this.allOrders.length) {
+          this.allOrders.forEach(o => this.readOrderIds.add(o.id));
+          this.saveReadOrders();
+        }
+
+        this.applyLocalFilters();
+        this.subscribeLoadedBranches();
+        this.updateStats();
+        this.updateTabCounts();
+
+        // Keep selectedOrder in sync with refreshed data
+        if (this.selectedOrder) {
+          const fresh = this.allOrders.find(o => o.id === this.selectedOrder!.id);
+          if (fresh) {
+            this.selectedOrder = fresh;
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Load orders failed', error);
+        this.orders = [];
+        this.allOrders = [];
+        this.toastService.error('Failed to load orders');
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
+    });
   }
 
   toggleView(mode: 'table' | 'kanban'): void {
@@ -51,98 +135,443 @@ export class OrderListComponent implements OnInit {
 
   onTabChange(tab: OrderStatus | 'ALL'): void {
     this.activeTab = tab;
-    this.filterOrders();
+    this.applyLocalFilters();
+  }
+
+  onSearch(event: Event): void {
+    this.searchQuery = (event.target as HTMLInputElement).value;
+    this.applyLocalFilters();
   }
 
   onFilterChange(filters: any): void {
-    // Logic for advanced filtering would go here
-    this.filterOrders();
+    this.searchQuery = (filters?.keyword ?? filters?.search ?? '').toString();
+    this.applyLocalFilters();
+  }
+
+  applyLocalFilters(): void {
+    let filtered = this.allOrders;
+
+    // 1. Filter by status tab
+    if (this.activeTab !== 'ALL') {
+      filtered = filtered.filter(o => o.status === this.activeTab);
+    }
+
+    // 2. Filter by search keyword
+    const keyword = this.searchQuery.trim().toLowerCase();
+    if (keyword) {
+      filtered = filtered.filter(o =>
+        [o.orderCode, o.customerName, o.customerPhone, o.branchName]
+          .filter(Boolean)
+          .some(val => val!.toLowerCase().includes(keyword))
+      );
+    }
+
+    this.orders = filtered;
   }
 
   openDetail(order: Order): void {
-    this.selectedOrder = order;
-    this.isDrawerOpen = true;
+    this.markAsRead(order.id);
+    this.orderService.getOrderById(order.id).subscribe({
+      next: (detail) => {
+        this.selectedOrder = this.normalizeOrder(detail);
+        this.isDrawerOpen = true;
+      },
+      error: () => {
+        this.selectedOrder = order;
+        this.isDrawerOpen = true;
+      }
+    });
   }
 
   closeDrawer(): void {
     this.isDrawerOpen = false;
   }
 
-  onStatusChange({ order, status }: { order: Order; status: OrderStatus }): void {
-    const updatedOrder = { 
-      ...order, 
-      status, 
-      updatedAt: new Date().toLocaleTimeString(),
-      timeline: [{ status, time: new Date().toLocaleTimeString() }, ...order.timeline]
-    };
-    
-    this.mockOrders = this.mockOrders.map(o => o.id === order.id ? updatedOrder : o);
-    if (this.selectedOrder?.id === order.id) {
-      this.selectedOrder = updatedOrder;
-    }
-    this.refreshData();
+  clearSelection(): void {
+    this.selectedOrder = null;
+    this.showTimelineDrawer = false;
   }
 
-  private filterOrders(): void {
-    let filtered = this.mockOrders;
-    if (this.activeTab !== 'ALL') {
-      filtered = filtered.filter(o => o.status === this.activeTab);
+  toggleTimelineDrawer(): void {
+    this.showTimelineDrawer = !this.showTimelineDrawer;
+  }
+
+  onStatusChange({ order, status }: { order: Order; status: OrderStatus }): void {
+    // Used by status transitions. We call updateOrderStatusWithReason
+    this.updateOrderStatusWithReason(order, status);
+  }
+
+  updateOrderStatusWithReason(order: Order, status: OrderStatus, reason?: string): void {
+    this.orderService.updateOrderStatus(order.id, status, reason).subscribe({
+      next: (updatedOrder) => {
+        const normalized = this.normalizeOrder(updatedOrder);
+        this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
+        this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
+        if (this.selectedOrder?.id === order.id) {
+          this.selectedOrder = normalized;
+        }
+        this.updateStats();
+        this.updateTabCounts();
+        this.toastService.success(`Order status updated to ${status}`);
+      },
+      error: (error) => {
+        console.error('Update order status failed', error);
+        this.toastService.error('Failed to update order status');
+      }
+    });
+  }
+
+  handlePrimaryAction(order: Order): void {
+    const nextStatus = this.getNextStatus(order);
+    if (nextStatus) {
+      this.updateOrderStatusWithReason(order, nextStatus);
     }
-    this.orders = filtered;
-    this.pageData.totalElements = filtered.length;
-    this.pageData.content = filtered;
+  }
+
+  handleSecondaryAction(order: Order): void {
+    if (order.status === 'PENDING') {
+      const reason = window.prompt('Enter rejection reason:');
+      if (reason !== null) {
+        this.updateOrderStatusWithReason(order, 'REJECTED', reason.trim());
+      }
+    } else if (['CONFIRMED', 'PREPARING', 'READY'].includes(order.status)) {
+      const reason = window.prompt('Enter cancellation reason:');
+      if (reason !== null) {
+        this.updateOrderStatusWithReason(order, 'CANCELLED', reason.trim());
+      }
+    } else if (order.status === 'COMPLETED') {
+      this.printReceipt(order);
+    }
+  }
+
+  confirmCounterPayment(order: Order, method: string): void {
+    // Locally confirm counter payment
+    order.paymentStatus = 'PAID';
+    order.paymentMethod = method;
+    
+    // Add custom timeline entry
+    const nowStr = new Date().toISOString();
+    const entry = {
+      status: 'PAID' as any,
+      time: nowStr,
+      note: `Thu tiền tại quầy via ${method}`
+    };
+    order.timeline = [entry, ...(order.timeline ?? [])];
+
+    // Sync state
+    this.allOrders = this.allOrders.map(o => o.id === order.id ? order : o);
+    this.orders = this.orders.map(o => o.id === order.id ? order : o);
+    this.selectedOrder = order;
+
+    this.toastService.success(`Confirmed payment of ${order.totalAmount.toLocaleString()} đ via ${method}`);
+  }
+
+  getStagesForOrder(order: Order): { label: string; value: OrderStatus }[] {
+    const isDelivery = order.type === 'DELIVERY';
+    if (isDelivery) {
+      return [
+        { label: 'Pending', value: 'PENDING' },
+        { label: 'Confirmed', value: 'CONFIRMED' },
+        { label: 'Preparing', value: 'PREPARING' },
+        { label: 'Ready', value: 'READY' },
+        { label: 'Delivering', value: 'DELIVERING' },
+        { label: 'Completed', value: 'COMPLETED' }
+      ];
+    } else {
+      return [
+        { label: 'Pending', value: 'PENDING' },
+        { label: 'Confirmed', value: 'CONFIRMED' },
+        { label: 'Preparing', value: 'PREPARING' },
+        { label: 'Ready', value: 'READY' },
+        { label: 'Completed', value: 'COMPLETED' }
+      ];
+    }
+  }
+
+  isStepCompleted(order: Order, stepValue: OrderStatus): boolean {
+    const stages = this.getStagesForOrder(order).map(s => s.value);
+    const currentIndex = stages.indexOf(order.status);
+    const stepIndex = stages.indexOf(stepValue);
+    if (currentIndex === -1 || stepIndex === -1) return false;
+    return stepIndex <= currentIndex;
+  }
+
+  getStageProgressPercent(order: Order): number {
+    const stages = this.getStagesForOrder(order);
+    const currentIndex = stages.findIndex(s => s.value === order.status);
+    if (currentIndex === -1) return 0;
+    if (currentIndex === stages.length - 1) return 100;
+    return (currentIndex / (stages.length - 1)) * 100;
+  }
+
+  getPrimaryActionLabel(order: Order): string {
+    switch (order.status) {
+      case 'PENDING':
+        return 'Confirm order';
+      case 'CONFIRMED':
+        return 'Start preparing';
+      case 'PREPARING':
+        return 'Mark ready';
+      case 'READY':
+        return order.type === 'DELIVERY' ? 'Start delivering' : 'Complete order';
+      case 'DELIVERING':
+        return 'Mark completed';
+      default:
+        return '';
+    }
+  }
+
+  getNextStatus(order: Order): OrderStatus | null {
+    switch (order.status) {
+      case 'PENDING':
+        return 'CONFIRMED';
+      case 'CONFIRMED':
+        return 'PREPARING';
+      case 'PREPARING':
+        return 'READY';
+      case 'READY':
+        return order.type === 'DELIVERY' ? 'DELIVERING' : 'COMPLETED';
+      case 'DELIVERING':
+        return 'COMPLETED';
+      default:
+        return null;
+    }
+  }
+
+  getTypeIcon(type?: string): string {
+    switch (type) {
+      case 'DELIVERY': return 'moped';
+      case 'PICKUP': return 'shopping_bag';
+      case 'WALK_IN': return 'table_restaurant';
+      default: return 'help';
+    }
+  }
+
+  getItemsBrief(order: Order): string {
+    if (!order.items || order.items.length === 0) return 'No items';
+    const firstItem = order.items[0];
+    const restCount = order.items.length - 1;
+    let brief = `${firstItem.name} x${firstItem.quantity}`;
+    if (restCount > 0) {
+      brief += ` and ${restCount} other item${restCount > 1 ? 's' : ''}`;
+    }
+    return brief;
+  }
+
+  getTableNumber(order: Order): string {
+    if (!order.note) return 'Counter';
+    const match = order.note.match(/(?:table|bàn)\s*#?(\d+)/i);
+    return match ? match[1] : 'Counter';
+  }
+
+  getRelativeTime(createdAt: string): string {
+    if (!createdAt) return '';
+    const created = new Date(createdAt).getTime();
+    const now = new Date().getTime();
+    const diffMs = now - created;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return new Date(createdAt).toLocaleDateString();
+  }
+
+  copyToClipboard(text: string): void {
+    navigator.clipboard.writeText(text).then(() => {
+      this.toastService.success('Order code copied to clipboard');
+    }).catch(() => {
+      this.toastService.error('Failed to copy');
+    });
+  }
+
+  printReceipt(order: Order): void {
+    const printContent = this.generateReceiptHtml(order);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(win.document.title = `Receipt_${order.orderCode}`);
+      win.document.body.innerHTML = printContent;
+      win.document.close();
+      win.print();
+    } else {
+      this.toastService.error('Failed to open print window');
+    }
+  }
+
+  generateReceiptHtml(order: Order): string {
+    const itemsHtml = order.items.map(item => `
+      <tr>
+        <td>${item.name} x${item.quantity}</td>
+        <td style="text-align: right;">${item.totalPrice.toLocaleString()} đ</td>
+      </tr>
+      ${item.toppings.length ? `
+        <tr>
+          <td colspan="2" style="font-size: 11px; color: #666; padding-left: 10px;">
+            + ${item.toppings.map(t => t.name || t.toppingName).join(', ')}
+          </td>
+        </tr>
+      ` : ''}
+    `).join('');
+
+    return `
+      <html>
+      <head>
+        <style>
+          body { font-family: monospace; padding: 20px; max-width: 300px; margin: 0 auto; color: #000; }
+          .center { text-align: center; }
+          .bold { font-weight: bold; }
+          .divider { border-top: 1px dashed #000; margin: 10px 0; }
+          table { width: 100%; border-collapse: collapse; }
+          td { padding: 4px 0; vertical-align: top; }
+        </style>
+      </head>
+      <body>
+        <div class="center">
+          <h3>PINE DRINK</h3>
+          <p>${order.branchName || 'Branch Store'}</p>
+          <p>Order ID: ${order.orderCode}</p>
+          <p>${order.createdAt}</p>
+        </div>
+        <div class="divider"></div>
+        <p><span class="bold">Customer:</span> ${order.customerName || 'Walk-in'}</p>
+        <p><span class="bold">Type:</span> ${order.type}</p>
+        <div class="divider"></div>
+        <table>
+          ${itemsHtml}
+        </table>
+        <div class="divider"></div>
+        <table>
+          <tr><td>Subtotal:</td><td style="text-align: right;">${(order.subtotal || 0).toLocaleString()} đ</td></tr>
+          <tr><td>Discount:</td><td style="text-align: right;">-${(order.discount || 0).toLocaleString()} đ</td></tr>
+          ${order.deliveryFee ? `<tr><td>Delivery Fee:</td><td style="text-align: right;">${(order.deliveryFee || 0).toLocaleString()} đ</td></tr>` : ''}
+          <tr class="bold"><td>Total:</td><td style="text-align: right;">${(order.totalAmount || 0).toLocaleString()} đ</td></tr>
+        </table>
+        <div class="divider"></div>
+        <div class="center">
+          <p>Payment: ${order.paymentMethod} (${order.paymentStatus})</p>
+          <p>Thank you for choosing Pine Drink!</p>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private listenOrderRealtime(): void {
+    this.subscriptions.add(
+      this.orderRealtimeService.orderEvents$.subscribe(event => this.applyRealtimeEvent(event))
+    );
+    this.orderRealtimeService.connect();
+  }
+
+  private subscribeLoadedBranches(): void {
+    this.allOrders
+      .map(order => order.branchId)
+      .filter((branchId): branchId is string => !!branchId)
+      .forEach(branchId => {
+        if (!this.subscribedBranchIds.has(branchId)) {
+          this.subscribedBranchIds.add(branchId);
+          this.orderRealtimeService.subscribeBranchOrders(branchId);
+        }
+      });
+  }
+
+  private applyRealtimeEvent(event: OrderRealtimeEnvelope): void {
+    const incoming = (event.payload || event.data || {}) as Partial<Order>;
+    const incomingId = incoming.id || event.targetId;
+    if (!incomingId) {
+      return;
+    }
+
+    const existingIndex = this.allOrders.findIndex(order => order.id === incomingId);
+    if (existingIndex > -1) {
+      const merged = this.normalizeOrder({ ...this.allOrders[existingIndex], ...incoming } as Order);
+      // Move updated order to top of list
+      this.allOrders = [merged, ...this.allOrders.filter(o => o.id !== incomingId)];
+      
+      if (this.selectedOrder?.id === incomingId) {
+        this.selectedOrder = merged;
+      }
+    } else {
+      // It's a completely new order! Add to top of list and leave unread
+      const newOrder = this.normalizeOrder(incoming as Order);
+      this.allOrders = [newOrder, ...this.allOrders];
+    }
+
+    this.applyLocalFilters();
+    this.updateStats();
+    this.updateTabCounts();
   }
 
   private updateStats(): void {
+    // Maintained for backward compatibility structure
+    const pending = this.allOrders.filter(o => o.status === 'PENDING').length;
+    const preparing = this.allOrders.filter(o => o.status === 'PREPARING').length;
+    const revenue = this.allOrders
+      .filter(o => o.status === 'COMPLETED')
+      .reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+
     this.stats = [
-      { label: 'New Orders', value: this.mockOrders.filter(o => o.status === 'NEW').length, change: 12, icon: 'fiber_new', color: 'amber', trend: 'up' },
-      { label: 'Preparing', value: this.mockOrders.filter(o => o.status === 'PREPARING').length, change: -5, icon: 'local_cafe', color: 'orange', trend: 'down' },
-      { label: 'Revenue Today', value: '4,250k', change: 8, icon: 'payments', color: 'pine', trend: 'up' },
-      { label: 'Avg Time', value: '14m', change: -2, icon: 'timer', color: 'blue', trend: 'up' }
+      { label: 'Pending Orders', value: pending },
+      { label: 'Preparing', value: preparing },
+      { label: 'Completed Revenue', value: revenue },
+      { label: 'Total Orders', value: this.allOrders.length }
     ];
   }
 
   private updateTabCounts(): void {
     this.tabs.forEach(tab => {
-      tab.count = tab.value === 'ALL' ? this.mockOrders.length : this.mockOrders.filter(o => o.status === tab.value).length;
+      tab.count = tab.value === 'ALL' ? this.allOrders.length : this.allOrders.filter(o => o.status === tab.value).length;
     });
   }
 
-  private mockOrders: Order[] = [
-    {
-      id: '1', orderCode: 'PD-8821', customerName: 'Hoàng Minh', customerPhone: '0901234567',
-      totalAmount: 145000, subtotal: 155000, discount: 10000, status: 'NEW', paymentStatus: 'PAID',
-      paymentMethod: 'MoMo', type: 'DELIVERY', priority: 'URGENT', createdAt: '10:45 AM',
-      items: [
-        { id: 'i1', name: 'Pine Green Tea', size: 'L', variant: '50% Sugar', quantity: 2, price: 45000, totalPrice: 90000, toppings: [{ name: 'Aloe Vera', price: 5000 }] }
-      ],
-      timeline: [{ status: 'NEW', time: '10:45 AM', note: 'Customer placed order via App' }],
-      customerAddress: '123 Lê Lợi, Quận 1, TP.HCM'
-    },
-    {
-      id: '2', orderCode: 'PD-8820', customerName: 'Khánh Vy', customerPhone: '0933445566',
-      totalAmount: 98000, subtotal: 98000, discount: 0, status: 'PREPARING', paymentStatus: 'UNPAID',
-      paymentMethod: 'Cash', type: 'WALK_IN', priority: 'NORMAL', createdAt: '10:30 AM',
-      items: [
-        { id: 'i2', name: 'Golden Milk Tea', size: 'M', variant: 'Less Ice', quantity: 1, price: 55000, totalPrice: 55000, toppings: [{ name: 'Pearl', price: 10000 }] }
-      ],
-      timeline: [
-        { status: 'CONFIRMED', time: '10:35 AM' },
-        { status: 'NEW', time: '10:30 AM' }
-      ]
-    },
-    {
-      id: '3', orderCode: 'PD-8819', customerName: 'Anh Tuấn', customerPhone: '0912889900',
-      totalAmount: 210000, subtotal: 210000, discount: 0, status: 'READY', paymentStatus: 'PAID',
-      paymentMethod: 'Bank Transfer', type: 'PICKUP', priority: 'HIGH', createdAt: '10:15 AM',
-      items: [
-        { id: 'i3', name: 'Oolong Macchiato', size: 'L', quantity: 3, price: 65000, totalPrice: 195000, toppings: [] }
-      ],
-      timeline: [
-        { status: 'READY', time: '10:40 AM' },
-        { status: 'PREPARING', time: '10:25 AM' },
-        { status: 'NEW', time: '10:15 AM' }
-      ]
-    }
-  ];
+  private normalizeOrder(order: Order): Order {
+    return {
+      ...order,
+      type: order.type ?? order.orderType,
+      subtotal: order.subtotal ?? order.subtotalAmount ?? 0,
+      discount: order.discount ?? order.discountAmount ?? 0,
+      customerAddress: order.customerAddress ?? order.deliveryAddress,
+      priority: order.priority ?? 'NORMAL',
+      timeline: order.timeline ?? this.buildTimeline(order),
+      items: (order.items ?? []).map((item) => {
+        const size = item.size ?? item.variantName;
+        const variant = item.variant && item.variant !== size ? item.variant : undefined;
+
+        return {
+          ...item,
+          name: item.name ?? item.productName,
+          variant,
+          price: item.price ?? item.unitPrice ?? 0,
+          size,
+          toppings: (item.toppings ?? []).map(topping => {
+            const quantity = Number(topping.quantity) || 1;
+            const unitPrice = Number(topping.unitPrice) || Number(topping.price) || 0;
+            const totalPrice = Number(topping.totalPrice) || unitPrice * quantity;
+
+            return {
+              ...topping,
+              name: topping.name ?? topping.toppingName,
+              quantity,
+              unitPrice,
+              totalPrice,
+              price: unitPrice
+            };
+          })
+        };
+      })
+    };
+  }
+
+  private buildTimeline(order: Order) {
+    return [
+      { status: 'REJECTED' as OrderStatus, time: order.rejectedAt ?? '', note: order.rejectReason || 'Rejected' },
+      { status: 'CANCELLED' as OrderStatus, time: order.cancelledAt ?? '', note: order.cancelReason || 'Cancelled' },
+      { status: 'COMPLETED' as OrderStatus, time: order.completedAt ?? '', note: 'Completed' },
+      { status: 'DELIVERING' as OrderStatus, time: order.deliveringAt ?? '', note: 'Delivering' },
+      { status: 'READY' as OrderStatus, time: order.readyAt ?? '', note: 'Ready' },
+      { status: 'PREPARING' as OrderStatus, time: order.preparedAt ?? '', note: 'Preparing' },
+      { status: 'CONFIRMED' as OrderStatus, time: order.confirmedAt ?? '', note: 'Confirmed' },
+      { status: 'PENDING' as OrderStatus, time: order.createdAt, note: 'Order created' }
+    ].filter(item => item.time);
+  }
 }

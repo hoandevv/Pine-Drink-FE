@@ -1,26 +1,49 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { Router } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
 import { AccessControlService } from '../../core/services/access-control.service';
+import { CartService } from '../../features/client/services/cart.service';
 
 @Component({
   selector: 'app-client-layout',
   templateUrl: './client-layout.component.html',
   styleUrls: ['./client-layout.component.scss']
 })
-export class ClientLayoutComponent {
+export class ClientLayoutComponent implements OnInit, OnDestroy {
 
-  readonly cartCount = 2;
-  readonly cartTotal = 84000;
+  cartCount = 0;
+  cartTotal = 0;
   isMobileNavOpen = false;
+  private readonly destroy$ = new Subject<void>();
 
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
-    private readonly accessControl: AccessControlService
+    private readonly accessControl: AccessControlService,
+    private readonly cartService: CartService
   ) {}
 
+  ngOnInit(): void {
+    this.cartService.cartCount$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(count => this.cartCount = count);
+
+    this.cartService.cartTotal$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(total => this.cartTotal = total);
+
+    const branchId = sessionStorage.getItem('selectedBranchId') || '';
+    if (branchId && this.isLoggedIn) {
+      this.cartService.getActiveCart(branchId).subscribe({ error: () => this.cartService.clearCart() });
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   get isLoggedIn(): boolean {
     return this.authService.isAuthenticated();
@@ -56,8 +79,14 @@ export class ClientLayoutComponent {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
+  goToCart(): void {
+    this.closeMobileNav();
+    this.router.navigate(['/cart']);
+  }
+
   logout(): void {
     this.closeMobileNav();
+    this.cartService.clearCart();
     this.authService.logout();
     this.router.navigate(['/auth/login']);
   }
