@@ -1,6 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription, finalize } from 'rxjs';
+import { Subscription, finalize, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { Order, OrderItem } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
@@ -49,7 +50,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
     private readonly orderService: OrderService,
     private readonly orderRealtimeService: OrderRealtimeService,
     private readonly authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (!this.isLoggedIn) {
@@ -276,6 +277,10 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
       this.orderRealtimeService.orderEvents$.subscribe(event => this.applyRealtimeEvent(event))
     );
 
+    this.subscriptions.add(
+      this.orderRealtimeService.errors$.subscribe(error => console.warn('[Order realtime]', error))
+    );
+
     this.orderRealtimeService.connect();
   }
 
@@ -293,25 +298,50 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   }
 
   private applyRealtimeEvent(event: OrderRealtimeEnvelope): void {
-    const incoming = (event.payload || event.data || {}) as Partial<Order>;
-    const incomingId = incoming.id || event.targetId;
+    const incoming = (event.payload || event.data || {}) as Partial<Order> & { newStatus?: Order['status']; reason?: string };
+    const incomingId = incoming.id || event.orderId || event.targetId;
     if (!this.currentOrder || incomingId !== this.currentOrder.id) {
       return;
     }
 
-    const merged = this.toTrackingOrder({ ...this.currentOrder, ...incoming } as Order);
+    this.orderService.getOrderById(incomingId).pipe(
+      catchError(error => {
+        console.warn('[Order realtime] hydrate failed', error);
+        return of({
+          ...this.currentOrder!,
+          ...incoming,
+          status: incoming.status ?? incoming.newStatus ?? this.currentOrder!.status,
+          rejectReason: incoming.reason ?? this.currentOrder!.rejectReason,
+          cancelReason: incoming.reason ?? this.currentOrder!.cancelReason
+        } as Order);
+      })
+    ).subscribe(order => this.updateCurrentOrderFromRealtime(order));
+  }
+
+  private updateCurrentOrderFromRealtime(order: Order): void {
+    if (!this.currentOrder || order.id !== this.currentOrder.id) {
+      return;
+    }
+
+    const previousStatus = this.currentOrder.status;
+    const merged = this.toTrackingOrder({ ...this.currentOrder, ...order } as Order);
     this.currentOrder = merged;
     this.buildOrderStatuses(merged);
 
     if (merged.status === 'REJECTED') {
       this.realtimeNotice = 'Đơn hàng đã quá hạn xác nhận và vừa được hệ thống tự động từ chối.';
+    } else if (merged.status === 'CANCELLED') {
+      this.realtimeNotice = 'Đơn hàng vừa được hủy.';
+    } else if (merged.status !== previousStatus) {
+      this.realtimeNotice = `Trạng thái đơn hàng vừa cập nhật: ${this.getStatusLabel(merged.status)}.`;
     }
 
     this.startExpiryCountdown();
 
-    this.recentOrders = this.recentOrders.map(order =>
-      order.id === merged.id ? merged : order
-    );
+    const existsInRecent = this.recentOrders.some(recentOrder => recentOrder.id === merged.id);
+    this.recentOrders = existsInRecent
+      ? this.recentOrders.map(recentOrder => recentOrder.id === merged.id ? merged : recentOrder)
+      : [merged, ...this.recentOrders].slice(0, 3);
   }
 
   getItemName(item: OrderItem): string {

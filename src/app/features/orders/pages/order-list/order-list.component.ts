@@ -1,11 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus } from '../../models/order.model';
 import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-order-list',
@@ -49,17 +51,21 @@ export class OrderListComponent implements OnInit, OnDestroy {
   constructor(
     private readonly orderService: OrderService,
     private readonly orderRealtimeService: OrderRealtimeService,
-    private readonly toastService: ToastService
+    private readonly toastService: ToastService,
+    private readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
     this.loadReadOrders();
     this.listenOrderRealtime();
+    this.subscribeStaffBranches();
     this.refreshData();
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.subscribedBranchIds.forEach(branchId => this.orderRealtimeService.unsubscribeBranchOrders(branchId));
+    this.subscribedBranchIds.clear();
   }
 
   loadReadOrders(): void {
@@ -460,6 +466,15 @@ export class OrderListComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.orderRealtimeService.orderEvents$.subscribe(event => this.applyRealtimeEvent(event))
     );
+
+    this.subscriptions.add(
+      this.orderRealtimeService.errors$.subscribe(error => console.warn('[Order realtime]', error))
+    );
+
+    this.subscriptions.add(
+      this.authService.currentUser$.subscribe(() => this.subscribeStaffBranches())
+    );
+
     this.orderRealtimeService.connect();
   }
 
@@ -467,34 +482,60 @@ export class OrderListComponent implements OnInit, OnDestroy {
     this.allOrders
       .map(order => order.branchId)
       .filter((branchId): branchId is string => !!branchId)
-      .forEach(branchId => {
-        if (!this.subscribedBranchIds.has(branchId)) {
-          this.subscribedBranchIds.add(branchId);
-          this.orderRealtimeService.subscribeBranchOrders(branchId);
-        }
-      });
+      .forEach(branchId => this.subscribeBranchTopic(branchId));
+  }
+
+  private subscribeStaffBranches(): void {
+    const branchIds = this.authService.getCurrentUser()?.scope?.branchIds ?? [];
+    branchIds.forEach(branchId => this.subscribeBranchTopic(branchId));
+  }
+
+  private subscribeBranchTopic(branchId: string): void {
+    if (this.subscribedBranchIds.has(branchId)) {
+      return;
+    }
+
+    this.subscribedBranchIds.add(branchId);
+    this.orderRealtimeService.subscribeBranchOrders(branchId);
   }
 
   private applyRealtimeEvent(event: OrderRealtimeEnvelope): void {
     const incoming = (event.payload || event.data || {}) as Partial<Order>;
-    const incomingId = incoming.id || event.targetId;
+    const incomingId = incoming.id || event.orderId || event.targetId;
     if (!incomingId) {
       return;
     }
 
-    const existingIndex = this.allOrders.findIndex(order => order.id === incomingId);
-    if (existingIndex > -1) {
-      const merged = this.normalizeOrder({ ...this.allOrders[existingIndex], ...incoming } as Order);
-      // Move updated order to top of list
-      this.allOrders = [merged, ...this.allOrders.filter(o => o.id !== incomingId)];
-      
-      if (this.selectedOrder?.id === incomingId) {
-        this.selectedOrder = merged;
-      }
-    } else {
-      // It's a completely new order! Add to top of list and leave unread
-      const newOrder = this.normalizeOrder(incoming as Order);
-      this.allOrders = [newOrder, ...this.allOrders];
+    this.orderService.getOrderById(incomingId).pipe(
+      catchError(error => {
+        console.warn('[Order realtime] hydrate failed', error);
+        return of({ ...incoming, id: incomingId } as Order);
+      })
+    ).subscribe(order => this.upsertRealtimeOrder(event, order));
+  }
+
+  private upsertRealtimeOrder(event: OrderRealtimeEnvelope, incomingOrder: Order): void {
+    const incomingId = incomingOrder.id || event.orderId || event.targetId;
+    if (!incomingId) {
+      return;
+    }
+
+    const eventType = event.type || event.eventType;
+    const existing = this.allOrders.find(order => order.id === incomingId);
+    const normalized = this.normalizeOrder({ ...(existing ?? {}), ...incomingOrder } as Order);
+
+    this.allOrders = [normalized, ...this.allOrders.filter(order => order.id !== incomingId)];
+
+    if (this.selectedOrder?.id === incomingId) {
+      this.selectedOrder = normalized;
+    }
+
+    if (!existing && eventType === 'ORDER_CREATED') {
+      this.toastService.success(`Đơn mới ${normalized.orderCode || ''}`.trim());
+    }
+
+    if (normalized.branchId) {
+      this.subscribeBranchTopic(normalized.branchId);
     }
 
     this.applyLocalFilters();
