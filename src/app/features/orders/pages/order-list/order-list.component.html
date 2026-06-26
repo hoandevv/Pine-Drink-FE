@@ -280,15 +280,20 @@
                 <strong>Thu tiền tại quầy</strong>
               </div>
               <p>Chọn phương thức thanh toán của khách hàng để xác nhận thu tiền trực tiếp:</p>
-              <div class="payment-options">
-                <button class="btn-pay-option cash" (click)="confirmCounterPayment(selectedOrder, 'CASH')">
-                  <span class="material-symbols-outlined">payments</span> Tiền mặt
+              <div class="payment-options offline-only">
+                <button
+                  class="btn-pay-option cash"
+                  [disabled]="recordingPaymentOrderId === selectedOrder.id"
+                  (click)="confirmCounterPayment(selectedOrder, 'CASH')">
+                  <span class="material-symbols-outlined">payments</span>
+                  {{ recordingPaymentOrderId === selectedOrder.id ? 'Đang xử lý...' : 'Tiền mặt' }}
                 </button>
-                <button class="btn-pay-option momo" (click)="confirmCounterPayment(selectedOrder, 'MOMO')">
-                  <span class="momo-logo-placeholder">M</span> MoMo
-                </button>
-                <button class="btn-pay-option vnpay" (click)="confirmCounterPayment(selectedOrder, 'VNPAY')">
-                  <span class="vnpay-logo-placeholder">V</span> VNPay
+                <button
+                  class="btn-pay-option cod"
+                  [disabled]="recordingPaymentOrderId === selectedOrder.id"
+                  (click)="confirmCounterPayment(selectedOrder, 'COD')">
+                  <span class="material-symbols-outlined">local_shipping</span>
+                  COD
                 </button>
               </div>
             </div>

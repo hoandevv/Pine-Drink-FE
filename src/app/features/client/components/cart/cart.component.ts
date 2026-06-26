@@ -24,7 +24,7 @@ export class CartComponent implements OnInit {
   selectedAddressId = '';
   selectedBranch: Branch | null = null;
   orderType: 'DELIVERY' | 'PICKUP' = 'DELIVERY';
-  paymentMethod: 'COD' | 'CASH' | 'VNPAY' | 'MOMO' = 'COD';
+  paymentMethod: 'COD' | 'CASH' = 'COD';
   note = '';
   loading = false;
   checkingOut = false;

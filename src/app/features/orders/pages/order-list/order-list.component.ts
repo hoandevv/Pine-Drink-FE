@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription, of } from 'rxjs';
+import { Subscription, finalize, of, switchMap } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus } from '../../models/order.model';
 import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
+import { PaymentService, RecordOfflinePaymentRequest } from '../../services/payment.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
 
@@ -23,6 +24,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
   activeTab: OrderStatus | 'ALL' = 'ALL';
   showTimelineDrawer = false;
   searchQuery = '';
+  recordingPaymentOrderId: string | null = null;
 
   private readonly subscriptions = new Subscription();
   private readonly subscribedBranchIds = new Set<string>();
@@ -51,6 +53,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
   constructor(
     private readonly orderService: OrderService,
     private readonly orderRealtimeService: OrderRealtimeService,
+    private readonly paymentService: PaymentService,
     private readonly toastService: ToastService,
     private readonly authService: AuthService
   ) {}
@@ -250,26 +253,47 @@ export class OrderListComponent implements OnInit, OnDestroy {
     }
   }
 
-  confirmCounterPayment(order: Order, method: string): void {
-    // Locally confirm counter payment
-    order.paymentStatus = 'PAID';
-    order.paymentMethod = method;
-    
-    // Add custom timeline entry
-    const nowStr = new Date().toISOString();
-    const entry = {
-      status: 'PAID' as any,
-      time: nowStr,
-      note: `Thu tiền tại quầy via ${method}`
+  confirmCounterPayment(order: Order, method: 'CASH' | 'COD'): void {
+    if (this.recordingPaymentOrderId) {
+      return;
+    }
+
+    const request: RecordOfflinePaymentRequest = {
+      orderId: order.id,
+      paymentMethod: method
     };
-    order.timeline = [entry, ...(order.timeline ?? [])];
 
-    // Sync state
-    this.allOrders = this.allOrders.map(o => o.id === order.id ? order : o);
-    this.orders = this.orders.map(o => o.id === order.id ? order : o);
-    this.selectedOrder = order;
+    this.recordingPaymentOrderId = order.id;
+    this.paymentService.recordOfflinePayment(request).pipe(
+      switchMap(() => this.orderService.getOrderById(order.id)),
+      finalize(() => {
+        this.recordingPaymentOrderId = null;
+      })
+    ).subscribe({
+      next: (updatedOrder) => {
+        const normalized = this.normalizeOrder(updatedOrder);
+        const paidAt = new Date().toISOString();
 
-    this.toastService.success(`Confirmed payment of ${order.totalAmount.toLocaleString()} đ via ${method}`);
+        normalized.timeline = [
+          {
+            status: 'PAID',
+            time: paidAt,
+            note: `Đã thu tiền tại quầy (${method})`
+          },
+          ...(normalized.timeline ?? [])
+        ];
+
+        this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
+        this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
+        this.selectedOrder = normalized;
+
+        this.toastService.success(`Đã xác nhận thanh toán ${Number(normalized.totalAmount || 0).toLocaleString()} đ qua ${method}`);
+      },
+      error: (error) => {
+        console.error('Record offline payment failed', error);
+        this.toastService.error(error?.error?.message || 'Không thể xác nhận thanh toán');
+      }
+    });
   }
 
   getStagesForOrder(order: Order): { label: string; value: OrderStatus }[] {

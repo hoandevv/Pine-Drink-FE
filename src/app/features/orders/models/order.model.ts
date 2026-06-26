@@ -11,7 +11,7 @@ export type OrderStatus =
 export type PaymentStatus = 'UNPAID' | 'PAID' | 'REFUNDED' | string;
 export type OrderType = 'DELIVERY' | 'PICKUP' | 'WALK_IN';
 export type OrderPriority = 'NORMAL' | 'HIGH' | 'URGENT';
-export type PaymentMethod = 'CASH' | 'COD' | 'VNPAY' | 'MOMO' | 'BANK_TRANSFER' | string;
+export type PaymentMethod = 'CASH' | 'COD' | string;
 
 export interface CreateOrderRequest {
   branchId: string;
