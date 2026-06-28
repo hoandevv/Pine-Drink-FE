@@ -212,8 +212,13 @@
                 <option [value]="orderType === 'DELIVERY' ? 'COD' : 'CASH'">
                   {{ orderType === 'DELIVERY' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : 'Thanh toán tiền mặt tại quầy' }}
                 </option>
+                <option value="MOMO">Thanh toán qua ví MoMo</option>
               </select>
               <span class="material-symbols-outlined select-chevron">expand_more</span>
+            </div>
+            <div *ngIf="paymentMethod === 'MOMO'" class="payment-info-note">
+              <span class="material-symbols-outlined">info</span>
+              <p>Bạn sẽ được chuyển đến trang thanh toán MoMo sau khi xác nhận đơn hàng</p>
             </div>
           </div>
 

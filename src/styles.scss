@@ -945,3 +945,94 @@ textarea {
     gap: 0.6rem;
   }
 }
+/* NEW PINE DRINK APP DESIGN TOKENS */
+:root {
+  --color-primary: #166534;
+  --color-primary-dark: #14532D;
+  --color-accent: #FACC15;
+  --color-bg: #FAFAF7;
+  --color-surface: #FFFFFF;
+  --color-text: #111827;
+  --color-muted: #6B7280;
+  --color-border: #E5E7EB;
+
+  --radius-card: 20px;
+  --radius-pill: 9999px;
+  --shadow-card: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 16px 40px rgba(15, 23, 42, 0.12);
+  --spacing-section: 64px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --spacing-section: 40px;
+  }
+}
+
+/* Base Utility Classes */
+.text-primary { color: var(--color-primary) !important; }
+.text-muted { color: var(--color-muted) !important; }
+.font-bold { font-weight: 700 !important; }
+.font-semibold { font-weight: 600 !important; }
+.text-center { text-align: center !important; }
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
+}
+
+.btn-secondary {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #f0fdf4;
+  transform: translateY(-2px);
+}
+
+.badge {
+  background-color: var(--color-accent);
+  color: #4B3A05;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+

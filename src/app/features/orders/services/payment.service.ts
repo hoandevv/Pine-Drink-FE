@@ -28,6 +28,25 @@ export interface PaymentTransactionResponse {
   updatedAt?: string;
 }
 
+export interface MomoCreatePaymentRequest {
+  orderId: string;
+  orderInfo: string;
+  extraData?: string;
+}
+
+export interface MomoCreatePaymentResponse {
+  orderId: string;
+  requestId: string;
+  payUrl: string;
+  deeplink: string;
+  qrCodeUrl: string;
+  resultCode: number;
+  message: string;
+  provider: string;
+  paymentMethod: string;
+  transactionId: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -45,6 +64,12 @@ export class PaymentService {
   getOrderPaymentStatus(orderId: string): Observable<PaymentTransactionResponse> {
     return this.http
       .get<BaseResponse<PaymentTransactionResponse>>(`${this.apiUrl}/orders/${orderId}/status`)
+      .pipe(map((response) => response.data));
+  }
+
+  createMomoPayment(request: MomoCreatePaymentRequest): Observable<MomoCreatePaymentResponse> {
+    return this.http
+      .post<BaseResponse<MomoCreatePaymentResponse>>(`${this.apiUrl}/momo/create`, request)
       .pipe(map((response) => response.data));
   }
 }

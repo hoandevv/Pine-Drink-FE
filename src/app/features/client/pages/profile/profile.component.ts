@@ -50,29 +50,7 @@ export class ProfileComponent implements OnInit {
     hasLocalPassword: true
   };
 
-  recentOrders: Order[] = [
-    {
-      id: 'ORD-001',
-      date: '2024-05-20',
-      items: 3,
-      total: 125000,
-      status: 'completed'
-    },
-    {
-      id: 'ORD-002',
-      date: '2024-05-18',
-      items: 2,
-      total: 89000,
-      status: 'completed'
-    },
-    {
-      id: 'ORD-003',
-      date: '2024-05-15',
-      items: 4,
-      total: 156000,
-      status: 'completed'
-    }
-  ];
+  recentOrders: Order[] = [];
 
   activeTab: 'info' | 'orders' | 'favorites' | 'settings' = 'info';
   showLanguageSelector: boolean = false;

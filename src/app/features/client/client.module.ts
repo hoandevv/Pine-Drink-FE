@@ -15,6 +15,7 @@ import { PromotionsComponent } from './pages/promotions/promotions.component';
 import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.component';
 import { AddressListComponent } from './pages/address-list/address-list.component';
 import { AddressFormComponent } from './pages/address-form/address-form.component';
+import { PaymentResultComponent } from './pages/payment-result/payment-result.component';
 
 // Components
 import { CartComponent } from './components/cart/cart.component';
@@ -31,7 +32,8 @@ import { BranchService } from '../branches/services/branch.service';
     PromotionsComponent,
     OrderTrackingComponent,
     AddressListComponent,
-    AddressFormComponent
+    AddressFormComponent,
+    PaymentResultComponent
   ],
   imports: [
     CommonModule,

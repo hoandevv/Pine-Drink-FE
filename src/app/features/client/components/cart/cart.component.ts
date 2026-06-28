@@ -5,6 +5,7 @@ import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
 import { CreateOrderRequest } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
+import { PaymentService } from '../../../orders/services/payment.service';
 import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
 import { CustomerAddressService } from '../../../../core/services/customer-address.service';
 import { CustomerAddress } from '../../../../shared/models/customer-address.model';
@@ -24,7 +25,7 @@ export class CartComponent implements OnInit {
   selectedAddressId = '';
   selectedBranch: Branch | null = null;
   orderType: 'DELIVERY' | 'PICKUP' = 'DELIVERY';
-  paymentMethod: 'COD' | 'CASH' = 'COD';
+  paymentMethod: 'COD' | 'CASH' | 'MOMO' = 'COD';
   note = '';
   loading = false;
   checkingOut = false;
@@ -42,7 +43,8 @@ export class CartComponent implements OnInit {
     private readonly voucherService: VoucherService,
     private readonly branchService: BranchService,
     private readonly addressService: CustomerAddressService,
-    private readonly orderService: OrderService
+    private readonly orderService: OrderService,
+    private readonly paymentService: PaymentService
   ) {}
 
   ngOnInit(): void {
@@ -121,7 +123,10 @@ export class CartComponent implements OnInit {
   }
 
   onOrderTypeChange(): void {
-    this.paymentMethod = this.orderType === 'DELIVERY' ? 'COD' : 'CASH';
+    // Keep current payment method if it's MOMO, otherwise use default
+    if (this.paymentMethod !== 'MOMO') {
+      this.paymentMethod = this.orderType === 'DELIVERY' ? 'COD' : 'CASH';
+    }
     this.calculateTotal();
   }
 
@@ -289,8 +294,13 @@ export class CartComponent implements OnInit {
     this.checkingOut = true;
     this.orderService.createOrder(request).subscribe({
       next: order => {
-        this.checkingOut = false;
-        this.router.navigate(['/track-order', order.id]);
+        // If MOMO payment is selected, redirect to MoMo payment gateway
+        if (this.paymentMethod === 'MOMO') {
+          this.handleMomoPayment(order.id, order.orderCode);
+        } else {
+          this.checkingOut = false;
+          this.router.navigate(['/track-order', order.id]);
+        }
       },
       error: err => {
         this.checkingOut = false;
@@ -301,6 +311,32 @@ export class CartComponent implements OnInit {
 
   continueShopping(): void {
     this.router.navigate(['/menu']);
+  }
+
+  handleMomoPayment(orderId: string, orderCode: string): void {
+    const orderInfo = `Thanh toán đơn hàng ${orderCode}`;
+    
+    this.paymentService.createMomoPayment({
+      orderId,
+      orderInfo,
+      extraData: ''
+    }).subscribe({
+      next: response => {
+        this.checkingOut = false;
+        if (response.resultCode === 0 && response.payUrl) {
+          // Redirect to MoMo payment page
+          window.location.href = response.payUrl;
+        } else {
+          alert('Không thể tạo thanh toán MoMo. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
+          this.router.navigate(['/track-order', orderId]);
+        }
+      },
+      error: err => {
+        this.checkingOut = false;
+        alert(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
+        this.router.navigate(['/track-order', orderId]);
+      }
+    });
   }
 
   formatPrice(price: number): string {
