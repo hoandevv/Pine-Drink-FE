@@ -24,6 +24,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   productError = '';
   branchError = '';
   branchHoursByBranchId: Record<string, BranchHours[]> = {};
+  orderMode: 'PICKUP' | 'DELIVERY' = 'PICKUP';
 
   constructor(
     private readonly router: Router,
@@ -90,7 +91,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   navigateToMenu(): void {
-    this.router.navigate(['/menu']);
+    this.persistOrderContext();
+    this.router.navigate(['/menu'], {
+      queryParams: this.selectedBranch ? { branchId: this.selectedBranch.id, mode: this.orderMode } : { mode: this.orderMode }
+    });
   }
 
   navigateToStores(): void {
@@ -99,9 +103,20 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   selectBranch(branch: Branch): void {
     this.selectedBranch = branch;
-    sessionStorage.setItem('selectedBranchId', branch.id);
-    sessionStorage.setItem('selectedBranchName', branch.name);
+    this.ensureSupportedOrderMode();
+    this.persistOrderContext();
     this.loadVouchers();
+  }
+
+  selectOrderMode(mode: 'PICKUP' | 'DELIVERY'): void {
+    if (!this.canUseOrderMode(mode)) { return; }
+    this.orderMode = mode;
+    this.persistOrderContext();
+  }
+
+  canUseOrderMode(mode: 'PICKUP' | 'DELIVERY', branch: Branch | null = this.selectedBranch): boolean {
+    if (!branch) { return false; }
+    return mode === 'PICKUP' ? branch.supportsPickup !== false : branch.supportsDelivery === true;
   }
 
   applyVoucher(voucherCode: string): void {
@@ -123,12 +138,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   addToCart(product: Product): void {
+    this.persistOrderContext();
     const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
-    if (branchId && this.selectedBranch?.name) {
-      sessionStorage.setItem('selectedBranchId', branchId);
-      sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
-    }
-    this.router.navigate(['/product', product.id], { queryParams: branchId ? { branchId } : undefined });
+    this.router.navigate(['/product', product.id], {
+      queryParams: branchId ? { branchId, mode: this.orderMode } : { mode: this.orderMode }
+    });
   }
 
   getProductBadge(product: Product): string {
@@ -142,11 +156,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.branchService.getActiveBranches(0, 6).subscribe({
       next: page => {
         this.nearbyBranches = (page.content || []).slice(0, 4);
-        this.selectedBranch = this.nearbyBranches[0] || null;
-        if (this.selectedBranch) {
-          sessionStorage.setItem('selectedBranchId', this.selectedBranch.id);
-          sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
-        }
+        const storedBranchId = sessionStorage.getItem('selectedBranchId') || '';
+        const storedBranch = this.nearbyBranches.find(branch => branch.id === storedBranchId);
+        this.selectedBranch = storedBranch || this.nearbyBranches[0] || null;
+        this.orderMode = this.normalizeOrderMode(sessionStorage.getItem('selectedOrderMode'));
+        this.ensureSupportedOrderMode();
+        this.persistOrderContext();
         this.loadVouchers();
         this.loadBranchHours(this.nearbyBranches);
       },
@@ -229,5 +244,28 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private normalizeTime(value: string): string {
     return value?.slice(0, 5) || '--:--';
+  }
+
+  private ensureSupportedOrderMode(): void {
+    if (this.canUseOrderMode(this.orderMode)) { return; }
+    if (this.canUseOrderMode('PICKUP')) {
+      this.orderMode = 'PICKUP';
+      return;
+    }
+    if (this.canUseOrderMode('DELIVERY')) {
+      this.orderMode = 'DELIVERY';
+    }
+  }
+
+  private persistOrderContext(): void {
+    if (this.selectedBranch) {
+      sessionStorage.setItem('selectedBranchId', this.selectedBranch.id);
+      sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
+    }
+    sessionStorage.setItem('selectedOrderMode', this.orderMode);
+  }
+
+  private normalizeOrderMode(value: string | null): 'PICKUP' | 'DELIVERY' {
+    return value === 'DELIVERY' ? 'DELIVERY' : 'PICKUP';
   }
 }

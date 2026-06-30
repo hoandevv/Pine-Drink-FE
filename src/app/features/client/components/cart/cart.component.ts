@@ -5,10 +5,17 @@ import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
 import { CreateOrderRequest } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
+import { PaymentService } from '../../../orders/services/payment.service';
 import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
 import { CustomerAddressService } from '../../../../core/services/customer-address.service';
 import { CustomerAddress } from '../../../../shared/models/customer-address.model';
 import { CartItem, CartService } from '../../services/cart.service';
+import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
+import { DailyStockService } from '../../../products/services/daily-stock.service';
+import { BranchProductAvailability } from '../../../branches/models/branch-availability.model';
+import { DailyStock } from '../../../products/models/daily-stock.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-cart',
@@ -23,13 +30,17 @@ export class CartComponent implements OnInit {
   addresses: CustomerAddress[] = [];
   selectedAddressId = '';
   selectedBranch: Branch | null = null;
-  orderType: 'DELIVERY' | 'PICKUP' = 'DELIVERY';
-  paymentMethod: 'COD' | 'CASH' | 'VNPAY' | 'MOMO' = 'COD';
+  orderType: 'DELIVERY' | 'PICKUP' = this.normalizeOrderMode(sessionStorage.getItem('selectedOrderMode'));
+  paymentMethod: 'COD' | 'CASH' | 'MOMO' = this.orderType === 'DELIVERY' ? 'COD' : 'CASH';
   note = '';
   loading = false;
   checkingOut = false;
   errorMessage = '';
   deliveryError = '';
+
+  dailyStocks: DailyStock[] = [];
+  branchProductAvailabilities: BranchProductAvailability[] = [];
+  checkingAvailability = false;
 
   subtotal: number = 0;
   shippingFee: number = 15000;
@@ -42,7 +53,10 @@ export class CartComponent implements OnInit {
     private readonly voucherService: VoucherService,
     private readonly branchService: BranchService,
     private readonly addressService: CustomerAddressService,
-    private readonly orderService: OrderService
+    private readonly orderService: OrderService,
+    private readonly paymentService: PaymentService,
+    private readonly branchAvailabilityService: BranchAvailabilityService,
+    private readonly dailyStockService: DailyStockService
   ) {}
 
   ngOnInit(): void {
@@ -62,17 +76,44 @@ export class CartComponent implements OnInit {
     }
 
     this.loading = true;
+    this.checkingAvailability = true;
     this.errorMessage = '';
-    this.cartService.getActiveCart(branchId).subscribe({
-      next: cart => {
+    
+    this.cartService.getActiveCart(branchId).pipe(
+      switchMap(cart => {
         this.cartItems = cart.items || [];
+        
+        if (this.cartItems.length === 0) {
+          return of([[], []]);
+        }
+        
+        const now = new Date();
+        const offset = now.getTimezoneOffset() * 60000;
+        const todayKey = new Date(now.getTime() - offset).toISOString().slice(0, 10);
+        
+        return forkJoin([
+          this.branchAvailabilityService.getProductAvailabilities(branchId).pipe(
+            catchError(() => of([] as BranchProductAvailability[]))
+          ),
+          this.dailyStockService.getPublicByBranchAndDate(branchId, todayKey).pipe(
+            catchError(() => of([] as DailyStock[]))
+          )
+        ]);
+      })
+    ).subscribe({
+      next: ([availabilities, stocks]: any) => {
+        this.branchProductAvailabilities = availabilities as BranchProductAvailability[];
+        this.dailyStocks = stocks as DailyStock[];
+        
         this.loading = false;
+        this.checkingAvailability = false;
         this.calculateTotal();
         this.cartService.syncCart(this.cartItems, branchId);
       },
       error: () => {
         this.cartItems = [];
         this.loading = false;
+        this.checkingAvailability = false;
         this.errorMessage = 'Không tải được giỏ hàng. Vui lòng đăng nhập hoặc thử lại.';
         this.calculateTotal();
       }
@@ -121,7 +162,11 @@ export class CartComponent implements OnInit {
   }
 
   onOrderTypeChange(): void {
-    this.paymentMethod = this.orderType === 'DELIVERY' ? 'COD' : 'CASH';
+    sessionStorage.setItem('selectedOrderMode', this.orderType);
+    // Keep current payment method if it's MOMO, otherwise use default
+    if (this.paymentMethod !== 'MOMO') {
+      this.paymentMethod = this.orderType === 'DELIVERY' ? 'COD' : 'CASH';
+    }
     this.calculateTotal();
   }
 
@@ -200,6 +245,19 @@ export class CartComponent implements OnInit {
   }
 
   updateQuantity(item: CartItem, change: number): void {
+    if (change > 0) {
+      const stock = this.dailyStocks.find(s => s.variantId === item.variantId);
+      if (stock) {
+        const currentCartQty = this.cartItems
+          .filter(i => i.variantId === item.variantId)
+          .reduce((sum, i) => sum + i.quantity, 0);
+        if (currentCartQty + change > Number(stock.availableQuantity)) {
+          alert('Không đủ số lượng sản phẩm để thêm thêm.');
+          return;
+        }
+      }
+    }
+
     item.quantity += change;
     if (item.quantity < 1) {
       this.removeItem(item);
@@ -254,9 +312,37 @@ export class CartComponent implements OnInit {
     this.calculateTotal();
   }
 
+  isItemOutOfStock(item: CartItem): boolean {
+    if (!item.productId || !item.variantId) return false;
+
+    // Check branch availability
+    const branchAvailability = this.branchProductAvailabilities.find(a => a.productId === item.productId);
+    if (branchAvailability) {
+      if (branchAvailability.status !== 'ACTIVE' || !branchAvailability.available) return true;
+      const now = Date.now();
+      const from = branchAvailability.availableFrom ? new Date(branchAvailability.availableFrom).getTime() : null;
+      const to = branchAvailability.availableTo ? new Date(branchAvailability.availableTo).getTime() : null;
+      if ((from && now < from) || (to && now > to)) return true;
+    }
+
+    // Check daily stock
+    const stock = this.dailyStocks.find(s => s.variantId === item.variantId);
+    if (!stock) return true; // If no stock defined for variant, assume out of stock
+    return (Number(stock.availableQuantity) || 0) < item.quantity; // Not enough stock for cart quantity
+  }
+
+  get hasOutOfStockItems(): boolean {
+    return this.cartItems.some(item => this.isItemOutOfStock(item));
+  }
+
   proceedToCheckout(): void {
     if (this.cartItems.length === 0) {
       alert('Giỏ hàng trống');
+      return;
+    }
+
+    if (this.hasOutOfStockItems) {
+      alert('Vui lòng loại bỏ hoặc giảm số lượng sản phẩm đã hết hàng trong giỏ trước khi đặt.');
       return;
     }
 
@@ -289,8 +375,13 @@ export class CartComponent implements OnInit {
     this.checkingOut = true;
     this.orderService.createOrder(request).subscribe({
       next: order => {
-        this.checkingOut = false;
-        this.router.navigate(['/track-order', order.id]);
+        // If MOMO payment is selected, redirect to MoMo payment gateway
+        if (this.paymentMethod === 'MOMO') {
+          this.handleMomoPayment(order.id, order.orderCode);
+        } else {
+          this.checkingOut = false;
+          this.router.navigate(['/track-order', order.id]);
+        }
       },
       error: err => {
         this.checkingOut = false;
@@ -303,7 +394,37 @@ export class CartComponent implements OnInit {
     this.router.navigate(['/menu']);
   }
 
+  handleMomoPayment(orderId: string, orderCode: string): void {
+    const orderInfo = `Thanh toán đơn hàng ${orderCode}`;
+    
+    this.paymentService.createMomoPayment({
+      orderId,
+      orderInfo,
+      extraData: ''
+    }).subscribe({
+      next: response => {
+        this.checkingOut = false;
+        if (response.resultCode === 0 && response.payUrl) {
+          // Redirect to MoMo payment page
+          window.location.href = response.payUrl;
+        } else {
+          alert('Không thể tạo thanh toán MoMo. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
+          this.router.navigate(['/track-order', orderId]);
+        }
+      },
+      error: err => {
+        this.checkingOut = false;
+        alert(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
+        this.router.navigate(['/track-order', orderId]);
+      }
+    });
+  }
+
   formatPrice(price: number): string {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+  }
+
+  private normalizeOrderMode(value: string | null): 'DELIVERY' | 'PICKUP' {
+    return value === 'DELIVERY' ? 'DELIVERY' : 'PICKUP';
   }
 }

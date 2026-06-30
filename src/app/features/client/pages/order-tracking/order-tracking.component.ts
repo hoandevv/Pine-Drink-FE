@@ -414,10 +414,7 @@ export class OrderTrackingComponent implements OnInit, OnDestroy {
   getPaymentMethodLabel(method: string): string {
     const labels: { [key: string]: string } = {
       CASH: 'Tiền mặt',
-      COD: 'Thanh toán khi nhận hàng',
-      VNPAY: 'VNPay',
-      MOMO: 'Ví MoMo',
-      BANK_TRANSFER: 'Chuyển khoản'
+      COD: 'Thanh toán khi nhận hàng'
     };
     return labels[method] || method;
   }
