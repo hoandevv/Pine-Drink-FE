@@ -33,6 +33,7 @@ export class MenuComponent implements OnInit {
   selectedBranch: Branch | null = null;
   productAvailabilityMap = new Map<string, BranchProductAvailability>();
   cartItems: CartItem[] = [];
+  orderMode: 'PICKUP' | 'DELIVERY' = 'PICKUP';
 
   selectedCategoryId = 'all';
   searchQuery = '';
@@ -58,6 +59,14 @@ export class MenuComponent implements OnInit {
     this.loadCartData();
 
     this.route.queryParams.subscribe(params => {
+      const branchId = params['branchId'];
+      if (branchId) {
+        sessionStorage.setItem('selectedBranchId', branchId);
+      }
+      if (params['mode']) {
+        this.orderMode = this.normalizeOrderMode(params['mode']);
+        sessionStorage.setItem('selectedOrderMode', this.orderMode);
+      }
       if (params['category']) {
         this.selectedCategoryId = params['category'];
         this.filterProducts();
@@ -210,8 +219,11 @@ export class MenuComponent implements OnInit {
     if (branchId && this.selectedBranch?.name) {
       sessionStorage.setItem('selectedBranchId', branchId);
       sessionStorage.setItem('selectedBranchName', this.selectedBranch.name);
+      sessionStorage.setItem('selectedOrderMode', this.orderMode);
     }
-    this.router.navigate(['/product', product.id], { queryParams: branchId ? { branchId } : undefined });
+    this.router.navigate(['/product', product.id], {
+      queryParams: branchId ? { branchId, mode: this.orderMode } : { mode: this.orderMode }
+    });
   }
 
   viewCart(): void {
@@ -285,6 +297,7 @@ export class MenuComponent implements OnInit {
   private loadSelectedBranch(): void {
     const storedBranchId = sessionStorage.getItem('selectedBranchId') || '';
     const storedBranchName = sessionStorage.getItem('selectedBranchName') || '';
+    this.orderMode = this.normalizeOrderMode(sessionStorage.getItem('selectedOrderMode'));
 
     this.branchService.getActiveBranches(0, 100).subscribe({
       next: page => {
@@ -330,5 +343,8 @@ export class MenuComponent implements OnInit {
         this.filterProducts();
       }
     });
+  }
+  private normalizeOrderMode(value: string | null): 'PICKUP' | 'DELIVERY' {
+    return value === 'DELIVERY' ? 'DELIVERY' : 'PICKUP';
   }
 }

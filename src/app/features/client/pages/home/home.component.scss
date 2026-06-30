@@ -355,13 +355,18 @@
       transition: all 0.2s;
       white-space: nowrap;
 
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
       &.active {
         background: white;
         color: #164A2F;
         box-shadow: 0 2px 8px rgba(22, 74, 47, 0.1);
       }
 
-      &:hover:not(.active) {
+      &:hover:not(.active):not(:disabled) {
         color: #164A2F;
       }
     }

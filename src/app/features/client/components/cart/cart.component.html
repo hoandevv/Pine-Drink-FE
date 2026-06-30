@@ -60,13 +60,16 @@
       <!-- Cart Items -->
       <div class="cart-items-section">
         <div class="cart-items-list">
-          <article *ngFor="let item of cartItems" class="cart-item">
+          <article *ngFor="let item of cartItems" class="cart-item" [class.out-of-stock]="isItemOutOfStock(item)">
             <div class="product-img-wrapper">
               <img [src]="item.productImageUrl || 'assets/images/placeholder-product.svg'" [alt]="item.productName" />
             </div>
             
             <div class="item-details">
-              <h3>{{ item.productName }}</h3>
+              <div class="title-row">
+                <h3>{{ item.productName }}</h3>
+                <span *ngIf="isItemOutOfStock(item)" class="out-of-stock-badge">Hết hàng / Quá SL</span>
+              </div>
               <div class="item-options">
                 <span *ngIf="item.variantName" class="option-tag size-variant">{{ item.variantName }}</span>
                 <span *ngIf="item.iceLevel" class="option-tag ice-variant">Đá {{ item.iceLevel }}</span>
@@ -95,7 +98,12 @@
                   <span class="material-symbols-outlined">remove</span>
                 </button>
                 <span class="quantity">{{ item.quantity }}</span>
-                <button type="button" (click)="updateQuantity(item, 1)" aria-label="Tăng số lượng">
+                <button 
+                  type="button" 
+                  (click)="updateQuantity(item, 1)" 
+                  [disabled]="isItemOutOfStock(item)"
+                  aria-label="Tăng số lượng"
+                >
                   <span class="material-symbols-outlined">add</span>
                 </button>
               </div>
@@ -207,15 +215,42 @@
 
           <div class="option-group">
             <label>Phương thức thanh toán</label>
-            <div class="select-wrapper">
-              <select [(ngModel)]="paymentMethod">
-                <option [value]="orderType === 'DELIVERY' ? 'COD' : 'CASH'">
-                  {{ orderType === 'DELIVERY' ? 'Thanh toán tiền mặt khi nhận hàng (COD)' : 'Thanh toán tiền mặt tại quầy' }}
-                </option>
-                <option value="MOMO">Thanh toán qua ví MoMo</option>
-              </select>
-              <span class="material-symbols-outlined select-chevron">expand_more</span>
+            <div class="payment-methods-grid">
+              <!-- Cash / COD Option -->
+              <div 
+                class="payment-method-card" 
+                [class.active]="paymentMethod === 'COD' || paymentMethod === 'CASH'"
+                (click)="paymentMethod = orderType === 'DELIVERY' ? 'COD' : 'CASH'"
+              >
+                <div class="payment-icon">
+                  <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div class="payment-info">
+                  <strong>{{ orderType === 'DELIVERY' ? 'Thanh toán tiền mặt (COD)' : 'Thanh toán tại quầy' }}</strong>
+                </div>
+                <div class="radio-indicator">
+                  <span class="material-symbols-outlined">{{ (paymentMethod === 'COD' || paymentMethod === 'CASH') ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+                </div>
+              </div>
+
+              <!-- MoMo Option -->
+              <div 
+                class="payment-method-card" 
+                [class.active]="paymentMethod === 'MOMO'"
+                (click)="paymentMethod = 'MOMO'"
+              >
+                <div class="payment-icon momo">
+                  <span class="material-symbols-outlined">account_balance_wallet</span>
+                </div>
+                <div class="payment-info">
+                  <strong>Ví MoMo</strong>
+                </div>
+                <div class="radio-indicator">
+                  <span class="material-symbols-outlined">{{ paymentMethod === 'MOMO' ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+                </div>
+              </div>
             </div>
+            
             <div *ngIf="paymentMethod === 'MOMO'" class="payment-info-note">
               <span class="material-symbols-outlined">info</span>
               <p>Bạn sẽ được chuyển đến trang thanh toán MoMo sau khi xác nhận đơn hàng</p>
@@ -328,9 +363,9 @@
           </div>
         </div>
 
-        <button class="checkout-button" (click)="proceedToCheckout()" [disabled]="checkingOut || !!deliveryError">
+        <button class="checkout-button" (click)="proceedToCheckout()" [disabled]="checkingOut || !!deliveryError || hasOutOfStockItems">
           <span *ngIf="checkingOut" class="inline-spinner"></span>
-          <span>{{ checkingOut ? 'Đang tạo đơn...' : 'Xác nhận đặt hàng' }}</span>
+          <span>{{ checkingOut ? 'Đang tạo đơn...' : (hasOutOfStockItems ? 'Có sản phẩm hết hàng' : 'Xác nhận đặt hàng') }}</span>
         </button>
 
         <div class="payment-methods">
