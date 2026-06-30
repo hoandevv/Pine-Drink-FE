@@ -10,6 +10,7 @@ import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.co
 import { CartComponent } from './components/cart/cart.component';
 import { AddressListComponent } from './pages/address-list/address-list.component';
 import { AddressFormComponent } from './pages/address-form/address-form.component';
+import { PaymentResultComponent } from './pages/payment-result/payment-result.component';
 
 const routes: Routes = [
   {
@@ -44,6 +45,10 @@ const routes: Routes = [
   {
     path: 'cart',
     component: CartComponent
+  },
+  {
+    path: 'payment/momo-return',
+    component: PaymentResultComponent
   },
   {
     path: 'profile',

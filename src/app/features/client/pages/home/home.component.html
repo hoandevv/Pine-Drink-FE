@@ -37,8 +37,20 @@
     <small>{{ 'home.quickOrder.nearestBranch' | translate }} - {{ selectedBranch.address || 'Pine Drink' }}</small>
   </div>
   <div class="order-toggle">
-    <button type="button" class="active">{{ 'home.quickOrder.pickupAtStore' | translate }}</button>
-    <button type="button">{{ 'home.quickOrder.delivery' | translate }}</button>
+    <button
+      type="button"
+      [class.active]="orderMode === 'PICKUP'"
+      [disabled]="!canUseOrderMode('PICKUP')"
+      (click)="selectOrderMode('PICKUP')">
+      {{ 'home.quickOrder.pickupAtStore' | translate }}
+    </button>
+    <button
+      type="button"
+      [class.active]="orderMode === 'DELIVERY'"
+      [disabled]="!canUseOrderMode('DELIVERY')"
+      (click)="selectOrderMode('DELIVERY')">
+      {{ 'home.quickOrder.delivery' | translate }}
+    </button>
   </div>
   <button class="primary-button compact" (click)="navigateToMenu()">{{ 'home.quickOrder.startOrder' | translate
     }}</button>
