@@ -44,6 +44,7 @@ export class ProductDetailComponent implements OnInit {
   branches: Branch[] = [];
   selectedBranchId = '';
   selectedBranchName = '';
+  orderMode: 'PICKUP' | 'DELIVERY' = 'PICKUP';
   branchProductAvailability: BranchProductAvailability | null = null;
   branchToppingAvailabilities: BranchToppingAvailability[] = [];
   dailyStocks: DailyStock[] = [];
@@ -57,6 +58,8 @@ export class ProductDetailComponent implements OnInit {
   selectedToppings: MockTopping[] = [];
   quantity = 1;
   note = '';
+
+  cartItems: any[] = [];
 
   sizeOptions: SizeOption[] = [];
 
@@ -91,14 +94,22 @@ export class ProductDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const routeBranchId = this.route.snapshot.queryParamMap.get('branchId') || '';
+    const routeOrderMode = this.route.snapshot.queryParamMap.get('mode');
     if (routeBranchId) {
       sessionStorage.setItem('selectedBranchId', routeBranchId);
     }
+    this.orderMode = this.normalizeOrderMode(routeOrderMode || sessionStorage.getItem('selectedOrderMode'));
+    sessionStorage.setItem('selectedOrderMode', this.orderMode);
 
     this.loadBranches();
     this.route.params.subscribe(params => {
       const productId = params['id'];
       this.loadProduct(productId);
+    });
+
+    this.cartService.cart$.subscribe(cart => {
+      this.cartItems = cart?.items || [];
+      this.normalizeQuantityToStock();
     });
   }
 
@@ -141,6 +152,7 @@ export class ProductDetailComponent implements OnInit {
     this.selectedBranchName = this.branches.find(branch => branch.id === branchId)?.name || this.selectedBranchName;
     sessionStorage.setItem('selectedBranchId', this.selectedBranchId);
     sessionStorage.setItem('selectedBranchName', this.selectedBranchName);
+    sessionStorage.setItem('selectedOrderMode', this.orderMode);
     this.refreshAvailability();
   }
 
@@ -228,7 +240,16 @@ export class ProductDetailComponent implements OnInit {
 
   get availableQuota(): number | null {
     const stock = this.selectedDailyStock;
-    return stock ? Math.max(0, Number(stock.availableQuantity) || 0) : null;
+    if (!stock) return null;
+    const baseQuota = Math.max(0, Number(stock.availableQuantity) || 0);
+    return Math.max(0, baseQuota - this.existingCartQuantity);
+  }
+
+  get existingCartQuantity(): number {
+    if (!this.selectedVariant) return 0;
+    return this.cartItems
+      .filter(item => item.variantId === this.selectedVariant!.id && item.productId === this.product?.id)
+      .reduce((sum, item) => sum + item.quantity, 0);
   }
 
   get maxOrderQuantity(): number {
@@ -444,7 +465,7 @@ export class ProductDetailComponent implements OnInit {
     if (!this.selectedBranchId) { return; }
 
     this.quotaLoading = true;
-    this.dailyStockService.getByBranchAndDate(this.selectedBranchId, this.todayKey()).subscribe({
+    this.dailyStockService.getPublicByBranchAndDate(this.selectedBranchId, this.todayKey()).subscribe({
       next: stocks => {
         this.dailyStocks = stocks || [];
         this.quotaLoading = false;
@@ -515,5 +536,9 @@ export class ProductDetailComponent implements OnInit {
     const to = availability.availableTo ? new Date(availability.availableTo).getTime() : null;
 
     return (!from || now >= from) && (!to || now <= to);
+  }
+
+  private normalizeOrderMode(value: string | null): 'PICKUP' | 'DELIVERY' {
+    return value === 'DELIVERY' ? 'DELIVERY' : 'PICKUP';
   }
 }

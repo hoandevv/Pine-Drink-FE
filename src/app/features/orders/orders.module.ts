@@ -3,7 +3,6 @@ import { NgModule } from '@angular/core';
 import { SharedModule } from '../../shared/shared.module';
 import { OrderListComponent } from './pages/order-list/order-list.component';
 import { OrdersRoutingModule } from './orders-routing.module';
-import { OrderService } from './services/order.service';
 
 import { OrderStatsComponent } from './components/order-stats.component';
 import { OrderStatusBadgeComponent } from './components/order-status-badge.component';
@@ -24,7 +23,7 @@ import { OrderDetailDrawerComponent } from './components/order-detail-drawer.com
     OrderKanbanComponent,
     OrderDetailDrawerComponent
   ],
-  imports: [SharedModule, OrdersRoutingModule],
-  providers: [OrderService]
+  imports: [SharedModule, OrdersRoutingModule]
 })
 export class OrdersModule {}
+

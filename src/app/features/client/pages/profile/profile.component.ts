@@ -45,34 +45,12 @@ export class ProfileComponent implements OnInit {
     gender: 'OTHER',
     avatar: '',
     loyaltyPoints: 1250,
-    memberSince: '2024-01-15',
+    memberSince: '',
     authProvider: 'LOCAL',
     hasLocalPassword: true
   };
 
-  recentOrders: Order[] = [
-    {
-      id: 'ORD-001',
-      date: '2024-05-20',
-      items: 3,
-      total: 125000,
-      status: 'completed'
-    },
-    {
-      id: 'ORD-002',
-      date: '2024-05-18',
-      items: 2,
-      total: 89000,
-      status: 'completed'
-    },
-    {
-      id: 'ORD-003',
-      date: '2024-05-15',
-      items: 4,
-      total: 156000,
-      status: 'completed'
-    }
-  ];
+  recentOrders: Order[] = [];
 
   activeTab: 'info' | 'orders' | 'favorites' | 'settings' = 'info';
   showLanguageSelector: boolean = false;
@@ -189,6 +167,7 @@ export class ProfileComponent implements OnInit {
         this.user.avatar = profile.avatarUrl || '';
         this.user.authProvider = (profile.authProvider || 'LOCAL').toUpperCase();
         this.user.hasLocalPassword = Boolean(profile.hasLocalPassword);
+        this.user.memberSince = profile.createdAt || '';
         this.syncPasswordFormMode();
         console.log('[Profile] Avatar URL:', this.user.avatar);
       },
@@ -205,6 +184,7 @@ export class ProfileComponent implements OnInit {
           this.user.avatar = currentUser.avatarUrl || '';
           this.user.authProvider = (currentUser.authProvider || 'LOCAL').toUpperCase();
           this.user.hasLocalPassword = Boolean(currentUser.hasLocalPassword);
+          this.user.memberSince = currentUser.createdAt || '';
           this.syncPasswordFormMode();
         }
       }
@@ -248,8 +228,26 @@ export class ProfileComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
-  formatDate(dateString: string): string {
-    const date = new Date(dateString);
+  formatDate(dateValue: string | number[] | null | undefined): string {
+    if (!dateValue) {
+      return 'Chưa có dữ liệu';
+    }
+
+    const date = Array.isArray(dateValue)
+      ? new Date(
+          dateValue[0],
+          (dateValue[1] || 1) - 1,
+          dateValue[2] || 1,
+          dateValue[3] || 0,
+          dateValue[4] || 0,
+          dateValue[5] || 0
+        )
+      : new Date(dateValue);
+
+    if (Number.isNaN(date.getTime())) {
+      return 'Chưa có dữ liệu';
+    }
+
     const currentLang = this.languageService.getCurrentLanguage();
     return date.toLocaleDateString(currentLang === 'vi' ? 'vi-VN' : 'en-US');
   }

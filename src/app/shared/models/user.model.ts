@@ -16,6 +16,7 @@ export interface AuthUser {
   authProvider?: 'LOCAL' | 'GOOGLE' | string | null;
   hasLocalPassword?: boolean | null;
   lastLoginAt?: string | null;
+  createdAt?: string | null;
   scope?: ScopeAccess | null;
   roles?: string[];
   permissions?: string[];

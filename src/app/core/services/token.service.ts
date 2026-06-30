@@ -72,14 +72,18 @@ export class TokenService {
       fullName: storedUser?.fullName,
       email: payload.email ?? storedUser?.email ?? '',
       phone: storedUser?.phone,
+      dateOfBirth: storedUser?.dateOfBirth,
+      gender: storedUser?.gender,
       avatarUrl: storedUser?.avatarUrl,
       status: storedUser?.status,
       authProvider: storedUser?.authProvider,
       hasLocalPassword: storedUser?.hasLocalPassword,
       lastLoginAt: storedUser?.lastLoginAt,
+      createdAt: storedUser?.createdAt,
       scope: storedUser?.scope ?? null,
       roles: payload.roles ?? storedUser?.roles ?? [],
-      permissions: payload.permissions ?? storedUser?.permissions ?? []
+      permissions: payload.permissions ?? storedUser?.permissions ?? [],
+      permissionsLoadedAt: storedUser?.permissionsLoadedAt
     };
   }
 

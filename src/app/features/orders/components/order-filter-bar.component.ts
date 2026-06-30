@@ -16,7 +16,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
         <div class="selectors-group">
           <select formControlName="status">
             <option value="">All Status</option>
-            <option value="NEW">New</option>
+            <option value="PENDING">Pending</option>
             <option value="CONFIRMED">Confirmed</option>
             <option value="PREPARING">Preparing</option>
             <option value="READY">Ready</option>
@@ -153,3 +153,4 @@ export class OrderFilterBarComponent {
     this.filterForm.reset({ dateRange: 'today', search: '', status: '', payment: '', type: '' });
   }
 }
+

@@ -2,12 +2,14 @@
   <a routerLink="/" class="brand" (click)="closeMobileNav()"><span>Pine Drink</span></a>
 
   <nav class="nav-links" [class.is-open]="isMobileNavOpen" aria-label="Điều hướng chính">
-    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeMobileNav()">Trang chủ</a>
+    <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"
+      (click)="closeMobileNav()">Trang chủ</a>
     <a routerLink="/menu" routerLinkActive="active" (click)="closeMobileNav()">Menu</a>
     <a routerLink="/promotions" routerLinkActive="active" (click)="closeMobileNav()">Khuyến mãi</a>
     <a routerLink="/track-order" routerLinkActive="active" (click)="closeMobileNav()">Theo dõi đơn</a>
     <a routerLink="/stores" routerLinkActive="active" (click)="closeMobileNav()">Cửa hàng</a>
-    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị" (click)="closeMobileNav()">
+    <a *ngIf="isAdmin" routerLink="/admin" class="admin-entry" aria-label="Quay lại trang quản trị"
+      (click)="closeMobileNav()">
       <span class="material-symbols-outlined">admin_panel_settings</span>
       <span>Quản trị</span>
     </a>
@@ -42,7 +44,8 @@
     <ng-template #guestActions>
       <a routerLink="/auth/login" class="login-button">Login</a>
     </ng-template>
-    <button class="mobile-menu-button" type="button" aria-label="Mở menu" [attr.aria-expanded]="isMobileNavOpen" (click)="toggleMobileNav()">
+    <button class="mobile-menu-button" type="button" aria-label="Mở menu" [attr.aria-expanded]="isMobileNavOpen"
+      (click)="toggleMobileNav()">
       <span class="material-symbols-outlined">{{ isMobileNavOpen ? 'close' : 'menu' }}</span>
     </button>
   </div>
@@ -62,7 +65,8 @@
         <span class="brand-mark">P</span>
         <strong>Pine Drink</strong>
       </div>
-      <p>Thương hiệu F&B hiện đại cho thế hệ mới. Đem lại trải nghiệm thưởng thức đồ uống nhanh chóng và chất lượng nhất.</p>
+      <p>Thương hiệu F&B hiện đại cho thế hệ mới. Đem lại trải nghiệm thưởng thức đồ uống nhanh chóng và chất lượng
+        nhất.</p>
       <div class="social-links">
         <a href="#" aria-label="Facebook" target="_blank">
           <span class="material-symbols-outlined">facebook</span>
@@ -132,8 +136,10 @@
   </div>
 </footer>
 
-<a *ngIf="!isChatPage" class="client-chat-fab" [routerLink]="['/chat']" [queryParams]="chatQueryParams" aria-label="Nhắn tin với Pine Drink">
+<a *ngIf="!isChatPage" class="client-chat-fab" [routerLink]="['/chat']" [queryParams]="chatQueryParams"
+  aria-label="Nhắn tin với Pine Drink">
   <span class="material-symbols-outlined">support_agent</span>
 </a>
 
-<button class="mobile-cart" type="button" routerLink="/cart"><span class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>
+<button class="mobile-cart" type="button" (click)="goToCart()"><span
+    class="material-symbols-outlined">shopping_basket</span>{{ cartCount }} món - {{ formatPrice(cartTotal) }}</button>

@@ -3,20 +3,38 @@
     <!-- Cart Header -->
     <div class="cart-header">
       <button class="back-button" (click)="continueShopping()">
-        <span class="material-symbols-outlined">arrow_back</span>
+        <span class="material-symbols-outlined back-icon">arrow_back</span>
         Tiếp tục mua hàng
       </button>
-      <h1>Giỏ hàng của bạn</h1>
-      <p *ngIf="cartItems.length > 0">{{ cartItems.length }} sản phẩm</p>
+      <div class="header-title-row">
+        <h1>Giỏ hàng của bạn</h1>
+        <span *ngIf="cartItems.length > 0" class="cart-count-badge">{{ cartItems.length }} sản phẩm</span>
+      </div>
     </div>
 
-    <div *ngIf="loading" class="empty-cart">
-      <span class="material-symbols-outlined">progress_activity</span>
-      <h2>Đang tải giỏ hàng...</h2>
+    <!-- Skeleton Loading State (Matches Layout) -->
+    <div *ngIf="loading" class="cart-skeleton-layout">
+      <div class="skeleton-main">
+        <div class="skeleton-card">
+          <div class="skeleton-item" *ngFor="let i of [1, 2]">
+            <div class="skeleton-img pulse"></div>
+            <div class="skeleton-info">
+              <div class="skeleton-line title pulse"></div>
+              <div class="skeleton-line sub pulse"></div>
+            </div>
+            <div class="skeleton-actions pulse"></div>
+          </div>
+        </div>
+        <div class="skeleton-card spec pulse"></div>
+      </div>
+      <div class="skeleton-side sidebar pulse"></div>
     </div>
 
-    <div *ngIf="!loading && errorMessage" class="empty-cart">
-      <span class="material-symbols-outlined">error</span>
+    <!-- Error State -->
+    <div *ngIf="!loading && errorMessage" class="empty-cart error-state">
+      <div class="error-icon-wrapper">
+        <span class="material-symbols-outlined">wifi_off</span>
+      </div>
       <h2>Chưa thể tải giỏ hàng</h2>
       <p>{{ errorMessage }}</p>
       <button class="primary-button" (click)="continueShopping()">
@@ -25,12 +43,15 @@
     </div>
 
     <!-- Empty Cart State -->
-    <div *ngIf="!loading && !errorMessage && cartItems.length === 0" class="empty-cart">
-      <span class="material-symbols-outlined">shopping_cart</span>
-      <h2>Giỏ hàng trống</h2>
-      <p>Hãy thêm sản phẩm vào giỏ hàng để tiếp tục</p>
+    <div *ngIf="!loading && !errorMessage && cartItems.length === 0" class="empty-cart empty-state">
+      <div class="empty-icon-wrapper">
+        <span class="material-symbols-outlined animate-cup">local_bar</span>
+        <span class="plus-badge">+</span>
+      </div>
+      <h2>Giỏ hàng đang đợi bạn điền đầy</h2>
+      <p>Một ly nước ngọt ngào từ Pine Drink sẽ làm ngày mới của bạn tràn đầy năng lượng!</p>
       <button class="primary-button" (click)="continueShopping()">
-        Khám phá menu
+        Khám phá menu ngay
       </button>
     </div>
 
@@ -39,15 +60,20 @@
       <!-- Cart Items -->
       <div class="cart-items-section">
         <div class="cart-items-list">
-          <article *ngFor="let item of cartItems" class="cart-item">
-            <img [src]="item.productImageUrl || 'assets/images/placeholder-product.svg'" [alt]="item.productName" />
+          <article *ngFor="let item of cartItems" class="cart-item" [class.out-of-stock]="isItemOutOfStock(item)">
+            <div class="product-img-wrapper">
+              <img [src]="item.productImageUrl || 'assets/images/placeholder-product.svg'" [alt]="item.productName" />
+            </div>
             
             <div class="item-details">
-              <h3>{{ item.productName }}</h3>
+              <div class="title-row">
+                <h3>{{ item.productName }}</h3>
+                <span *ngIf="isItemOutOfStock(item)" class="out-of-stock-badge">Hết hàng / Quá SL</span>
+              </div>
               <div class="item-options">
-                <span *ngIf="item.variantName" class="option-tag">{{ item.variantName }}</span>
-                <span *ngIf="item.iceLevel" class="option-tag">Đá {{ item.iceLevel }}</span>
-                <span *ngIf="item.sugarLevel" class="option-tag">Đường {{ item.sugarLevel }}</span>
+                <span *ngIf="item.variantName" class="option-tag size-variant">{{ item.variantName }}</span>
+                <span *ngIf="item.iceLevel" class="option-tag ice-variant">Đá {{ item.iceLevel }}</span>
+                <span *ngIf="item.sugarLevel" class="option-tag sugar-variant">Đường {{ item.sugarLevel }}</span>
               </div>
               <div *ngIf="item.toppings.length > 0" class="item-toppings">
                 <span class="topping-label">Topping:</span>
@@ -56,7 +82,7 @@
                 </span>
               </div>
               <p *ngIf="item.note" class="item-note">
-                <span class="material-symbols-outlined">note</span>
+                <span class="material-symbols-outlined">description</span>
                 {{ item.note }}
               </p>
             </div>
@@ -67,11 +93,17 @@
                   type="button" 
                   (click)="updateQuantity(item, -1)"
                   [disabled]="item.quantity <= 1"
+                  aria-label="Giảm số lượng"
                 >
                   <span class="material-symbols-outlined">remove</span>
                 </button>
                 <span class="quantity">{{ item.quantity }}</span>
-                <button type="button" (click)="updateQuantity(item, 1)">
+                <button 
+                  type="button" 
+                  (click)="updateQuantity(item, 1)" 
+                  [disabled]="isItemOutOfStock(item)"
+                  aria-label="Tăng số lượng"
+                >
                   <span class="material-symbols-outlined">add</span>
                 </button>
               </div>
@@ -80,24 +112,168 @@
                 <strong>{{ formatPrice(item.totalPrice) }}</strong>
               </div>
 
-              <button class="remove-button" (click)="removeItem(item)">
-                <span class="material-symbols-outlined">delete</span>
+              <button class="remove-button" (click)="removeItem(item)" aria-label="Xóa sản phẩm">
+                <span class="material-symbols-outlined">delete_forever</span>
               </button>
             </div>
           </article>
         </div>
 
+        <div class="checkout-options">
+          <div class="option-group">
+            <label>Hình thức nhận hàng</label>
+            <div class="select-wrapper">
+              <select [(ngModel)]="orderType" (ngModelChange)="onOrderTypeChange()">
+                <option value="DELIVERY">Giao hàng tận nơi</option>
+                <option value="PICKUP">Đến lấy tại quán</option>
+              </select>
+              <span class="material-symbols-outlined select-chevron">expand_more</span>
+            </div>
+          </div>
+
+          <div class="option-group" *ngIf="orderType === 'DELIVERY'">
+            <label>Địa chỉ giao hàng</label>
+            <div class="select-wrapper">
+              <select [(ngModel)]="selectedAddressId" (ngModelChange)="onAddressChange()">
+                <option value="" disabled>Chọn địa chỉ nhận hàng</option>
+                <option *ngFor="let address of addresses" [value]="address.id">
+                  {{ address.receiverName }} - {{ address.receiverPhone }} - {{ formatAddress(address) }}
+                </option>
+              </select>
+              <span class="material-symbols-outlined select-chevron">expand_more</span>
+            </div>
+
+            <div *ngIf="selectedAddress as address" class="selected-address-card animated-card">
+              <div class="address-card-icon">
+                <span class="material-symbols-outlined">location_on</span>
+              </div>
+              <div class="address-card-content">
+                <div class="receiver-line">
+                  <strong>{{ address.receiverName }}</strong>
+                  <span class="phone-badge">{{ address.receiverPhone }}</span>
+                </div>
+                <p>{{ formatAddress(address) }}</p>
+                <span *ngIf="address.isDefault" class="default-badge">Mặc định</span>
+              </div>
+            </div>
+
+
+            <div *ngIf="!selectedAddress" class="delivery-info-description empty">
+              <h4>
+                <span class="material-symbols-outlined">contact_support</span>
+                Chưa chọn thông tin giao hàng
+              </h4>
+              <p *ngIf="addresses.length === 0">
+                Bạn chưa lưu địa chỉ giao hàng nào. Vui lòng thêm địa chỉ mới để tiếp tục đặt hàng.
+              </p>
+              <p *ngIf="addresses.length > 0">
+                Vui lòng chọn một địa chỉ nhận hàng từ danh mục phía trên.
+              </p>
+            </div>
+
+            <button type="button" class="link-button" routerLink="/addresses/new">
+              <span class="material-symbols-outlined">add_circle</span> Thêm địa chỉ mới
+            </button>
+
+            <!-- Delivery Error Banner -->
+            <div *ngIf="deliveryError" class="delivery-error-banner">
+              <span class="material-symbols-outlined">warning_row</span>
+              <p>{{ deliveryError }}</p>
+            </div>
+          </div>
+
+          <div class="option-group" *ngIf="orderType === 'PICKUP'">
+            <label>Thông tin quán nhận hàng</label>
+
+            <div *ngIf="selectedBranch as branch" class="delivery-info-description pickup animated-card">
+              <h4>
+                <span class="material-symbols-outlined">storefront</span>
+                Chi nhánh Pine Drink phụ trách
+              </h4>
+              <div class="delivery-info-row">
+                <span class="info-label">Tên quán</span>
+                <strong>{{ branch.name }}</strong>
+              </div>
+              <div class="delivery-info-row">
+                <span class="info-label">Hotline</span>
+                <strong>{{ branch.phone || 'Chưa cập nhật' }}</strong>
+              </div>
+              <div class="delivery-info-row">
+                <span class="info-label">Địa chỉ cửa hàng</span>
+                <p>{{ branch.address || 'Chưa cập nhật địa chỉ' }}</p>
+              </div>
+            </div>
+
+            <div *ngIf="!selectedBranch" class="delivery-info-description empty">
+              <h4>
+                <span class="material-symbols-outlined">storefront</span>
+                Chưa nhận dạng được chi nhánh
+              </h4>
+              <p>Vui lòng quay lại trang chủ chọn chi nhánh gần bạn nhất trước khi đặt món.</p>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label>Phương thức thanh toán</label>
+            <div class="payment-methods-grid">
+              <!-- Cash / COD Option -->
+              <div 
+                class="payment-method-card" 
+                [class.active]="paymentMethod === 'COD' || paymentMethod === 'CASH'"
+                (click)="paymentMethod = orderType === 'DELIVERY' ? 'COD' : 'CASH'"
+              >
+                <div class="payment-icon">
+                  <span class="material-symbols-outlined">payments</span>
+                </div>
+                <div class="payment-info">
+                  <strong>{{ orderType === 'DELIVERY' ? 'Thanh toán tiền mặt (COD)' : 'Thanh toán tại quầy' }}</strong>
+                </div>
+                <div class="radio-indicator">
+                  <span class="material-symbols-outlined">{{ (paymentMethod === 'COD' || paymentMethod === 'CASH') ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+                </div>
+              </div>
+
+              <!-- MoMo Option -->
+              <div 
+                class="payment-method-card" 
+                [class.active]="paymentMethod === 'MOMO'"
+                (click)="paymentMethod = 'MOMO'"
+              >
+                <div class="payment-icon momo">
+                  <span class="material-symbols-outlined">account_balance_wallet</span>
+                </div>
+                <div class="payment-info">
+                  <strong>Ví MoMo</strong>
+                </div>
+                <div class="radio-indicator">
+                  <span class="material-symbols-outlined">{{ paymentMethod === 'MOMO' ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div *ngIf="paymentMethod === 'MOMO'" class="payment-info-note">
+              <span class="material-symbols-outlined">info</span>
+              <p>Bạn sẽ được chuyển đến trang thanh toán MoMo sau khi xác nhận đơn hàng</p>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <label>Ghi chú cho đơn hàng</label>
+            <textarea rows="3" placeholder="Ví dụ: Ít ngọt, nhiều đá, giao giờ hành chính..." [(ngModel)]="note"></textarea>
+          </div>
+        </div>
+
         <!-- Voucher Section -->
         <div class="voucher-section">
           <h3>
-            <span class="material-symbols-outlined">local_offer</span>
-            Mã giảm giá
+            <span class="material-symbols-outlined icon-accent">local_offer</span>
+            Mã giảm giá khả dụng
           </h3>
           
           <div class="voucher-input">
             <input 
               type="text" 
-              placeholder="Nhập mã voucher" 
+              placeholder="Nhập mã ưu đãi của bạn..." 
               [(ngModel)]="voucherCode"
               [disabled]="!!selectedVoucher"
             />
@@ -117,39 +293,43 @@
             </button>
           </div>
 
-          <div *ngIf="selectedVoucher" class="applied-voucher">
-            <span class="material-symbols-outlined">check_circle</span>
-            <div>
+          <!-- Applied Voucher View Component -->
+          <div *ngIf="selectedVoucher" class="applied-voucher animated-voucher-success">
+            <span class="material-symbols-outlined success-pop-icon">check_circle</span>
+            <div class="applied-info">
               <strong>{{ selectedVoucher.code }}</strong>
-              <p>{{ selectedVoucher.title }}</p>
+              <p>{{ selectedVoucher.name }}</p>
             </div>
             <span class="discount-amount">-{{ formatPrice(discount) }}</span>
           </div>
 
           <div class="available-vouchers">
-            <h4>Voucher khả dụng</h4>
+            <h4>Ưu đãi dành riêng cho bạn</h4>
             <div class="voucher-list">
               <article 
                 *ngFor="let voucher of availableVouchers" 
                 class="voucher-card"
-                [class.disabled]="subtotal < voucher.minOrderAmount"
+                [class.disabled]="subtotal < (voucher.minOrderAmount || 0)"
               >
                 <div class="voucher-icon">
                   <span class="material-symbols-outlined">confirmation_number</span>
                 </div>
                 <div class="voucher-info">
-                  <strong>{{ voucher.code }}</strong>
-                  <p>{{ voucher.title }}</p>
-                  <small *ngIf="subtotal < voucher.minOrderAmount">
-                    Đơn tối thiểu {{ formatPrice(voucher.minOrderAmount) }}
+                  <div class="code-row">
+                    <strong>{{ voucher.code }}</strong>
+                    <span *ngIf="subtotal < (voucher.minOrderAmount || 0)" class="material-symbols-outlined lock-icon">lock</span>
+                  </div>
+                  <p>{{ voucher.name }}</p>
+                  <small *ngIf="subtotal < (voucher.minOrderAmount || 0)">
+                    Cần mua thêm {{ formatPrice((voucher.minOrderAmount || 0) - subtotal) }} để kích hoạt
                   </small>
                 </div>
                 <button 
                   class="apply-voucher-button"
-                  [disabled]="subtotal < voucher.minOrderAmount || selectedVoucher?.id === voucher.id"
+                  [disabled]="subtotal < (voucher.minOrderAmount || 0) || selectedVoucher?.id === voucher.id"
                   (click)="applyVoucher(voucher)"
                 >
-                  {{ selectedVoucher?.id === voucher.id ? 'Đã áp dụng' : 'Áp dụng' }}
+                  {{ selectedVoucher?.id === voucher.id ? 'Đã dùng' : 'Áp dụng' }}
                 </button>
               </article>
             </div>
@@ -157,48 +337,61 @@
         </div>
       </div>
 
-      <!-- Order Summary -->
+      <!-- Order Summary Column -->
       <aside class="order-summary">
         <h3>Tóm tắt đơn hàng</h3>
         
         <div class="summary-details">
           <div class="summary-row">
             <span>Tạm tính</span>
-            <span>{{ formatPrice(subtotal) }}</span>
+            <strong>{{ formatPrice(subtotal) }}</strong>
           </div>
           <div class="summary-row">
-            <span>Phí giao hàng</span>
-            <span>{{ formatPrice(shippingFee) }}</span>
+            <span>Phí vận chuyển</span>
+            <strong>{{ formatPrice(shippingFee) }}</strong>
           </div>
           <div *ngIf="discount > 0" class="summary-row discount">
-            <span>Giảm giá</span>
-            <span>-{{ formatPrice(discount) }}</span>
+            <span>Ưu đãi voucher</span>
+            <strong>-{{ formatPrice(discount) }}</strong>
           </div>
+          
           <div class="summary-divider"></div>
+          
           <div class="summary-row total">
-            <strong>Tổng cộng</strong>
-            <strong>{{ formatPrice(total) }}</strong>
+            <span>Tổng số tiền</span>
+            <strong class="total-price-text">{{ formatPrice(total) }}</strong>
           </div>
         </div>
 
-        <button class="checkout-button" (click)="proceedToCheckout()">
-          Tiến hành thanh toán
+        <button class="checkout-button" (click)="proceedToCheckout()" [disabled]="checkingOut || !!deliveryError || hasOutOfStockItems">
+          <span *ngIf="checkingOut" class="inline-spinner"></span>
+          <span>{{ checkingOut ? 'Đang tạo đơn...' : (hasOutOfStockItems ? 'Có sản phẩm hết hàng' : 'Xác nhận đặt hàng') }}</span>
         </button>
 
         <div class="payment-methods">
-          <p>Phương thức thanh toán</p>
-          <div class="payment-icons">
-            <span class="payment-icon">💳</span>
-            <span class="payment-icon">📱</span>
-            <span class="payment-icon">💵</span>
+          <p>Hỗ trợ các phương thức thanh toán</p>
+          <div class="payment-icons-list">
+            <div class="payment-badge" title="Thẻ ngân hàng">
+              <span class="material-symbols-outlined">credit_card</span>
+              <small>Thẻ</small>
+            </div>
+            <div class="payment-badge" title="Ví điện tử">
+              <span class="material-symbols-outlined">smartphone</span>
+              <small>Ví Điện Tử</small>
+            </div>
+            <div class="payment-badge" title="Tiền mặt">
+              <span class="material-symbols-outlined">payments</span>
+              <small>Tiền Mặt</small>
+            </div>
           </div>
         </div>
 
         <div class="security-note">
-          <span class="material-symbols-outlined">lock</span>
-          <p>Thanh toán an toàn và bảo mật</p>
+          <span class="material-symbols-outlined">verified_user</span>
+          <p>Mọi giao dịch được mã hóa an toàn & bảo mật tuyệt đối</p>
         </div>
       </aside>
     </div>
   </div>
 </div>
+

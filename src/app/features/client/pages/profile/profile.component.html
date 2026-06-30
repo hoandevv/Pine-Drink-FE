@@ -1,376 +1,298 @@
 <div class="profile-page">
-  <!-- Error/Success Messages -->
-  <div *ngIf="errorMessage" class="fixed top-4 right-4 z-50 max-w-md p-4 bg-error/10 border border-error rounded-xl shadow-lg animate-slide-in">
+  <!-- Notifications -->
+  <div *ngIf="errorMessage" class="fixed top-4 right-4 z-50 max-w-md p-4 bg-error-light rounded-xl shadow-lg animate-slide-in">
     <div class="flex items-start gap-3">
       <span class="material-symbols-outlined text-error">error</span>
-      <p class="text-error text-body-sm font-medium flex-1">{{ errorMessage }}</p>
-      <button type="button" (click)="errorMessage = ''" class="text-error hover:text-error/80">
+      <p class="text-error font-medium flex-1 text-sm">{{ errorMessage }}</p>
+      <button type="button" (click)="errorMessage = ''" class="text-error hover:opacity-80">
         <span class="material-symbols-outlined text-[20px]">close</span>
       </button>
     </div>
   </div>
 
-  <div *ngIf="successMessage" class="fixed top-4 right-4 z-50 max-w-md p-4 bg-primary/10 border border-primary rounded-xl shadow-lg animate-slide-in">
+  <div *ngIf="successMessage" class="fixed top-4 right-4 z-50 max-w-md p-4 bg-primary-light rounded-xl shadow-lg animate-slide-in">
     <div class="flex items-start gap-3">
       <span class="material-symbols-outlined text-primary">check_circle</span>
-      <p class="text-primary text-body-sm font-medium flex-1">{{ successMessage }}</p>
-      <button type="button" (click)="successMessage = ''" class="text-primary hover:text-primary/80">
+      <p class="text-primary font-medium flex-1 text-sm">{{ successMessage }}</p>
+      <button type="button" (click)="successMessage = ''" class="text-primary hover:opacity-80">
         <span class="material-symbols-outlined text-[20px]">close</span>
       </button>
     </div>
   </div>
 
-  <!-- Profile Header -->
-  <div class="profile-header">
-    <div class="profile-header-content">
-      <div class="profile-avatar">
-        <div class="avatar-circle">
-          <img 
-            *ngIf="user.avatar" 
-            [src]="user.avatar" 
-            alt="Avatar" 
-            class="avatar-image cursor-pointer"
-            (click)="showAvatarPreview = true"
-            (error)="onAvatarLoadError()"
-            (load)="onAvatarLoadSuccess()" 
-          />
-          <div *ngIf="!user.avatar" class="avatar-initials">
-            {{ getUserInitials() }}
+  <div class="profile-container">
+    <!-- Hero Profile -->
+    <div class="profile-hero">
+      <div class="hero-left">
+        <div class="avatar-wrapper">
+          <div class="avatar-circle">
+            <img 
+              *ngIf="user.avatar" 
+              [src]="user.avatar" 
+              alt="Avatar" 
+              class="cursor-pointer"
+              (click)="showAvatarPreview = true"
+              (error)="onAvatarLoadError()"
+              (load)="onAvatarLoadSuccess()" 
+            />
+            <div *ngIf="!user.avatar" class="avatar-initials">
+              {{ getUserInitials() }}
+            </div>
           </div>
+          <input 
+            type="file" 
+            id="avatarInput" 
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+            (change)="onAvatarFileSelected($event)" 
+            style="display: none;"
+          />
+          <button class="edit-avatar-btn" type="button" (click)="triggerAvatarUpload()" [disabled]="uploadingAvatar">
+            <span class="material-symbols-outlined">{{ uploadingAvatar ? 'hourglass_empty' : 'photo_camera' }}</span>
+          </button>
         </div>
-        <input 
-          type="file" 
-          id="avatarInput" 
-          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
-          (change)="onAvatarFileSelected($event)" 
-          style="display: none;"
-        />
-        <button class="edit-avatar-btn" type="button" (click)="triggerAvatarUpload()" [disabled]="uploadingAvatar">
-          <span class="material-symbols-outlined">{{ uploadingAvatar ? 'hourglass_empty' : 'photo_camera' }}</span>
-        </button>
-      </div>
-      
-      <div class="profile-info">
-        <h1>{{ user.name }}</h1>
-        <p class="email">{{ user.email }}</p>
-        <div class="member-badge">
-          <span class="material-symbols-outlined">workspace_premium</span>
-          <span>{{ 'profile.memberSince' | translate }} {{ formatDate(user.memberSince) }}</span>
+        
+        <div class="user-info">
+          <h1>{{ user.name }}</h1>
+          <p>{{ user.email }}</p>
+          <div class="member-badge">
+            <span class="material-symbols-outlined">workspace_premium</span>
+            <span>{{ 'profile.memberSince' | translate }} {{ formatDate(user.memberSince) }}</span>
+          </div>
         </div>
       </div>
 
-      <div class="loyalty-card">
-        <div class="loyalty-icon">
+      <div class="points-card">
+        <div class="points-icon">
           <span class="material-symbols-outlined">stars</span>
         </div>
-        <div class="loyalty-info">
-          <span class="points">{{ user.loyaltyPoints }}</span>
-          <span class="label">{{ 'profile.loyaltyPoints' | translate }}</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Tab Navigation -->
-  <div class="profile-tabs">
-    <button 
-      type="button"
-      class="tab-button" 
-      [class.active]="activeTab === 'info'"
-      (click)="setActiveTab('info')">
-      <span class="material-symbols-outlined">person</span>
-      <span>{{ 'profile.tabs.info' | translate }}</span>
-    </button>
-    <button 
-      type="button"
-      class="tab-button" 
-      [class.active]="activeTab === 'orders'"
-      (click)="setActiveTab('orders')">
-      <span class="material-symbols-outlined">receipt_long</span>
-      <span>{{ 'profile.tabs.orders' | translate }}</span>
-    </button>
-    <button 
-      type="button"
-      class="tab-button" 
-      [class.active]="activeTab === 'favorites'"
-      (click)="setActiveTab('favorites')">
-      <span class="material-symbols-outlined">favorite</span>
-      <span>{{ 'profile.tabs.favorites' | translate }}</span>
-    </button>
-    <button 
-      type="button"
-      class="tab-button" 
-      [class.active]="activeTab === 'settings'"
-      (click)="setActiveTab('settings')">
-      <span class="material-symbols-outlined">settings</span>
-      <span>{{ 'profile.tabs.settings' | translate }}</span>
-    </button>
-  </div>
-
-  <!-- Tab Content -->
-  <div class="profile-content">
-    <!-- Personal Info Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'info'">
-      <div class="info-section">
-        <div class="section-header">
-          <h2>{{ 'profile.personalInfo.title' | translate }}</h2>
-          <button type="button" class="edit-button" (click)="editProfile()">
-            <span class="material-symbols-outlined">edit</span>
-            <span>{{ 'profile.personalInfo.edit' | translate }}</span>
-          </button>
-        </div>
-
-        <div class="info-grid">
-          <div class="info-card">
-            <div class="info-icon">
-              <span class="material-symbols-outlined">person</span>
-            </div>
-            <div class="info-details">
-              <label>{{ 'profile.personalInfo.fullName' | translate }}</label>
-              <p>{{ user.name }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <span class="material-symbols-outlined">mail</span>
-            </div>
-            <div class="info-details">
-              <label>{{ 'profile.personalInfo.email' | translate }}</label>
-              <p>{{ user.email }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <span class="material-symbols-outlined">call</span>
-            </div>
-            <div class="info-details">
-              <label>{{ 'profile.personalInfo.phone' | translate }}</label>
-              <p>{{ user.phone }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <span class="material-symbols-outlined">cake</span>
-            </div>
-            <div class="info-details">
-              <label>{{ 'profile.personalInfo.birthday' | translate }}</label>
-              <p>{{ user.dateOfBirth ? formatDate(user.dateOfBirth) : ('profile.personalInfo.noBirthday' | translate) }}</p>
-            </div>
-          </div>
-
-          <div class="info-card">
-            <div class="info-icon">
-              <span class="material-symbols-outlined">wc</span>
-            </div>
-            <div class="info-details">
-              <label>{{ 'profile.personalInfo.gender' | translate }}</label>
-              <p>{{ 'profile.gender.' + (user.gender || 'OTHER') | translate }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Address Section -->
-      <div class="info-section">
-        <div class="section-header">
-          <h2>{{ 'profile.address.title' | translate }}</h2>
-          <button type="button" class="add-button" routerLink="/addresses">
-            <span class="material-symbols-outlined">location_on</span>
-            <span>Quản lý địa chỉ</span>
-          </button>
-        </div>
-
-        <!-- Loading State -->
-        <div *ngIf="loadingAddresses" class="address-loading">
-          <span class="material-symbols-outlined spinning">progress_activity</span>
-          <p>Đang tải địa chỉ...</p>
-        </div>
-
-        <!-- Empty State -->
-        <div *ngIf="!loadingAddresses && addresses.length === 0" class="address-empty">
-          <span class="material-symbols-outlined">location_off</span>
-          <p>Chưa có địa chỉ nào</p>
-          <button type="button" class="primary-button compact" routerLink="/addresses/new">
-            Thêm địa chỉ đầu tiên
-          </button>
-        </div>
-
-        <!-- Address List -->
-        <div *ngIf="!loadingAddresses && addresses.length > 0" class="address-list">
-          <div *ngFor="let address of addresses.slice(0, 2)" class="address-card">
-            <div *ngIf="address.isDefault" class="address-badge">{{ 'profile.address.default' | translate }}</div>
-            <h3>{{ address.receiverName }}</h3>
-            <p>{{ getFullAddress(address) }}</p>
-            <div class="address-phone">
-              <span class="material-symbols-outlined">phone</span>
-              <span>{{ address.receiverPhone }}</span>
-            </div>
-          </div>
-          <button *ngIf="addresses.length > 2" type="button" class="view-all-button" routerLink="/addresses">
-            Xem tất cả {{ addresses.length }} địa chỉ
-          </button>
+        <div class="points-info">
+          <span class="points-value">{{ user.loyaltyPoints }}</span>
+          <span class="points-label">{{ 'profile.loyaltyPoints' | translate }}</span>
         </div>
       </div>
     </div>
 
-    <!-- Orders Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'orders'">
-      <div class="orders-section">
+    <!-- Tabs -->
+    <div class="profile-tabs">
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'info'" (click)="setActiveTab('info')">
+        <span class="material-symbols-outlined">person</span>
+        <span>{{ 'profile.tabs.info' | translate }}</span>
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'orders'" (click)="setActiveTab('orders')">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span>{{ 'profile.tabs.orders' | translate }}</span>
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'favorites'" (click)="setActiveTab('favorites')">
+        <span class="material-symbols-outlined">favorite</span>
+        <span>{{ 'profile.tabs.favorites' | translate }}</span>
+      </button>
+      <button type="button" class="tab-btn" [class.active]="activeTab === 'settings'" (click)="setActiveTab('settings')">
+        <span class="material-symbols-outlined">settings</span>
+        <span>{{ 'profile.tabs.settings' | translate }}</span>
+      </button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      
+      <!-- Personal Info Tab -->
+      <div *ngIf="activeTab === 'info'">
+        <div class="section-card">
+          <div class="section-header">
+            <h2>{{ 'profile.personalInfo.title' | translate }}</h2>
+            <button type="button" class="btn-outline" (click)="editProfile()">
+              <span class="material-symbols-outlined">edit</span>
+              <span>{{ 'profile.personalInfo.edit' | translate }}</span>
+            </button>
+          </div>
+          
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="item-icon"><span class="material-symbols-outlined">person</span></div>
+              <div class="item-content">
+                <label>{{ 'profile.personalInfo.fullName' | translate }}</label>
+                <p>{{ user.name }}</p>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="item-icon"><span class="material-symbols-outlined">mail</span></div>
+              <div class="item-content">
+                <label>{{ 'profile.personalInfo.email' | translate }}</label>
+                <p>{{ user.email }}</p>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="item-icon"><span class="material-symbols-outlined">call</span></div>
+              <div class="item-content">
+                <label>{{ 'profile.personalInfo.phone' | translate }}</label>
+                <p>{{ user.phone }}</p>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="item-icon"><span class="material-symbols-outlined">cake</span></div>
+              <div class="item-content">
+                <label>{{ 'profile.personalInfo.birthday' | translate }}</label>
+                <p>{{ user.dateOfBirth ? formatDate(user.dateOfBirth) : ('profile.personalInfo.noBirthday' | translate) }}</p>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="item-icon"><span class="material-symbols-outlined">wc</span></div>
+              <div class="item-content">
+                <label>{{ 'profile.personalInfo.gender' | translate }}</label>
+                <p>{{ 'profile.gender.' + (user.gender || 'OTHER') | translate }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <div class="section-header">
+            <h2>{{ 'profile.address.title' | translate }}</h2>
+            <button type="button" class="btn-outline" routerLink="/addresses">
+              <span class="material-symbols-outlined">location_on</span>
+              <span>Quản lý địa chỉ</span>
+            </button>
+          </div>
+
+          <div *ngIf="loadingAddresses" class="flex justify-center p-8 text-gray-500">
+            <span class="material-symbols-outlined animate-spin mr-2">progress_activity</span>
+            <span>Đang tải địa chỉ...</span>
+          </div>
+
+          <div *ngIf="!loadingAddresses && addresses.length === 0" class="address-empty">
+            <div class="empty-icon"><span class="material-symbols-outlined">location_off</span></div>
+            <h3>Chưa có địa chỉ giao hàng</h3>
+            <p>Thêm địa chỉ để đặt hàng nhanh hơn.</p>
+            <button type="button" class="btn-primary" routerLink="/addresses/new">
+              Thêm địa chỉ
+            </button>
+          </div>
+
+          <div *ngIf="!loadingAddresses && addresses.length > 0" class="address-list">
+            <div *ngFor="let address of addresses.slice(0, 2)" class="address-card">
+              <span *ngIf="address.isDefault" class="badge">{{ 'profile.address.default' | translate }}</span>
+              <h3>{{ address.receiverName }}</h3>
+              <p>{{ getFullAddress(address) }}</p>
+              <div class="phone">
+                <span class="material-symbols-outlined text-[16px]">phone</span>
+                <span>{{ address.receiverPhone }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 text-center" *ngIf="addresses.length > 2">
+             <button type="button" class="btn-outline w-full justify-center" routerLink="/addresses">Xem tất cả {{ addresses.length }} địa chỉ</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders Tab -->
+      <div *ngIf="activeTab === 'orders'" class="section-card">
         <div class="section-header">
           <h2>{{ 'profile.orders.title' | translate }}</h2>
-          <div class="order-filter">
-            <button type="button" class="filter-btn active">{{ 'profile.orders.all' | translate }}</button>
-            <button type="button" class="filter-btn">{{ 'profile.orders.completed' | translate }}</button>
-            <button type="button" class="filter-btn">{{ 'profile.orders.processing' | translate }}</button>
-          </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div *ngIf="recentOrders.length === 0" class="address-empty">
+          <div class="empty-icon"><span class="material-symbols-outlined">receipt_long</span></div>
+          <h3>Chưa có đơn hàng nào</h3>
+          <p>Bạn chưa thực hiện đơn hàng nào.</p>
+          <button type="button" class="btn-primary" routerLink="/menu">
+            Đặt hàng ngay
+          </button>
         </div>
 
-        <div class="orders-list">
+        <div *ngIf="recentOrders.length > 0">
           <div class="order-card" *ngFor="let order of recentOrders">
             <div class="order-header">
               <div class="order-id">
-                <span class="material-symbols-outlined">receipt</span>
-                <strong>{{ order.id }}</strong>
+                <span class="material-symbols-outlined text-[20px]">receipt</span>
+                {{ order.id }}
               </div>
-              <span class="order-status" [ngClass]="getStatusClass(order.status)">
-                {{ getStatusText(order.status) }}
-              </span>
+              <span class="status-badge" [ngClass]="order.status">{{ getStatusText(order.status) }}</span>
             </div>
-
-            <div class="order-body">
-              <div class="order-info">
-                <div class="order-detail">
-                  <span class="material-symbols-outlined">calendar_today</span>
-                  <span>{{ formatDate(order.date) }}</span>
-                </div>
-                <div class="order-detail">
-                  <span class="material-symbols-outlined">shopping_bag</span>
-                  <span>{{ order.items }} {{ 'profile.orders.items' | translate }}</span>
-                </div>
+            <div class="order-details">
+              <div class="meta">
+                <span><span class="material-symbols-outlined align-middle text-[16px]">calendar_today</span> {{ formatDate(order.date) }}</span>
+                <span><span class="material-symbols-outlined align-middle text-[16px]">shopping_bag</span> {{ order.items }} {{ 'profile.orders.items' | translate }}</span>
               </div>
-              <div class="order-total">
-                <span class="label">{{ 'profile.orders.total' | translate }}:</span>
-                <strong>{{ formatPrice(order.total) }}</strong>
-              </div>
-            </div>
-
-            <div class="order-actions">
-              <button type="button" class="secondary-btn">{{ 'profile.orders.viewDetail' | translate }}</button>
-              <button type="button" class="primary-btn">{{ 'profile.orders.reorder' | translate }}</button>
+              <div class="total">{{ formatPrice(order.total) }}</div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Favorites Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'favorites'">
-      <div class="favorites-section">
-        <div class="section-header">
-          <h2>{{ 'profile.favorites.title' | translate }}</h2>
-        </div>
-
-        <div class="empty-state">
-          <span class="material-symbols-outlined">favorite_border</span>
+      <!-- Favorites Tab -->
+      <div *ngIf="activeTab === 'favorites'" class="section-card">
+        <div class="address-empty">
+          <div class="empty-icon"><span class="material-symbols-outlined">favorite</span></div>
           <h3>{{ 'profile.favorites.empty' | translate }}</h3>
           <p>{{ 'profile.favorites.emptyDesc' | translate }}</p>
-          <button type="button" class="primary-button" routerLink="/menu">
+          <button type="button" class="btn-primary" routerLink="/menu">
             {{ 'profile.favorites.exploreMenu' | translate }}
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- Settings Tab -->
-    <div class="tab-content" *ngIf="activeTab === 'settings'">
-      <div class="settings-section">
-        <div class="section-header">
-          <h2>{{ 'profile.settings.title' | translate }}</h2>
-        </div>
-
+      <!-- Settings Tab -->
+      <div *ngIf="activeTab === 'settings'" class="section-card">
         <div class="settings-list">
           <div class="setting-item" (click)="changePassword()">
-            <div class="setting-icon">
-              <span class="material-symbols-outlined">lock</span>
-            </div>
-            <div class="setting-info">
+            <div class="setting-icon"><span class="material-symbols-outlined">lock</span></div>
+            <div class="setting-content">
               <h3>{{ passwordActionTitle }}</h3>
               <p>{{ passwordActionDescription }}</p>
             </div>
-            <span class="material-symbols-outlined">chevron_right</span>
-          </div>
-
-          <div class="setting-item">
-            <div class="setting-icon">
-              <span class="material-symbols-outlined">notifications</span>
-            </div>
-            <div class="setting-info">
-              <h3>{{ 'profile.settings.notifications' | translate }}</h3>
-              <p>{{ 'profile.settings.notificationsDesc' | translate }}</p>
-            </div>
-            <span class="material-symbols-outlined">chevron_right</span>
+            <span class="material-symbols-outlined chevron">chevron_right</span>
           </div>
 
           <div class="setting-item" (click)="openLanguageSelector()">
-            <div class="setting-icon">
-              <span class="material-symbols-outlined">language</span>
-            </div>
-            <div class="setting-info">
+            <div class="setting-icon"><span class="material-symbols-outlined">language</span></div>
+            <div class="setting-content">
               <h3>{{ 'profile.settings.language' | translate }}</h3>
               <p>{{ getCurrentLanguageName() }}</p>
             </div>
-            <span class="material-symbols-outlined">chevron_right</span>
-          </div>
-
-          <div class="setting-item">
-            <div class="setting-icon">
-              <span class="material-symbols-outlined">help</span>
-            </div>
-            <div class="setting-info">
-              <h3>{{ 'profile.settings.help' | translate }}</h3>
-              <p>{{ 'profile.settings.helpDesc' | translate }}</p>
-            </div>
-            <span class="material-symbols-outlined">chevron_right</span>
+            <span class="material-symbols-outlined chevron">chevron_right</span>
           </div>
 
           <div class="setting-item danger" (click)="logout()">
-            <div class="setting-icon">
-              <span class="material-symbols-outlined">logout</span>
-            </div>
-            <div class="setting-info">
+            <div class="setting-icon"><span class="material-symbols-outlined">logout</span></div>
+            <div class="setting-content">
               <h3>{{ 'profile.settings.logout' | translate }}</h3>
               <p>{{ 'profile.settings.logoutDesc' | translate }}</p>
             </div>
-            <span class="material-symbols-outlined">chevron_right</span>
+            <span class="material-symbols-outlined chevron">chevron_right</span>
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
+  <!-- Modals -->
+  
   <!-- Language Selector Modal -->
-  <div class="language-modal" *ngIf="showLanguageSelector" (click)="closeLanguageSelector()">
-    <div class="language-modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-overlay" *ngIf="showLanguageSelector" (click)="closeLanguageSelector()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ 'language.select' | translate }}</h3>
-        <button type="button" class="close-button" (click)="closeLanguageSelector()">
+        <button type="button" class="close-btn" (click)="closeLanguageSelector()">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-      <div class="language-list">
+      <div class="modal-body flex flex-col gap-2">
         <button
           *ngFor="let lang of languageService.availableLanguages"
           type="button"
-          class="language-option"
-          [class.active]="languageService.getCurrentLanguage() === lang.code"
+          class="flex items-center justify-between p-3 rounded-xl border border-gray-200 hover:bg-gray-50"
+          [class.border-green-600]="languageService.getCurrentLanguage() === lang.code"
+          [class.bg-green-50]="languageService.getCurrentLanguage() === lang.code"
           (click)="selectLanguage(lang.code)"
         >
-          <span class="language-flag">{{ lang.flag }}</span>
-          <span class="language-name">{{ lang.name }}</span>
-          <span class="check-icon material-symbols-outlined" *ngIf="languageService.getCurrentLanguage() === lang.code">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">{{ lang.flag }}</span>
+            <span class="font-medium">{{ lang.name }}</span>
+          </div>
+          <span class="material-symbols-outlined text-green-600" *ngIf="languageService.getCurrentLanguage() === lang.code">
             check_circle
           </span>
         </button>
@@ -378,257 +300,116 @@
     </div>
   </div>
 
- <!-- Change Password Modal -->
-<div *ngIf="showChangePasswordModal" class="language-modal" (click)="closeChangePasswordModal()">
-  <div class="language-modal-content" style="max-width: 420px;" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <div>
-        <h3>{{ passwordActionTitle }}</h3>
-        <p class="text-body-sm text-on-surface-variant mt-1">
-          {{ isGoogleOnlyAccount
-            ? 'Thiết lập mật khẩu để có thể đăng nhập bằng email và mật khẩu.'
-            : 'Cập nhật mật khẩu mới cho tài khoản của bạn.' }}
-        </p>
-      </div>
-
-      <button type="button" class="close-button" (click)="closeChangePasswordModal()">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </div>
-
-    <div *ngIf="errorMessage" class="p-md bg-error/10 border border-error rounded-xl mb-md">
-      <p class="text-error text-body-sm font-medium">{{ errorMessage }}</p>
-    </div>
-
-    <div *ngIf="successMessage" class="p-md bg-primary/10 border border-primary rounded-xl mb-md">
-      <p class="text-primary text-body-sm font-medium">{{ successMessage }}</p>
-    </div>
-
-    <form [formGroup]="changePasswordForm" (ngSubmit)="submitPasswordChange()" class="space-y-md p-4">
-      
-      <div class="space-y-xs" *ngIf="!isGoogleOnlyAccount">
-        <label class="block font-label-md text-on-surface">Mật khẩu hiện tại</label>
-
-        <div class="relative">
-          <input
-            [type]="passwordVisibility.current ? 'text' : 'password'"
-            formControlName="currentPassword"
-            placeholder="Nhập mật khẩu hiện tại"
-            autocomplete="current-password"
-            class="w-full px-md py-sm pr-11 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-
-          <button
-            type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
-            (click)="togglePasswordVisibility('current')"
-          >
-            <span class="material-symbols-outlined text-[20px]">
-              {{ passwordVisibility.current ? 'visibility_off' : 'visibility' }}
-            </span>
-          </button>
-        </div>
-
-        <p
-          *ngIf="changePasswordForm.get('currentPassword')?.touched && changePasswordForm.get('currentPassword')?.invalid"
-          class="text-error text-label-sm"
-        >
-          Vui lòng nhập mật khẩu hiện tại.
-        </p>
-      </div>
-
-      <div class="space-y-xs">
-        <label class="block font-label-md text-on-surface">Mật khẩu mới</label>
-
-        <div class="relative">
-          <input
-            [type]="passwordVisibility.new ? 'text' : 'password'"
-            formControlName="newPassword"
-            placeholder="Tối thiểu 8 ký tự"
-            autocomplete="new-password"
-            class="w-full px-md py-sm pr-11 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-
-          <button
-            type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
-            (click)="togglePasswordVisibility('new')"
-          >
-            <span class="material-symbols-outlined text-[20px]">
-              {{ passwordVisibility.new ? 'visibility_off' : 'visibility' }}
-            </span>
-          </button>
-        </div>
-
-        <p
-          *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('required')"
-          class="text-error text-label-sm"
-        >
-          Vui lòng nhập mật khẩu mới.
-        </p>
-
-        <p
-          *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('minlength')"
-          class="text-error text-label-sm"
-        >
-          Mật khẩu phải có tối thiểu 8 ký tự.
-        </p>
-
-        <p
-          *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.hasError('pattern')"
-          class="text-error text-label-sm"
-        >
-          Mật khẩu cần có chữ hoa, chữ thường, số và ký tự đặc biệt.
-        </p>
-      </div>
-
-      <div class="space-y-xs">
-        <label class="block font-label-md text-on-surface">Xác nhận mật khẩu mới</label>
-
-        <div class="relative">
-          <input
-            [type]="passwordVisibility.confirm ? 'text' : 'password'"
-            formControlName="confirmPassword"
-            placeholder="Nhập lại mật khẩu mới"
-            autocomplete="new-password"
-            class="w-full px-md py-sm pr-11 bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-
-          <button
-            type="button"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant"
-            (click)="togglePasswordVisibility('confirm')"
-          >
-            <span class="material-symbols-outlined text-[20px]">
-              {{ passwordVisibility.confirm ? 'visibility_off' : 'visibility' }}
-            </span>
-          </button>
-        </div>
-
-        <p
-          *ngIf="changePasswordForm.get('confirmPassword')?.touched && changePasswordForm.hasError('mismatch')"
-          class="text-error text-label-sm"
-        >
-          Mật khẩu xác nhận không khớp.
-        </p>
-      </div>
-
-      <div class="flex gap-3 pt-4">
-        <button
-          type="button"
-          class="flex-1 py-sm border border-outline rounded-xl font-medium text-on-surface hover:bg-surface-container transition-all"
-          (click)="closeChangePasswordModal()"
-        >
-          Hủy
-        </button>
-
-        <button
-          type="submit"
-          class="flex-1 py-sm bg-primary text-white rounded-xl font-medium hover:bg-primary-container hover:text-on-primary-container transition-all disabled:opacity-50"
-          [disabled]="changingPassword || changePasswordForm.invalid"
-        >
-          {{ changingPassword ? 'Đang lưu...' : 'Lưu mật khẩu' }}
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-  <!-- Edit Profile Modal -->
-  <div *ngIf="showEditProfileModal" class="language-modal" (click)="closeEditProfileModal()">
-    <div class="language-modal-content" style="max-width: 500px;" (click)="$event.stopPropagation()">
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" *ngIf="showChangePasswordModal" (click)="closeChangePasswordModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>Chỉnh sửa thông tin</h3>
-        <button type="button" class="close-button" (click)="closeEditProfileModal()">
+        <h3>{{ passwordActionTitle }}</h3>
+        <button type="button" class="close-btn" (click)="closeChangePasswordModal()">
           <span class="material-symbols-outlined">close</span>
         </button>
       </div>
-
-      <div *ngIf="errorMessage" class="p-md bg-error/10 border border-error rounded-xl mb-md">
-        <p class="text-error text-body-sm font-medium">{{ errorMessage }}</p>
-      </div>
-
-      <div *ngIf="successMessage" class="p-md bg-primary/10 border border-primary rounded-xl mb-md">
-        <p class="text-primary text-body-sm font-medium">{{ successMessage }}</p>
-      </div>
-
-      <form [formGroup]="editProfileForm" (ngSubmit)="submitProfileUpdate()" class="space-y-md p-4">
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Họ và tên</label>
-          <input 
-            type="text" 
-            formControlName="fullName" 
-            placeholder="Nhập họ và tên" 
-            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-          <p *ngIf="editProfileForm.get('fullName')?.touched && editProfileForm.get('fullName')?.invalid" class="text-error text-label-sm">Vui lòng nhập họ và tên.</p>
-        </div>
-
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Số điện thoại</label>
-          <input 
-            type="tel" 
-            formControlName="phone" 
-            placeholder="Nhập số điện thoại (10 chữ số)" 
-            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-          <p *ngIf="editProfileForm.get('phone')?.touched && editProfileForm.get('phone')?.invalid" class="text-error text-label-sm">Vui lòng nhập số điện thoại hợp lệ (10 chữ số).</p>
-        </div>
-        
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Ngày sinh</label>
-          <input 
-            type="date" 
-            formControlName="dateOfBirth" 
-            class="w-full px-md py-sm bg-surface-container-low border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary text-body-md transition-all outline-none"
-          />
-        </div>
-
-        <div class="space-y-xs">
-          <label class="block font-label-md text-on-surface">Giới tính</label>
-          <div class="flex gap-4 p-2 bg-surface-container-low border border-outline-variant rounded-xl">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" formControlName="gender" value="MALE" class="w-4 h-4 text-primary">
-              <span class="text-body-md">{{ 'profile.gender.MALE' | translate }}</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" formControlName="gender" value="FEMALE" class="w-4 h-4 text-primary">
-              <span class="text-body-md">{{ 'profile.gender.FEMALE' | translate }}</span>
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" formControlName="gender" value="OTHER" class="w-4 h-4 text-primary">
-              <span class="text-body-md">{{ 'profile.gender.OTHER' | translate }}</span>
-            </label>
+      <div class="modal-body">
+        <form [formGroup]="changePasswordForm" (ngSubmit)="submitPasswordChange()" class="flex flex-col gap-4">
+          <div *ngIf="!isGoogleOnlyAccount" class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Mật khẩu hiện tại</label>
+            <div class="relative">
+              <input
+                [type]="passwordVisibility.current ? 'text' : 'password'"
+                formControlName="currentPassword"
+                class="w-full p-3 pr-10 border border-gray-300 rounded-xl outline-none focus:border-green-700"
+              />
+              <button type="button" class="absolute right-3 top-3 text-gray-500" (click)="togglePasswordVisibility('current')">
+                <span class="material-symbols-outlined text-[20px]">{{ passwordVisibility.current ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
           </div>
-        </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Mật khẩu mới</label>
+            <div class="relative">
+              <input
+                [type]="passwordVisibility.new ? 'text' : 'password'"
+                formControlName="newPassword"
+                class="w-full p-3 pr-10 border border-gray-300 rounded-xl outline-none focus:border-green-700"
+              />
+              <button type="button" class="absolute right-3 top-3 text-gray-500" (click)="togglePasswordVisibility('new')">
+                <span class="material-symbols-outlined text-[20px]">{{ passwordVisibility.new ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
+            <div class="relative">
+              <input
+                [type]="passwordVisibility.confirm ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                class="w-full p-3 pr-10 border border-gray-300 rounded-xl outline-none focus:border-green-700"
+              />
+              <button type="button" class="absolute right-3 top-3 text-gray-500" (click)="togglePasswordVisibility('confirm')">
+                <span class="material-symbols-outlined text-[20px]">{{ passwordVisibility.confirm ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-2">
+             <button type="button" class="flex-1 p-3 border border-gray-300 rounded-xl font-medium" (click)="closeChangePasswordModal()">Hủy</button>
+             <button type="submit" class="flex-1 p-3 bg-green-800 text-white rounded-xl font-medium disabled:opacity-50" [disabled]="changingPassword || changePasswordForm.invalid">
+               {{ changingPassword ? 'Đang lưu...' : 'Lưu mật khẩu' }}
+             </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
-        <div class="flex gap-3 pt-4">
-          <button 
-            type="button" 
-            (click)="closeEditProfileModal()" 
-            class="flex-1 py-sm border border-outline rounded-xl font-medium text-on-surface hover:bg-surface-container transition-all"
-          >
-            Hủy
-          </button>
-          <button 
-            type="submit" 
-            class="flex-1 py-sm bg-primary text-white rounded-xl font-medium hover:bg-primary-container hover:text-on-primary-container transition-all disabled:opacity-50"
-            [disabled]="updatingProfile || editProfileForm.invalid"
-          >
-            {{ updatingProfile ? 'Đang lưu...' : 'Lưu thay đổi' }}
-          </button>
-        </div>
-      </form>
+  <!-- Edit Profile Modal -->
+  <div class="modal-overlay" *ngIf="showEditProfileModal" (click)="closeEditProfileModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Chỉnh sửa thông tin</h3>
+        <button type="button" class="close-btn" (click)="closeEditProfileModal()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="editProfileForm" (ngSubmit)="submitProfileUpdate()" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Họ và tên</label>
+            <input type="text" formControlName="fullName" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-700" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Số điện thoại</label>
+            <input type="tel" formControlName="phone" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-700" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Ngày sinh</label>
+            <input type="date" formControlName="dateOfBirth" class="w-full p-3 border border-gray-300 rounded-xl outline-none focus:border-green-700" />
+          </div>
+          <div class="flex flex-col gap-1">
+            <label class="text-sm font-medium text-gray-700">Giới tính</label>
+            <div class="flex gap-4 p-3 border border-gray-300 rounded-xl">
+              <label class="flex items-center gap-2"><input type="radio" formControlName="gender" value="MALE"> Nam</label>
+              <label class="flex items-center gap-2"><input type="radio" formControlName="gender" value="FEMALE"> Nữ</label>
+              <label class="flex items-center gap-2"><input type="radio" formControlName="gender" value="OTHER"> Khác</label>
+            </div>
+          </div>
+          <div class="flex gap-3 mt-2">
+             <button type="button" class="flex-1 p-3 border border-gray-300 rounded-xl font-medium" (click)="closeEditProfileModal()">Hủy</button>
+             <button type="submit" class="flex-1 p-3 bg-green-800 text-white rounded-xl font-medium disabled:opacity-50" [disabled]="updatingProfile || editProfileForm.invalid">
+               {{ updatingProfile ? 'Đang lưu...' : 'Lưu thay đổi' }}
+             </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
   <!-- Avatar Preview Modal -->
-  <div *ngIf="showAvatarPreview" class="avatar-preview-modal" (click)="showAvatarPreview = false">
-    <div class="preview-content" (click)="$event.stopPropagation()">
-      <button type="button" class="close-preview" (click)="showAvatarPreview = false">
+  <div class="modal-overlay" *ngIf="showAvatarPreview" (click)="showAvatarPreview = false">
+    <div class="relative max-w-md w-full p-4" (click)="$event.stopPropagation()">
+      <button type="button" class="absolute top-0 right-0 bg-white rounded-full p-2" (click)="showAvatarPreview = false">
         <span class="material-symbols-outlined">close</span>
       </button>
-      <img [src]="user.avatar" alt="Avatar Preview" class="full-avatar" />
+      <img [src]="user.avatar" class="w-full h-auto rounded-full shadow-2xl" />
     </div>
   </div>
 </div>
