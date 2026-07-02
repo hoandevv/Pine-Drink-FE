@@ -4,7 +4,8 @@
       <div class="shipper-hero__content">
         <span class="shipper-eyebrow">PineFresh Logistics Portal</span>
         <h1>Bảng điều phối giao hàng</h1>
-        <p>Theo dõi đơn được giao, cập nhật trạng thái và hoàn tất giao hàng nhanh chóng trong một workspace dành riêng cho shipper.</p>
+        <p>Theo dõi đơn được giao, cập nhật trạng thái và hoàn tất giao hàng nhanh chóng trong một workspace dành riêng
+          cho shipper.</p>
 
         <div class="shipper-actions">
           <button type="button" class="shipper-primary-action">
@@ -64,7 +65,9 @@
                 <p>{{ order.time }}</p>
               </div>
             </div>
-            <span class="shipper-status" [class.status-ready]="order.status === 'READY_FOR_PICKUP'" [class.status-delivering]="order.status === 'DELIVERING'" [class.status-failed]="order.status === 'FAILED'">
+            <span class="shipper-status" [class.status-ready]="order.status === 'READY_FOR_PICKUP'"
+              [class.status-delivering]="order.status === 'DELIVERING'"
+              [class.status-failed]="order.status === 'FAILED'">
               {{ order.status }}
             </span>
           </div>
@@ -132,9 +135,18 @@
             <h3>Ca làm việc</h3>
           </div>
           <dl>
-            <div><dt>Thời gian</dt><dd>08:00 - 18:00</dd></div>
-            <div><dt>Khu vực</dt><dd>Quận 1, Quận 3</dd></div>
-            <div><dt>Shipper ID</dt><dd>#4492</dd></div>
+            <div>
+              <dt>Thời gian</dt>
+              <dd>08:00 - 18:00</dd>
+            </div>
+            <div>
+              <dt>Khu vực</dt>
+              <dd>Quận 1, Quận 3</dd>
+            </div>
+            <div>
+              <dt>Shipper ID</dt>
+              <dd>#4492</dd>
+            </div>
           </dl>
           <span class="shift-live"><i></i> Đang trong ca trực</span>
         </article>
@@ -245,7 +257,8 @@
             </div>
             <div class="order-meta">
               <strong>{{ order.amount }}</strong>
-              <span class="status-chip" [class.is-done]="order.status === 'Hoàn tất'" [class.is-pending]="order.status === 'Chờ xử lý'">
+              <span class="status-chip" [class.is-done]="order.status === 'Hoàn tất'"
+                [class.is-pending]="order.status === 'Chờ xử lý'">
                 {{ order.status }}
               </span>
             </div>

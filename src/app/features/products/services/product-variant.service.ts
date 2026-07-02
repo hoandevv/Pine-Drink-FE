@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, shareReplay } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
@@ -16,6 +16,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ProductVariantService {
   private readonly productsUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.products}`;
+  private readonly variantCache = new Map<string, Observable<ProductVariant[]>>();
 
   constructor(private readonly http: HttpClient) {}
 
@@ -31,31 +32,70 @@ export class ProductVariantService {
   }
 
   getActiveVariants(productId: string): Observable<ProductVariant[]> {
-    return this.http
-      .get<BaseResponse<ProductVariant[]>>(`${this.variantsUrl(productId)}/active`)
-      .pipe(map((response) => (response.data || []).map((variant) => this.normalizeVariant(variant))));
+    // Check if we already have a cached or in-flight request for this product
+    if (!this.variantCache.has(productId)) {
+      const request$ = this.http
+        .get<BaseResponse<ProductVariant[]>>(`${this.variantsUrl(productId)}/active`)
+        .pipe(
+          map((response) => (response.data || []).map((variant) => this.normalizeVariant(variant))),
+          shareReplay({ bufferSize: 1, refCount: true })
+        );
+      this.variantCache.set(productId, request$);
+    }
+    return this.variantCache.get(productId)!;
   }
 
   createVariant(productId: string, request: ProductVariantCreateRequest): Observable<ProductVariant> {
     return this.http
       .post<BaseResponse<ProductVariant>>(this.variantsUrl(productId), this.toBackendRequest(request))
-      .pipe(map((response) => this.normalizeVariant(response.data)));
+      .pipe(
+        map((response) => this.normalizeVariant(response.data)),
+        map((variant) => {
+          this.invalidateCache(productId);
+          return variant;
+        })
+      );
   }
 
   updateVariant(productId: string, variantId: string, request: ProductVariantUpdateRequest): Observable<ProductVariant> {
     return this.http
       .put<BaseResponse<ProductVariant>>(`${this.variantsUrl(productId)}/${variantId}`, this.toBackendRequest(request))
-      .pipe(map((response) => this.normalizeVariant(response.data)));
+      .pipe(
+        map((response) => this.normalizeVariant(response.data)),
+        map((variant) => {
+          this.invalidateCache(productId);
+          return variant;
+        })
+      );
   }
 
   updateVariantStatus(productId: string, variantId: string, request: ProductVariantStatusRequest): Observable<ProductVariant> {
     return this.http
       .patch<BaseResponse<ProductVariant>>(`${this.variantsUrl(productId)}/${variantId}/status`, request)
-      .pipe(map((response) => this.normalizeVariant(response.data)));
+      .pipe(
+        map((response) => this.normalizeVariant(response.data)),
+        map((variant) => {
+          this.invalidateCache(productId);
+          return variant;
+        })
+      );
   }
 
   deleteVariant(productId: string, variantId: string): Observable<void> {
-    return this.http.delete<BaseResponse<null>>(`${this.variantsUrl(productId)}/${variantId}`).pipe(map(() => void 0));
+    return this.http.delete<BaseResponse<null>>(`${this.variantsUrl(productId)}/${variantId}`).pipe(
+      map(() => {
+        this.invalidateCache(productId);
+        return void 0;
+      })
+    );
+  }
+
+  clearCache(): void {
+    this.variantCache.clear();
+  }
+
+  private invalidateCache(productId: string): void {
+    this.variantCache.delete(productId);
   }
 
   private variantsUrl(productId: string): string {
