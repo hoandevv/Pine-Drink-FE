@@ -39,10 +39,12 @@ export class DailyStocksPageComponent implements OnInit {
   selectedBranchId = '';
   selectedDate = this.toDateInput(new Date());
   selectedStock: DailyStock | null = null;
+  variantSearchTerm = '';
   loading = false;
   saving = false;
   bootLoading = false;
   logLoading = false;
+  variantsLoading = false;
   drawerOpen = false;
   copyOpen = false;
   errorMessage = '';
@@ -63,6 +65,14 @@ export class DailyStocksPageComponent implements OnInit {
   get totalReserved(): number { return this.stocks.reduce((sum, stock) => sum + (stock.reservedQuantity || 0), 0); }
   get totalSold(): number { return this.stocks.reduce((sum, stock) => sum + (stock.soldQuantity || 0), 0); }
   get selectedBranch(): Branch | undefined { return this.branches.find((branch) => branch.id === this.selectedBranchId); }
+  get filteredVariants(): VariantOption[] {
+    if (!this.variantSearchTerm.trim()) { return this.variants; }
+    const term = this.variantSearchTerm.toLowerCase();
+    return this.variants.filter((v) => 
+      v.productName.toLowerCase().includes(term) || 
+      v.variantName.toLowerCase().includes(term)
+    );
+  }
 
   onBranchChange(branchId: string): void { this.selectedBranchId = branchId; this.loadStocks(); }
   onDateChange(date: string): void { this.selectedDate = date; this.loadStocks(); }
@@ -70,8 +80,13 @@ export class DailyStocksPageComponent implements OnInit {
 
   openCreateDrawer(): void {
     this.selectedStock = null;
+    this.variantSearchTerm = '';
     this.quotaForm.reset({ variantId: '', dailyQuantity: 0, reason: 'Set quota đầu ngày' });
     this.drawerOpen = true;
+    // Lazy load variants only when drawer opens
+    if (this.variants.length === 0 && !this.variantsLoading) {
+      this.loadAllVariants();
+    }
   }
 
   openEditDrawer(stock: DailyStock): void {
@@ -169,7 +184,7 @@ export class DailyStocksPageComponent implements OnInit {
         this.branches = branches.content || [];
         this.products = products.content || [];
         this.selectedBranchId = this.branches[0]?.id || '';
-        this.loadAllVariants();
+        // Variants will be loaded lazily when drawer opens
         if (this.selectedBranchId) { this.loadStocks(); }
       },
       error: () => { this.errorMessage = 'Không tải được dữ liệu chi nhánh/sản phẩm.'; }
@@ -178,16 +193,19 @@ export class DailyStocksPageComponent implements OnInit {
 
   private loadAllVariants(): void {
     if (!this.products.length) { this.variants = []; return; }
-    forkJoin(this.products.map((product) => this.variantService.getActiveVariants(product.id))).subscribe({
-      next: (groups) => {
-        this.variants = groups.flatMap((items, index) => items.map((variant) => ({
-          ...variant,
-          productId: this.products[index].id,
-          productName: this.products[index].name
-        })));
-      },
-      error: () => { this.variants = []; }
-    });
+    this.variantsLoading = true;
+    forkJoin(this.products.map((product) => this.variantService.getActiveVariants(product.id)))
+      .pipe(finalize(() => (this.variantsLoading = false)))
+      .subscribe({
+        next: (groups) => {
+          this.variants = groups.flatMap((items, index) => items.map((variant) => ({
+            ...variant,
+            productId: this.products[index].id,
+            productName: this.products[index].name
+          })));
+        },
+        error: () => { this.variants = []; }
+      });
   }
 
   private loadStocks(): void {

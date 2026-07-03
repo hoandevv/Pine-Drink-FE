@@ -1,8 +1,392 @@
-.report-kpis { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 16px; margin-top: 22px; }
-.report-kpis article, .report-chart { padding: 22px; border-radius: 28px; background: rgba(255,253,244,.9); border: 1px solid rgba(15,74,42,.1); box-shadow: 0 22px 54px rgba(15,47,28,.08); }
-p { margin: 0; color: #72806f; font-weight: 800; } h3 { margin: 8px 0; color: #102018; font-size: 28px; } strong { color: #0f7a3b; }
-.report-chart { margin-top: 18px; }
-.report-chart header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.report-chart header span { padding: 8px 12px; border-radius: 999px; color: #7a4d00; background: rgba(255,214,79,.28); font-weight: 900; }
-.bars { height: 330px; display: flex; align-items: end; gap: 12px; padding: 24px; border-radius: 24px; background: linear-gradient(180deg,rgba(15,74,42,.06),rgba(255,214,79,.08)); }
-.bars i { flex: 1; min-width: 12px; border-radius: 999px 999px 8px 8px; background: linear-gradient(180deg,#ffd64f,#22c55e,#0f4a2a); box-shadow: 0 14px 30px rgba(15,74,42,.16); }
+:host {
+  display: block;
+  color: #102018;
+}
+
+.report-shell {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+
+.report-sidebar,
+.report-workspace {
+  min-width: 0;
+}
+
+.hero-card,
+.preset-card,
+.generator-card,
+.job-card,
+.quick-stats article {
+  border: 1px solid rgba(15, 74, 42, 0.11);
+  box-shadow: 0 22px 54px rgba(15, 47, 28, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+  border-radius: 30px;
+  color: #fffdf4;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 214, 79, 0.42), transparent 30%),
+    linear-gradient(135deg, #0f4a2a 0%, #147a42 52%, #0b2b20 100%);
+}
+
+.hero-card::after {
+  content: '';
+  position: absolute;
+  right: -38px;
+  bottom: -48px;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f7a3b;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero-card .eyebrow {
+  color: #ffe58a;
+}
+
+.hero-card h2,
+.card-header h3,
+.job-card h3 {
+  margin: 8px 0;
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.hero-card p,
+.card-header p,
+.job-card p {
+  margin: 0;
+  color: rgba(16, 32, 24, 0.64);
+  font-weight: 700;
+}
+
+.hero-card p {
+  color: rgba(255, 253, 244, 0.82);
+}
+
+.preset-card {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  color: #102018;
+  background: rgba(255, 253, 244, 0.88);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.preset-card:hover,
+.preset-card.active {
+  transform: translateY(-3px);
+  border-color: rgba(34, 197, 94, 0.38);
+  box-shadow: 0 26px 60px rgba(15, 74, 42, 0.14);
+}
+
+.preset-card.amber.active {
+  border-color: rgba(245, 158, 11, 0.42);
+}
+
+.preset-card.blue.active {
+  border-color: rgba(59, 130, 246, 0.42);
+}
+
+.preset-card .material-symbols-outlined {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #0f7a3b, #22c55e);
+}
+
+.preset-card.amber .material-symbols-outlined {
+  background: linear-gradient(135deg, #f59e0b, #ffd64f);
+}
+
+.preset-card.blue .material-symbols-outlined {
+  background: linear-gradient(135deg, #2563eb, #60a5fa);
+}
+
+.preset-card strong,
+.preset-card small {
+  display: block;
+}
+
+.preset-card strong {
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.preset-card small {
+  margin-top: 4px;
+  color: #72806f;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.quick-stats article {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 253, 244, 0.92);
+}
+
+.quick-stats small,
+.quick-stats span {
+  display: block;
+  color: #72806f;
+  font-weight: 800;
+}
+
+.quick-stats strong {
+  display: block;
+  margin: 6px 0;
+  font-size: 24px;
+  font-weight: 1000;
+  color: #0f4a2a;
+}
+
+.generator-card,
+.job-card {
+  padding: 24px;
+  border-radius: 30px;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 244, 0.96), rgba(255, 253, 244, 0.84)),
+    radial-gradient(circle at top right, rgba(255, 214, 79, 0.18), transparent 35%);
+}
+
+.card-header,
+.job-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.format-pill,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: #0f4a2a;
+  background: rgba(34, 197, 94, 0.12);
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.report-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.report-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.report-form label span {
+  color: #52624f;
+  font-weight: 950;
+}
+
+.report-form input,
+.report-form select {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid rgba(15, 74, 42, 0.14);
+  border-radius: 18px;
+  padding: 0 16px;
+  outline: none;
+  color: #102018;
+  background: rgba(255, 255, 255, 0.76);
+  font: inherit;
+  font-weight: 800;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-form input:focus,
+.report-form select:focus {
+  border-color: rgba(34, 197, 94, 0.54);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.11);
+}
+
+.report-form label small {
+  color: #b42318;
+  font-weight: 850;
+}
+
+.date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.generate-btn,
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  border: 0;
+  border-radius: 18px;
+  color: #fffdf4;
+  background: linear-gradient(135deg, #0f4a2a, #22c55e);
+  box-shadow: 0 20px 36px rgba(15, 122, 59, 0.22);
+  font-weight: 950;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.generate-btn:hover,
+.download-btn:hover {
+  transform: translateY(-2px);
+}
+
+.generate-btn:disabled,
+.download-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
+.job-card {
+  margin-top: 18px;
+}
+
+.job-card.empty {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.empty-icon {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 10px;
+  border-radius: 24px;
+  color: #0f7a3b;
+  background: rgba(34, 197, 94, 0.12);
+  font-size: 34px;
+}
+
+.status-badge[data-status='DONE'] {
+  color: #067647;
+  background: rgba(22, 163, 74, 0.14);
+}
+
+.status-badge[data-status='RUNNING'] {
+  color: #7a4d00;
+  background: rgba(255, 214, 79, 0.24);
+}
+
+.status-badge[data-status='FAILED'] {
+  color: #b42318;
+  background: rgba(244, 63, 94, 0.12);
+}
+
+.progress-track {
+  overflow: hidden;
+  height: 12px;
+  margin: 20px 0;
+  border-radius: 999px;
+  background: rgba(15, 74, 42, 0.08);
+}
+
+.progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffd64f, #22c55e, #0f4a2a);
+  transition: width 0.45s ease;
+}
+
+.job-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  color: #72806f;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.error-text {
+  margin-top: 14px !important;
+  color: #b42318 !important;
+}
+
+.download-btn {
+  width: 100%;
+  margin-top: 18px;
+  background: linear-gradient(135deg, #102018, #0f7a3b);
+}
+
+@media (max-width: 1100px) {
+  .report-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .report-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .hero-card {
+    grid-column: 1 / -1;
+  }
+
+  .preset-card {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .quick-stats,
+  .date-grid,
+  .job-meta,
+  .report-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header,
+  .job-topline {
+    flex-direction: column;
+  }
+}

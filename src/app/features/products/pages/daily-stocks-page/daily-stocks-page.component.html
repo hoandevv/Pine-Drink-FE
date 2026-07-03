@@ -83,10 +83,23 @@
 <aside class="stock-drawer" [class.open]="drawerOpen" aria-label="Daily stock quota form">
   <form [formGroup]="quotaForm" (ngSubmit)="saveQuota()">
     <div class="drawer-head"><div><h2>{{ selectedStock ? 'Cập nhật quota' : 'Set quota ngày' }}</h2></div><button type="button" class="icon-btn" (click)="closeDrawer()"><span class="material-symbols-outlined">close</span></button></div>
+    
+    <label>Tìm kiếm biến thể
+      <input 
+        type="text" 
+        placeholder="Tìm theo tên sản phẩm hoặc biến thể..." 
+        [(ngModel)]="variantSearchTerm" 
+        [ngModelOptions]="{standalone: true}"
+        [disabled]="!!selectedStock || variantsLoading" />
+      <small *ngIf="variantsLoading">Đang tải danh sách biến thể...</small>
+      <small *ngIf="!variantsLoading && variants.length > 0">{{ filteredVariants.length }} / {{ variants.length }} biến thể</small>
+    </label>
+
     <label>Biến thể
-      <select id="daily-stock-variant-select" formControlName="variantId" [disabled]="!!selectedStock">
-        <option value="" disabled>Chọn biến thể</option>
-        <option *ngFor="let variant of variants; trackBy: trackVariant" [ngValue]="variant.id">{{ variant.productName }} · {{ variant.variantName }}</option>
+      <select id="daily-stock-variant-select" formControlName="variantId" [disabled]="!!selectedStock || variantsLoading">
+        <option value="" disabled>{{ variantsLoading ? 'Đang tải...' : 'Chọn biến thể' }}</option>
+        <option *ngFor="let variant of filteredVariants; trackBy: trackVariant" [ngValue]="variant.id">{{ variant.productName }} · {{ variant.variantName }}</option>
+        <option *ngIf="!variantsLoading && variantSearchTerm && filteredVariants.length === 0" disabled>Không tìm thấy biến thể phù hợp</option>
       </select>
     </label>
     <label>Daily quantity

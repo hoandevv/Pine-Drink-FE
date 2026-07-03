@@ -187,8 +187,15 @@
   backdrop-filter: blur(14px);
 }
 
-.chip-top { top: 28px; right: 18px; }
-.chip-bottom { left: 14px; bottom: 32px; }
+.chip-top {
+  top: 28px;
+  right: 18px;
+}
+
+.chip-bottom {
+  left: 14px;
+  bottom: 32px;
+}
 
 .shipper-metrics {
   display: grid;
@@ -216,7 +223,7 @@
   background: rgba(255, 201, 40, 0.18);
 }
 
-.shipper-metric-card > .material-symbols-outlined {
+.shipper-metric-card>.material-symbols-outlined {
   width: 48px;
   height: 48px;
   display: grid;
@@ -314,7 +321,7 @@
   gap: 14px;
 }
 
-.shipper-order-id > .material-symbols-outlined {
+.shipper-order-id>.material-symbols-outlined {
   width: 52px;
   height: 52px;
   display: grid;
@@ -375,7 +382,7 @@
   margin-top: 24px;
 }
 
-.shipper-order-info > div {
+.shipper-order-info>div {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -483,7 +490,7 @@
   stroke: #e2f2e2;
 }
 
-.progress-ring circle + circle {
+.progress-ring circle+circle {
   stroke: #164a2f;
   stroke-linecap: round;
   stroke-dasharray: 465;
@@ -607,6 +614,7 @@
 }
 
 @media (max-width: 1180px) {
+
   .shipper-hero,
   .shipper-main-grid {
     grid-template-columns: 1fr;
@@ -618,6 +626,7 @@
 }
 
 @media (max-width: 720px) {
+
   .shipper-hero,
   .shipper-order-card,
   .shipper-progress-card,
@@ -866,10 +875,21 @@
   opacity: 0.2;
 }
 
-.tone-green::after { background: #22c55e; }
-.tone-yellow::after { background: #ffd64f; }
-.tone-mint::after { background: #8ee6a8; }
-.tone-orange::after { background: #f59e0b; }
+.tone-green::after {
+  background: #22c55e;
+}
+
+.tone-yellow::after {
+  background: #ffd64f;
+}
+
+.tone-mint::after {
+  background: #8ee6a8;
+}
+
+.tone-orange::after {
+  background: #f59e0b;
+}
 
 .metric-card__top,
 .panel-heading,
@@ -1104,13 +1124,27 @@
 }
 
 @keyframes floatDrink {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-14px) rotate(2deg); }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(2deg);
+  }
 }
 
 @keyframes growBar {
-  from { transform: scaleY(0.25); opacity: 0.35; }
-  to { transform: scaleY(1); opacity: 1; }
+  from {
+    transform: scaleY(0.25);
+    opacity: 0.35;
+  }
+
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 1180px) {
@@ -1130,6 +1164,7 @@
 }
 
 @media (max-width: 720px) {
+
   .hero-card,
   .panel,
   .metric-card {

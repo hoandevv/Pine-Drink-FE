@@ -1,21 +1,143 @@
-<app-page-header title="Reports" description="Báo cáo doanh thu, hiệu suất đơn hàng và insight khách hàng.">
-  <button type="button" class="btn btn-primary">Tải báo cáo PDF</button>
+<app-page-header title="Reports" description="Tạo báo cáo PDF qua job nền, theo dõi trạng thái realtime bằng polling.">
+  <button type="button" class="btn btn-primary" (click)="createReport()" [disabled]="isSubmitting">
+    <span class="material-symbols-outlined">bolt</span>
+    {{ isSubmitting ? 'Đang tạo...' : 'Tạo báo cáo' }}
+  </button>
 </app-page-header>
 
-<section class="report-kpis">
-  <article *ngFor="let kpi of kpis">
-    <p>{{ kpi.label }}</p>
-    <h3>{{ kpi.value }}</h3>
-    <strong>{{ kpi.trend }}</strong>
-  </article>
-</section>
+<section class="report-shell">
+  <aside class="report-sidebar">
+    <div class="hero-card">
+      <span class="eyebrow">Pine Drink Analytics</span>
+      <h2>Report center</h2>
+      <p>Xuất hóa đơn PDF và báo cáo doanh thu bảo mật qua backend.</p>
+    </div>
 
-<section class="report-chart">
-  <header>
-    <h3>Doanh thu 12 tháng</h3>
-    <span>Mock analytics</span>
-  </header>
-  <div class="bars">
-    <i *ngFor="let bar of bars" [style.height.%]="bar"></i>
-  </div>
+    <button
+      *ngFor="let preset of presets"
+      type="button"
+      class="preset-card"
+      [class.active]="selectedType === preset.type"
+      [class.amber]="preset.accent === 'amber'"
+      (click)="selectPreset(preset.type)">
+      <span class="material-symbols-outlined">{{ preset.icon }}</span>
+      <span>
+        <strong>{{ preset.title }}</strong>
+        <small>{{ preset.description }}</small>
+      </span>
+    </button>
+  </aside>
+
+  <main class="report-workspace">
+    <section class="quick-stats">
+      <article *ngFor="let stat of quickStats">
+        <small>{{ stat.label }}</small>
+        <strong>{{ stat.value }}</strong>
+        <span>{{ stat.hint }}</span>
+      </article>
+    </section>
+
+    <section class="generator-card">
+      <div class="card-header">
+        <div>
+          <span class="eyebrow">{{ selectedPreset.type }}</span>
+          <h3>{{ selectedPreset.title }}</h3>
+          <p>{{ selectedPreset.description }}</p>
+        </div>
+        <span class="format-pill">PDF</span>
+      </div>
+
+      <form [formGroup]="form" class="report-form" (ngSubmit)="createReport()">
+        <label *ngIf="selectedType === 'INVOICE'">
+          <span>Mã đơn hàng</span>
+          <input id="report-order-code" type="text" formControlName="orderCode" placeholder="VD: ORD-20260701-001" />
+          <small *ngIf="form.controls.orderCode.touched && form.controls.orderCode.invalid">Bắt buộc nhập mã đơn.</small>
+        </label>
+
+        <ng-container *ngIf="selectedType === 'DAILY_REVENUE'">
+          <label>
+            <span>Chi nhánh</span>
+            <select id="report-branch" formControlName="branchId">
+              <option value="" disabled>Chọn chi nhánh</option>
+              <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
+            </select>
+          </label>
+
+          <div class="date-grid">
+            <label>
+              <span>Từ ngày</span>
+              <input id="report-from-date" type="date" formControlName="fromDate" />
+            </label>
+            <label>
+              <span>Đến ngày</span>
+              <input id="report-to-date" type="date" formControlName="toDate" />
+            </label>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="selectedType === 'PRODUCT_CATALOG'">
+          <label>
+            <span>Trạng thái</span>
+            <select id="report-status" formControlName="status">
+              <option value="">Tất cả</option>
+              <option value="ACTIVE">Đang bán</option>
+              <option value="INACTIVE">Ngừng bán</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Danh mục</span>
+            <select id="report-category" formControlName="categoryId">
+              <option value="">Tất cả</option>
+              <!-- Categories will be loaded dynamically if needed -->
+            </select>
+          </label>
+        </ng-container>
+
+        <button id="report-create-job" type="submit" class="generate-btn" [disabled]="isSubmitting">
+          <span class="material-symbols-outlined">rocket_launch</span>
+          {{ isSubmitting ? 'Đang xử lý job...' : 'Xuất PDF' }}
+        </button>
+      </form>
+    </section>
+
+    <section class="job-card" [class.empty]="!currentJob" [class.failed]="currentJob?.status === 'FAILED'">
+      <ng-container *ngIf="currentJob; else emptyJob">
+        <div class="job-topline">
+          <div>
+            <span class="eyebrow">Job #{{ currentJob.id }}</span>
+            <h3>{{ currentJob.reportType }} · {{ currentJob.fileFormat }}</h3>
+          </div>
+          <strong class="status-badge" [attr.data-status]="currentJob.status">{{ currentJob.status }}</strong>
+        </div>
+
+        <div class="progress-track">
+          <i [style.width.%]="progressPercent"></i>
+        </div>
+
+        <div class="job-meta">
+          <span>Requested: {{ currentJob.requestedAt || '—' }}</span>
+          <span>Completed: {{ currentJob.completedAt || '—' }}</span>
+        </div>
+
+        <p class="error-text" *ngIf="currentJob.status === 'FAILED'">{{ currentJob.errorMessage || 'Tạo báo cáo thất bại' }}</p>
+
+        <button
+          id="report-download"
+          type="button"
+          class="download-btn"
+          (click)="downloadReport()"
+          [disabled]="currentJob.status !== 'DONE' || isDownloading">
+          <span class="material-symbols-outlined">download</span>
+          {{ isDownloading ? 'Đang tải...' : 'Tải PDF' }}
+        </button>
+      </ng-container>
+
+      <ng-template #emptyJob>
+        <span class="material-symbols-outlined empty-icon">hourglass_empty</span>
+        <h3>Chưa có job nào</h3>
+        <p>Chọn loại báo cáo, nhập thông tin rồi bấm xuất PDF.</p>
+      </ng-template>
+    </section>
+  </main>
 </section>

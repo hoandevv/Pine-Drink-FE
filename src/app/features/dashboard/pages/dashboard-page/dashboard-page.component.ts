@@ -64,7 +64,7 @@ interface DeliveryNotice {
   styleUrls: ['./dashboard-page.component.scss']
 })
 export class DashboardPageComponent {
-  constructor(private readonly accessControl: AccessControlService) {}
+  constructor(private readonly accessControl: AccessControlService) { }
 
   get isDeliveryOnly(): boolean {
     return this.accessControl.hasAnyRole(['DELIVERY']) && !this.accessControl.hasAnyRole(['ADMIN', 'MANAGER']);
