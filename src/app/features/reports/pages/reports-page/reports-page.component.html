@@ -1,143 +1,195 @@
-<app-page-header title="Reports" description="Tạo báo cáo PDF qua job nền, theo dõi trạng thái realtime bằng polling.">
-  <button type="button" class="btn btn-primary" (click)="createReport()" [disabled]="isSubmitting">
-    <span class="material-symbols-outlined">bolt</span>
-    {{ isSubmitting ? 'Đang tạo...' : 'Tạo báo cáo' }}
-  </button>
-</app-page-header>
+<div class="report-page">
+  <!-- Header -->
+  <div class="report-header">
+    <h1 class="report-title">Báo cáo</h1>
+    <p class="report-description">Quản lý, tạo và tải xuống các báo cáo của hệ thống.</p>
+  </div>
 
-<section class="report-shell">
-  <aside class="report-sidebar">
-    <div class="hero-card">
-      <span class="eyebrow">Pine Drink Analytics</span>
-      <h2>Report center</h2>
-      <p>Xuất hóa đơn PDF và báo cáo doanh thu bảo mật qua backend.</p>
+  <!-- Stats & Filter Section -->
+  <div class="stats-filter-section">
+    <div class="quick-stats">
+      <div class="stat-card" *ngFor="let stat of quickStats">
+        <span class="stat-label">{{ stat.label }}</span>
+        <strong class="stat-value">{{ stat.value }}</strong>
+      </div>
     </div>
 
-    <button
-      *ngFor="let preset of presets"
-      type="button"
-      class="preset-card"
-      [class.active]="selectedType === preset.type"
-      [class.amber]="preset.accent === 'amber'"
-      (click)="selectPreset(preset.type)">
-      <span class="material-symbols-outlined">{{ preset.icon }}</span>
-      <span>
-        <strong>{{ preset.title }}</strong>
-        <small>{{ preset.description }}</small>
-      </span>
-    </button>
-  </aside>
+    <div class="divider"></div>
 
-  <main class="report-workspace">
-    <section class="quick-stats">
-      <article *ngFor="let stat of quickStats">
-        <small>{{ stat.label }}</small>
-        <strong>{{ stat.value }}</strong>
-        <span>{{ stat.hint }}</span>
-      </article>
-    </section>
-
-    <section class="generator-card">
-      <div class="card-header">
-        <div>
-          <span class="eyebrow">{{ selectedPreset.type }}</span>
-          <h3>{{ selectedPreset.title }}</h3>
-          <p>{{ selectedPreset.description }}</p>
+    <form [formGroup]="filterForm" class="filter-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="categoryId">Danh mục sản phẩm</label>
+          <select id="categoryId" formControlName="categoryId" class="form-control">
+            <option value="">Tất cả danh mục</option>
+            <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+          </select>
         </div>
-        <span class="format-pill">PDF</span>
+
+        <div class="form-group">
+          <label for="productStatus">Trạng thái sản phẩm</label>
+          <select id="productStatus" formControlName="status" class="form-control">
+            <option value="">Tất cả</option>
+            <option value="ACTIVE">Đang bán</option>
+            <option value="INACTIVE">Ngừng bán</option>
+          </select>
+        </div>
       </div>
 
-      <form [formGroup]="form" class="report-form" (ngSubmit)="createReport()">
-        <label *ngIf="selectedType === 'INVOICE'">
-          <span>Mã đơn hàng</span>
-          <input id="report-order-code" type="text" formControlName="orderCode" placeholder="VD: ORD-20260701-001" />
-          <small *ngIf="form.controls.orderCode.touched && form.controls.orderCode.invalid">Bắt buộc nhập mã đơn.</small>
-        </label>
-
-        <ng-container *ngIf="selectedType === 'DAILY_REVENUE'">
-          <label>
-            <span>Chi nhánh</span>
-            <select id="report-branch" formControlName="branchId">
-              <option value="" disabled>Chọn chi nhánh</option>
-              <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
-            </select>
-          </label>
-
-          <div class="date-grid">
-            <label>
-              <span>Từ ngày</span>
-              <input id="report-from-date" type="date" formControlName="fromDate" />
-            </label>
-            <label>
-              <span>Đến ngày</span>
-              <input id="report-to-date" type="date" formControlName="toDate" />
-            </label>
-          </div>
-        </ng-container>
-
-        <ng-container *ngIf="selectedType === 'PRODUCT_CATALOG'">
-          <label>
-            <span>Trạng thái</span>
-            <select id="report-status" formControlName="status">
-              <option value="">Tất cả</option>
-              <option value="ACTIVE">Đang bán</option>
-              <option value="INACTIVE">Ngừng bán</option>
-            </select>
-          </label>
-
-          <label>
-            <span>Danh mục</span>
-            <select id="report-category" formControlName="categoryId">
-              <option value="">Tất cả</option>
-              <!-- Categories will be loaded dynamically if needed -->
-            </select>
-          </label>
-        </ng-container>
-
-        <button id="report-create-job" type="submit" class="generate-btn" [disabled]="isSubmitting">
-          <span class="material-symbols-outlined">rocket_launch</span>
-          {{ isSubmitting ? 'Đang xử lý job...' : 'Xuất PDF' }}
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="resetFilter()">
+          Đặt lại
         </button>
-      </form>
-    </section>
-
-    <section class="job-card" [class.empty]="!currentJob" [class.failed]="currentJob?.status === 'FAILED'">
-      <ng-container *ngIf="currentJob; else emptyJob">
-        <div class="job-topline">
-          <div>
-            <span class="eyebrow">Job #{{ currentJob.id }}</span>
-            <h3>{{ currentJob.reportType }} · {{ currentJob.fileFormat }}</h3>
-          </div>
-          <strong class="status-badge" [attr.data-status]="currentJob.status">{{ currentJob.status }}</strong>
-        </div>
-
-        <div class="progress-track">
-          <i [style.width.%]="progressPercent"></i>
-        </div>
-
-        <div class="job-meta">
-          <span>Requested: {{ currentJob.requestedAt || '—' }}</span>
-          <span>Completed: {{ currentJob.completedAt || '—' }}</span>
-        </div>
-
-        <p class="error-text" *ngIf="currentJob.status === 'FAILED'">{{ currentJob.errorMessage || 'Tạo báo cáo thất bại' }}</p>
-
-        <button
-          id="report-download"
-          type="button"
-          class="download-btn"
-          (click)="downloadReport()"
-          [disabled]="currentJob.status !== 'DONE' || isDownloading">
-          <span class="material-symbols-outlined">download</span>
-          {{ isDownloading ? 'Đang tải...' : 'Tải PDF' }}
+        <button type="button" class="btn btn-primary" (click)="applyFilter()">
+          Lọc
         </button>
-      </ng-container>
+      </div>
+    </form>
+  </div>
 
-      <ng-template #emptyJob>
-        <span class="material-symbols-outlined empty-icon">hourglass_empty</span>
-        <h3>Chưa có job nào</h3>
-        <p>Chọn loại báo cáo, nhập thông tin rồi bấm xuất PDF.</p>
+  <!-- Create Report Section -->
+  <div class="create-section">
+    <h2 class="section-title">Tạo báo cáo</h2>
+    
+    <div class="create-content">
+      <div class="format-selection">
+        <label>Định dạng xuất:</label>
+        <div class="format-options">
+          <button 
+            type="button" 
+            class="format-btn"
+            [class.active]="selectedFormat === 'PDF'"
+            (click)="selectedFormat = 'PDF'">
+            PDF
+          </button>
+          <button 
+            type="button" 
+            class="format-btn"
+            [class.active]="selectedFormat === 'XLSX'"
+            (click)="selectedFormat = 'XLSX'">
+            Excel
+          </button>
+        </div>
+      </div>
+
+      <p class="create-note">
+        <span class="note-icon">ℹ️</span>
+        Báo cáo sẽ được xử lý trong nền và có thể tải xuống sau khi hoàn tất.
+      </p>
+
+      <button 
+        type="button" 
+        class="btn btn-create" 
+        (click)="createReport()"
+        [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Đang tạo...' : 'Tạo báo cáo' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Report History Table -->
+  <div class="history-section">
+    <h2 class="section-title">Lịch sử xuất báo cáo</h2>
+
+    <div class="table-container" *ngIf="!isLoadingHistory">
+      <table class="report-table" *ngIf="reportHistory.length > 0; else emptyState">
+        <thead>
+          <tr>
+            <th>Mã báo cáo</th>
+            <th>Loại báo cáo</th>
+            <th>Thời gian tạo</th>
+            <th>Trạng thái</th>
+            <th>Định dạng</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let job of reportHistory">
+            <td class="col-code">{{ job.id }}</td>
+            <td>Báo cáo sản phẩm</td>
+            <td>{{ formatDate(job.requestedAt) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(job.status)">
+                {{ getStatusLabel(job.status) }}
+              </span>
+            </td>
+            <td>
+              <span class="format-badge">{{ job.fileFormat }}</span>
+            </td>
+            <td class="col-actions">
+              <button 
+                type="button" 
+                class="action-btn btn-download"
+                [disabled]="job.status !== 'DONE'"
+                (click)="downloadReport(job)"
+                title="Tải xuống">
+                ⬇️
+              </button>
+              <button 
+                type="button" 
+                class="action-btn btn-retry"
+                *ngIf="job.status === 'FAILED'"
+                (click)="retryReport(job)"
+                title="Tạo lại">
+                🔄
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <h3>Chưa có báo cáo nào</h3>
+          <p>Tạo báo cáo đầu tiên để bắt đầu theo dõi lịch sử</p>
+        </div>
       </ng-template>
-    </section>
-  </main>
-</section>
+
+      <div class="pagination-bar" *ngIf="historyTotalElements > 0">
+        <div class="pagination-info">
+          {{ getHistoryRangeLabel() }}
+        </div>
+
+        <div class="pagination-size">
+          <label for="historyPageSize">Hiển thị</label>
+          <select
+            id="historyPageSize"
+            class="page-size-select"
+            [value]="historySize"
+            (change)="changeHistorySize($any($event.target).value)">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+
+        <div class="pagination-actions">
+          <button
+            type="button"
+            class="page-btn"
+            [disabled]="historyFirst || isLoadingHistory"
+            (click)="goToHistoryPage(historyPage - 1)">
+            ‹
+          </button>
+          <span class="page-current">
+            Trang {{ historyPage + 1 }} / {{ historyTotalPages }}
+          </span>
+          <button
+            type="button"
+            class="page-btn"
+            [disabled]="historyLast || isLoadingHistory"
+            (click)="goToHistoryPage(historyPage + 1)">
+            ›
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoadingHistory">
+      <div class="spinner"></div>
+      <p>Đang tải lịch sử báo cáo...</p>
+    </div>
+  </div>
+</div>
