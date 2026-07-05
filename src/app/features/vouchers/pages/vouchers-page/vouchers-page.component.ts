@@ -51,7 +51,7 @@ export class VouchersPageComponent implements OnInit {
     private readonly voucherService: VoucherService,
     private readonly branchService: BranchService,
     private readonly toast: ToastService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadVouchers();

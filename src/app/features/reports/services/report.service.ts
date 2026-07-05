@@ -5,7 +5,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
-import { CreateReportJobRequest, ReportJobResponse } from '../models/report.model';
+import { CreateReportJobRequest, ReportJobResponse, ReportJobStatsResponse } from '../models/report.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReportService {
@@ -36,6 +36,12 @@ export class ReportService {
       .get<BaseResponse<PageResponse<ReportJobResponse>>>(this.apiUrl, {
         params: { page, size, sort: 'createdAt,desc' }
       })
+      .pipe(map((response) => response.data));
+  }
+
+  getJobStats(): Observable<ReportJobStatsResponse> {
+    return this.http
+      .get<BaseResponse<ReportJobStatsResponse>>(`${this.apiUrl}/stats`)
       .pipe(map((response) => response.data));
   }
 }

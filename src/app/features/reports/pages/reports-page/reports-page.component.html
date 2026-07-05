@@ -2,7 +2,6 @@
   <!-- Header -->
   <div class="report-header">
     <h1 class="report-title">Báo cáo</h1>
-    <p class="report-description">Quản lý, tạo và tải xuống các báo cáo của hệ thống.</p>
   </div>
 
   <!-- Stats & Filter Section -->
@@ -54,11 +53,12 @@
     <div class="create-content">
       <div class="format-selection">
         <label>Định dạng xuất:</label>
-        <div class="format-options">
+        <div class="format-options" role="group" aria-label="Định dạng xuất báo cáo">
           <button 
             type="button" 
             class="format-btn"
             [class.active]="selectedFormat === 'PDF'"
+            [disabled]="isExporting"
             (click)="selectedFormat = 'PDF'">
             PDF
           </button>
@@ -66,6 +66,7 @@
             type="button" 
             class="format-btn"
             [class.active]="selectedFormat === 'XLSX'"
+            [disabled]="isExporting"
             (click)="selectedFormat = 'XLSX'">
             Excel
           </button>
@@ -77,13 +78,37 @@
         Báo cáo sẽ được xử lý trong nền và có thể tải xuống sau khi hoàn tất.
       </p>
 
-      <button 
-        type="button" 
-        class="btn btn-create" 
-        (click)="createReport()"
-        [disabled]="isSubmitting">
-        {{ isSubmitting ? 'Đang tạo...' : 'Tạo báo cáo' }}
-      </button>
+      <div
+        class="report-action-panel"
+        [class.is-active]="exportStatus !== 'idle'"
+        [class.is-success]="exportStatus === 'success'"
+        [class.is-error]="exportStatus === 'error'"
+        aria-live="polite">
+        <button 
+          type="button" 
+          class="btn btn-create" 
+          id="createReportButton"
+          [class.is-success]="exportStatus === 'success'"
+          [class.is-error]="exportStatus === 'error'"
+          (click)="createReport()"
+          [disabled]="isExporting"
+          [attr.aria-busy]="isExporting">
+          <span class="btn-spinner" *ngIf="shouldShowExportSpinner()" aria-hidden="true"></span>
+          <span class="btn-state-icon" *ngIf="exportStatus === 'success'" aria-hidden="true">✓</span>
+          <span class="btn-state-icon" *ngIf="exportStatus === 'error'" aria-hidden="true">!</span>
+          <span>{{ getExportButtonText() }}</span>
+        </button>
+
+        <div class="export-status-box" *ngIf="exportStatus !== 'idle'">
+          <span class="inline-spinner" *ngIf="shouldShowExportSpinner()" aria-hidden="true"></span>
+          <span class="status-dot success" *ngIf="exportStatus === 'success'" aria-hidden="true">✓</span>
+          <span class="status-dot error" *ngIf="exportStatus === 'error'" aria-hidden="true">!</span>
+          <div>
+            <strong>{{ getExportButtonText() }}</strong>
+            <p>{{ exportMessage }}</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -120,10 +145,14 @@
               <button 
                 type="button" 
                 class="action-btn btn-download"
-                [disabled]="job.status !== 'DONE'"
+                [class.is-loading]="isDownloading(job.id)"
+                [disabled]="job.status !== 'DONE' || isDownloading(job.id)"
                 (click)="downloadReport(job)"
-                title="Tải xuống">
-                ⬇️
+                [attr.aria-label]="isDownloading(job.id) ? 'Đang tải xuống báo cáo' : 'Tải xuống báo cáo'"
+                [attr.aria-busy]="isDownloading(job.id)"
+                [title]="isDownloading(job.id) ? 'Đang tải xuống...' : 'Tải xuống'">
+                <span class="action-spinner" *ngIf="isDownloading(job.id)" aria-hidden="true"></span>
+                <span *ngIf="!isDownloading(job.id)" aria-hidden="true">↓</span>
               </button>
               <button 
                 type="button" 
