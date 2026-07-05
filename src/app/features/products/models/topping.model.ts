@@ -1,0 +1,8 @@
+export interface Topping {
+  id: string;
+  name: string;
+  price: number;
+  isAvailable: boolean;
+  category: string;
+  image?: string;
+}

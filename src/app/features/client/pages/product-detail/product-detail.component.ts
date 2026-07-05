@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MockTopping } from '../../../../shared/mock-data';
+import { Topping } from '../../../products/models/topping.model';
 import { BranchProductAvailability, BranchToppingAvailability } from '../../../branches/models/branch-availability.model';
 import { CartService } from '../../services/cart.service';
 import { Branch } from '../../../branches/models/branch.model';
@@ -37,7 +37,7 @@ interface LevelOption {
 })
 export class ProductDetailComponent implements OnInit {
   product: Product | null = null;
-  availableToppings: MockTopping[] = [];
+  availableToppings: Topping[] = [];
   loading = false;
   errorMessage = '';
 
@@ -55,7 +55,7 @@ export class ProductDetailComponent implements OnInit {
   selectedVariant: ProductVariant | null = null;
   selectedIceLevel = 70;
   selectedSugarLevel = 100;
-  selectedToppings: MockTopping[] = [];
+  selectedToppings: Topping[] = [];
   quantity = 1;
   note = '';
 
@@ -172,7 +172,7 @@ export class ProductDetailComponent implements OnInit {
     this.selectedSugarLevel = level;
   }
 
-  toggleTopping(topping: MockTopping): void {
+  toggleTopping(topping: Topping): void {
     const index = this.selectedToppings.findIndex(t => t.id === topping.id);
     if (index > -1) {
       this.selectedToppings.splice(index, 1);
@@ -181,7 +181,7 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
-  isToppingSelected(topping: MockTopping): boolean {
+  isToppingSelected(topping: Topping): boolean {
     return this.selectedToppings.some(t => t.id === topping.id);
   }
 
@@ -317,7 +317,7 @@ export class ProductDetailComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
-  getToppingsByCategory(category: string): MockTopping[] {
+  getToppingsByCategory(category: string): Topping[] {
     return this.availableToppings.filter(t => t.category === category);
   }
 
@@ -397,7 +397,7 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
-  private mapProductToppings(productToppings: ProductTopping[]): MockTopping[] {
+  private mapProductToppings(productToppings: ProductTopping[]): Topping[] {
     return productToppings
       .filter(item => item.status === 'ACTIVE')
       .map(item => ({
@@ -498,7 +498,7 @@ export class ProductDetailComponent implements OnInit {
     return new Date(now.getTime() - offset).toISOString().slice(0, 10);
   }
 
-  private applyToppingAvailability(toppings: MockTopping[]): MockTopping[] {
+  private applyToppingAvailability(toppings: Topping[]): Topping[] {
     if (!this.selectedBranchId) { return toppings; }
 
     this.branchAvailabilityService.getToppingAvailabilities(this.selectedBranchId).subscribe({
@@ -519,9 +519,9 @@ export class ProductDetailComponent implements OnInit {
   }
 
   private filterToppingsByAvailability(
-    toppings: MockTopping[],
+    toppings: Topping[],
     availabilities: BranchToppingAvailability[]
-  ): MockTopping[] {
+  ): Topping[] {
     if (!availabilities.length) { return toppings; }
 
     return toppings.filter(topping => {

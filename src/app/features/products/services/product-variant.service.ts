@@ -18,7 +18,7 @@ export class ProductVariantService {
   private readonly productsUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.products}`;
   private readonly variantCache = new Map<string, Observable<ProductVariant[]>>();
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   getVariants(productId: string, page: number, size: number): Observable<PageResponse<ProductVariant>> {
     const params = new HttpParams()
@@ -43,6 +43,12 @@ export class ProductVariantService {
       this.variantCache.set(productId, request$);
     }
     return this.variantCache.get(productId)!;
+  }
+
+  getAllActiveVariants(): Observable<ProductVariant[]> {
+    return this.http
+      .get<BaseResponse<ProductVariant[]>>(`${this.productsUrl}/variants/active`)
+      .pipe(map((response) => (response.data || []).map((variant) => this.normalizeVariant(variant))));
   }
 
   createVariant(productId: string, request: ProductVariantCreateRequest): Observable<ProductVariant> {

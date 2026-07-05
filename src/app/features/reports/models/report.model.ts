@@ -20,3 +20,10 @@ export interface ReportJobResponse {
   startedAt?: string | null;
   completedAt?: string | null;
 }
+
+export interface ReportJobStatsResponse {
+  total: number;
+  completed: number;
+  running: number;
+  failed: number;
+}

@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
+
+import { SidebarScrollService } from '../../core/services/sidebar-scroll.service';
 
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../core/services/auth.service';
@@ -28,7 +30,8 @@ interface NavSection {
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.scss']
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements AfterViewInit {
+  @ViewChild('sidebarScrollContainer') private readonly sidebarScrollContainer?: ElementRef<HTMLElement>;
   readonly navSections: NavSection[] = [
     {
       title: 'Tổng quan',
@@ -91,7 +94,8 @@ export class AdminLayoutComponent {
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
-    private readonly accessControl: AccessControlService
+    private readonly accessControl: AccessControlService,
+    private readonly sidebarScrollService: SidebarScrollService
   ) {
     this.currentUser = this.authService.getCurrentUser();
 
@@ -100,7 +104,12 @@ export class AdminLayoutComponent {
       .subscribe(() => {
         this.currentUser = this.authService.getCurrentUser();
         this.sidebarOpen = false;
+        this.restoreSidebarScroll();
       });
+  }
+
+  ngAfterViewInit(): void {
+    this.restoreSidebarScroll();
   }
 
   get isDeliveryOnly(): boolean {
@@ -129,6 +138,39 @@ export class AdminLayoutComponent {
 
   isActive(route: string): boolean {
     return this.router.url === route || this.router.url.startsWith(`${route}/`);
+  }
+
+  onSidebarScroll(event: Event): void {
+    this.sidebarScrollService.save((event.target as HTMLElement).scrollTop);
+  }
+
+  private restoreSidebarScroll(): void {
+    const container = this.sidebarScrollContainer?.nativeElement;
+    if (!container) return;
+
+    if (this.sidebarScrollService.hasSavedPosition()) {
+      this.sidebarScrollService.restore(container);
+    } else {
+      this.scrollToActiveItem();
+    }
+  }
+
+  private scrollToActiveItem(): void {
+    const container = this.sidebarScrollContainer?.nativeElement;
+    if (!container) return;
+
+    // Chờ Angular cập nhật DOM và gán class .is-active
+    setTimeout(() => {
+      const activeLink = container.querySelector('.is-active') as HTMLElement;
+      if (activeLink) {
+        activeLink.scrollIntoView({ behavior: 'auto', block: 'center' });
+        
+        // Lưu lại vị trí sau khi cuộn
+        setTimeout(() => {
+          this.sidebarScrollService.save(container.scrollTop);
+        }, 100);
+      }
+    }, 150);
   }
 
   private canViewNavItem(item: NavItem): boolean {
