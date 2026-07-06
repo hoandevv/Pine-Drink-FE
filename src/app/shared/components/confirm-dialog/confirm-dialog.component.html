@@ -1,0 +1,67 @@
+<ng-container *ngIf="(dialog$ | async) as rawDialog">
+  <ng-container *ngIf="onDialogChange(rawDialog) as dialog">
+    <div class="confirm-backdrop" (click)="overlayClick(dialog)"></div>
+
+    <section class="confirm-shell" role="dialog" aria-modal="true" [attr.aria-labelledby]="'confirm-title-' + dialog.id">
+      <header class="confirm-header">
+        <div class="confirm-icon" [class]="dialog.type || 'warning'">
+          <span class="material-symbols-outlined">{{ iconFor(dialog.type || 'warning') }}</span>
+        </div>
+
+        <div class="confirm-heading">
+          <p class="confirm-eyebrow">Pine Drink Admin Console</p>
+          <h2 [id]="'confirm-title-' + dialog.id">{{ dialog.title }}</h2>
+        </div>
+      </header>
+
+      <div class="confirm-content">
+        <p class="confirm-message" *ngIf="dialog.message">{{ dialog.message }}</p>
+        <p class="confirm-description" *ngIf="dialog.description">{{ dialog.description }}</p>
+
+        <label class="confirm-input" *ngIf="dialog.mode === 'prompt'">
+          <span>{{ dialog.input?.label || 'Nội dung' }}</span>
+          <textarea
+            rows="3"
+            [placeholder]="dialog.input?.placeholder || ''"
+            [(ngModel)]="inputValue"
+            [disabled]="dialog.loading"
+          ></textarea>
+        </label>
+
+        <div class="confirm-risk-list" *ngIf="dialog.risks?.length || dialog.affectedItems?.length">
+          <span class="risk-title">Ảnh hưởng</span>
+          <ul>
+            <li *ngFor="let item of (dialog.risks || dialog.affectedItems)">
+              <span class="material-symbols-outlined">priority_high</span>
+              {{ item }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <footer class="confirm-footer">
+        <button
+          *ngIf="dialog.mode !== 'alert'"
+          type="button"
+          class="confirm-btn secondary"
+          [disabled]="dialog.loading"
+          (click)="cancel(dialog)"
+        >
+          {{ dialog.cancelText || 'Hủy' }}
+        </button>
+
+        <button
+          type="button"
+          class="confirm-btn primary"
+          [class.danger]="dialog.type === 'danger'"
+          [class.success]="dialog.type === 'success'"
+          [disabled]="dialog.loading || isConfirmDisabled(dialog)"
+          (click)="confirm(dialog)"
+        >
+          <span class="spinner" *ngIf="dialog.loading"></span>
+          {{ dialog.loading ? 'Đang xử lý...' : (dialog.confirmText || 'Xác nhận') }}
+        </button>
+      </footer>
+    </section>
+  </ng-container>
+</ng-container>

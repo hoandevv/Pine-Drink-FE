@@ -10,6 +10,7 @@ import { GlobalLoadingComponent } from './components/global-loading/global-loadi
 import { PageHeaderComponent } from './components/page-header/page-header.component';
 import { PaginationComponent } from './components/pagination/pagination.component';
 import { ToastContainerComponent } from './components/toast-container/toast-container.component';
+import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { MapPickerComponent } from '../features/client/components/map-picker/map-picker.component';
 
 @NgModule({
@@ -20,7 +21,8 @@ import { MapPickerComponent } from '../features/client/components/map-picker/map
     EmptyStateComponent,
     PaginationComponent,
     AdminPaginationComponent,
-    MapPickerComponent
+    MapPickerComponent,
+    ConfirmDialogComponent
   ],
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, TranslateModule],
   exports: [
@@ -34,7 +36,8 @@ import { MapPickerComponent } from '../features/client/components/map-picker/map
     EmptyStateComponent,
     PaginationComponent,
     AdminPaginationComponent,
-    MapPickerComponent
+    MapPickerComponent,
+    ConfirmDialogComponent
   ]
 })
 export class SharedModule {}

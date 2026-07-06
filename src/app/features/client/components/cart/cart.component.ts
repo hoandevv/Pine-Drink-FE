@@ -16,6 +16,8 @@ import { BranchProductAvailability } from '../../../branches/models/branch-avail
 import { DailyStock } from '../../../products/models/daily-stock.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
+import { ToastNotificationService } from '../../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-cart',
@@ -56,7 +58,9 @@ export class CartComponent implements OnInit {
     private readonly orderService: OrderService,
     private readonly paymentService: PaymentService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
-    private readonly dailyStockService: DailyStockService
+    private readonly dailyStockService: DailyStockService,
+    private readonly toast: ToastNotificationService,
+    private readonly confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -252,7 +256,7 @@ export class CartComponent implements OnInit {
           .filter(i => i.variantId === item.variantId)
           .reduce((sum, i) => sum + i.quantity, 0);
         if (currentCartQty + change > Number(stock.availableQuantity)) {
-          alert('Không đủ số lượng sản phẩm để thêm thêm.');
+          this.toast.warning('Không đủ số lượng sản phẩm để thêm thêm.');
           return;
         }
       }
@@ -275,16 +279,19 @@ export class CartComponent implements OnInit {
         this.calculateTotal();
       },
       error: err => {
-        alert(err?.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.');
+        this.toast.error(err?.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.');
       }
     });
   }
 
   applyVoucher(voucher?: VoucherResponse): void {
+    const warnMinOrder = (minOrderAmount: number) =>
+      this.toast.warning(`Đơn hàng tối thiểu ${this.formatPrice(minOrderAmount)} để áp dụng mã này`);
+
     if (voucher) {
       const minOrderAmount = voucher.minOrderAmount || 0;
       if (this.subtotal < minOrderAmount) {
-        alert(`Đơn hàng tối thiểu ${this.formatPrice(minOrderAmount)} để áp dụng mã này`);
+        warnMinOrder(minOrderAmount);
         return;
       }
       this.selectedVoucher = voucher;
@@ -294,12 +301,12 @@ export class CartComponent implements OnInit {
       if (foundVoucher) {
         const minOrderAmount = foundVoucher.minOrderAmount || 0;
         if (this.subtotal < minOrderAmount) {
-          alert(`Đơn hàng tối thiểu ${this.formatPrice(minOrderAmount)} để áp dụng mã này`);
+          warnMinOrder(minOrderAmount);
           return;
         }
         this.selectedVoucher = foundVoucher;
       } else {
-        alert('Mã voucher không hợp lệ');
+        this.toast.warning('Mã voucher không hợp lệ');
         return;
       }
     }
@@ -337,28 +344,28 @@ export class CartComponent implements OnInit {
 
   proceedToCheckout(): void {
     if (this.cartItems.length === 0) {
-      alert('Giỏ hàng trống');
+      this.toast.warning('Giỏ hàng trống');
       return;
     }
 
     if (this.hasOutOfStockItems) {
-      alert('Vui lòng loại bỏ hoặc giảm số lượng sản phẩm đã hết hàng trong giỏ trước khi đặt.');
+      this.toast.warning('Vui lòng loại bỏ hoặc giảm số lượng sản phẩm đã hết hàng trong giỏ trước khi đặt.');
       return;
     }
 
     const branchId = sessionStorage.getItem('selectedBranchId') || '';
     if (!branchId) {
-      alert('Vui lòng chọn chi nhánh trước khi đặt hàng');
+      this.toast.warning('Vui lòng chọn chi nhánh trước khi đặt hàng');
       return;
     }
 
     if (this.orderType === 'DELIVERY') {
       if (!this.selectedAddressId) {
-        alert('Vui lòng chọn địa chỉ giao hàng');
+        this.toast.warning('Vui lòng chọn địa chỉ giao hàng');
         return;
       }
       if (this.deliveryError) {
-        alert(this.deliveryError);
+        this.toast.warning(this.deliveryError);
         return;
       }
     }
@@ -372,6 +379,27 @@ export class CartComponent implements OnInit {
       voucherCode: this.selectedVoucher?.code || this.voucherCode.trim() || undefined
     };
 
+    this.confirmDialog.confirm({
+      title: 'Xác nhận đặt hàng?',
+      message: `Bạn sắp đặt đơn hàng ${this.orderType === 'DELIVERY' ? 'giao tận nơi' : 'nhận tại quán'} với tổng tiền ${this.formatPrice(this.total)}.`,
+      description: this.paymentMethod === 'MOMO'
+        ? 'Sau khi tạo đơn, hệ thống sẽ chuyển bạn sang trang thanh toán MoMo.'
+        : 'Vui lòng kiểm tra lại thông tin đơn hàng trước khi xác nhận.',
+      confirmText: 'Đặt hàng',
+      cancelText: 'Kiểm tra lại',
+      type: 'info',
+      affectedItems: [
+        `${this.cartItems.length} sản phẩm`,
+        `Thanh toán: ${this.paymentMethod === 'MOMO' ? 'Ví MoMo' : (this.orderType === 'DELIVERY' ? 'COD' : 'Tại quầy')}`,
+        `Tổng tiền: ${this.formatPrice(this.total)}`
+      ]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.createOrder(request);
+    });
+  }
+
+  private createOrder(request: CreateOrderRequest): void {
     this.checkingOut = true;
     this.orderService.createOrder(request).subscribe({
       next: order => {
@@ -385,7 +413,7 @@ export class CartComponent implements OnInit {
       },
       error: err => {
         this.checkingOut = false;
-        alert(err?.error?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+        this.toast.error(err?.error?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
       }
     });
   }
@@ -408,13 +436,13 @@ export class CartComponent implements OnInit {
           // Redirect to MoMo payment page
           window.location.href = response.payUrl;
         } else {
-          alert('Không thể tạo thanh toán MoMo. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
+          this.toast.error('Không thể tạo thanh toán MoMo. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
           this.router.navigate(['/track-order', orderId]);
         }
       },
       error: err => {
         this.checkingOut = false;
-        alert(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
+        this.toast.error(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
         this.router.navigate(['/track-order', orderId]);
       }
     });

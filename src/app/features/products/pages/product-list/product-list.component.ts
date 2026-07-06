@@ -12,6 +12,8 @@ import { BranchAvailabilityService } from '../../../branches/services/branch-ava
 import { BranchService } from '../../../branches/services/branch.service';
 import { BranchProductAvailability, BranchProductAvailabilityRequest } from '../../../branches/models/branch-availability.model';
 import { Branch } from '../../../branches/models/branch.model';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { PromptDialogService } from '../../../../shared/components/prompt-dialog/prompt-dialog.service';
 
 @Component({
   selector: 'app-product-list',
@@ -51,7 +53,9 @@ export class ProductListComponent implements OnInit {
     private readonly productService: ProductService,
     private readonly categoryService: CategoryService,
     private readonly branchService: BranchService,
-    private readonly branchAvailabilityService: BranchAvailabilityService
+    private readonly branchAvailabilityService: BranchAvailabilityService,
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly promptDialog: PromptDialogService
   ) {}
 
   ngOnInit(): void {
@@ -111,21 +115,28 @@ export class ProductListComponent implements OnInit {
     const actionLabel = nextStatus === 'ACTIVE' ? 'bật lại' : 'ẩn';
     const productName = product.name || product.code || 'sản phẩm này';
 
-    if (!window.confirm(`Xác nhận ${actionLabel} ${productName}?`)) {
-      return;
-    }
+    this.confirmDialog.confirm({
+      title: `Xác nhận ${actionLabel} sản phẩm?`,
+      message: `Bạn có chắc muốn ${actionLabel} ${productName}?`,
+      confirmText: nextStatus === 'ACTIVE' ? 'Bật lại' : 'Ẩn sản phẩm',
+      cancelText: 'Hủy',
+      type: nextStatus === 'ACTIVE' ? 'success' : 'warning',
+      affectedItems: [productName]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.loading = true;
-    this.errorMessage = '';
+      this.loading = true;
+      this.errorMessage = '';
 
-    this.productService.updateProductStatus(product.id, nextStatus)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadProducts(this.pageData.page),
-        error: () => {
-          this.errorMessage = `Không thể ${actionLabel} sản phẩm. Vui lòng thử lại hoặc kiểm tra quyền thao tác.`;
-        }
-      });
+      this.productService.updateProductStatus(product.id, nextStatus)
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: () => this.loadProducts(this.pageData.page),
+          error: () => {
+            this.errorMessage = `Không thể ${actionLabel} sản phẩm. Vui lòng thử lại hoặc kiểm tra quyền thao tác.`;
+          }
+        });
+    });
   }
 
   deleteProduct(product: Product): void {
@@ -181,12 +192,20 @@ export class ProductListComponent implements OnInit {
   }
 
   markProductSoldOut(product: Product): void {
-    const reason = window.prompt(`Lý do hết hàng cho ${product.name}?`, this.getAvailability(product.id)?.soldOutReason || 'Hết nguyên liệu');
-    if (reason === null) {
-      return;
-    }
-
-    this.saveProductAvailability(product, false, reason.trim() || 'Hết nguyên liệu');
+    this.promptDialog.prompt({
+      title: 'Nhập lý do hết hàng',
+      message: `Cho biết lý do hết hàng của ${product.name}.`,
+      label: 'Lý do',
+      placeholder: 'Ví dụ: Hết nguyên liệu',
+      value: this.getAvailability(product.id)?.soldOutReason || 'Hết nguyên liệu',
+      required: false,
+      confirmText: 'Lưu lý do',
+      cancelText: 'Hủy',
+      type: 'warning'
+    }).subscribe((reason) => {
+      if (reason === null) return;
+      this.saveProductAvailability(product, false, reason.trim() || 'Hết nguyên liệu');
+    });
   }
 
   private loadProducts(page = 0): void {

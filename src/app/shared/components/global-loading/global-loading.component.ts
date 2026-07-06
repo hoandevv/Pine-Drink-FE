@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 
-import { LoadingService } from '../../../core/services/loading.service';
+import { LoadingOverlayService } from '../../../core/services/loading.service';
 
 @Component({
   selector: 'app-global-loading',
@@ -8,5 +8,5 @@ import { LoadingService } from '../../../core/services/loading.service';
   styleUrls: ['./global-loading.component.scss']
 })
 export class GlobalLoadingComponent {
-  constructor(public readonly loadingService: LoadingService) {}
+  constructor(public readonly loadingOverlay: LoadingOverlayService) {}
 }

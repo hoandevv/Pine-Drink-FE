@@ -16,6 +16,8 @@ export type PermissionCode =
   | 'BRANCH_CREATE'
   | 'BRANCH_UPDATE'
   | 'BRANCH_DELETE'
+  | 'REPORT_VIEW'
+  | 'REPORT_CREATE'
   | 'PROFILE_VIEW'
   | 'PROFILE_UPDATE'
   | 'CUSTOMER_ADDRESS_VIEW'
@@ -40,6 +42,8 @@ const ROLE_PERMISSION_FALLBACK: Record<string, PermissionCode[]> = {
     'BRANCH_CREATE',
     'BRANCH_UPDATE',
     'BRANCH_DELETE',
+    'REPORT_VIEW',
+    'REPORT_CREATE',
     'PROFILE_VIEW',
     'PROFILE_UPDATE',
     'CUSTOMER_ADDRESS_VIEW',
@@ -57,6 +61,8 @@ const ROLE_PERMISSION_FALLBACK: Record<string, PermissionCode[]> = {
     'BRANCH_VIEW',
     'BRANCH_CREATE',
     'BRANCH_UPDATE',
+    'REPORT_VIEW',
+    'REPORT_CREATE',
     'PROFILE_VIEW',
     'PROFILE_UPDATE',
     'FILE_UPLOAD',

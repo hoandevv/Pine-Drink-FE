@@ -96,7 +96,7 @@ const routes: Routes = [
       },
       {
         path: 'reports',
-        data: { roles: ['ADMIN', 'MANAGER'] },
+        data: { permission: 'REPORT_VIEW' },
         loadChildren: () => import('./features/reports/reports.module').then((m) => m.ReportsModule)
       }
     ]
