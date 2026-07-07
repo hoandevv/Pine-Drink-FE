@@ -19,6 +19,7 @@ export class AddressFormComponent implements OnInit {
   isEditMode = false;
   addressId: string | null = null;
   isSubmitting = false;
+  returnUrl = '/addresses';
 
   constructor(
     private readonly fb: FormBuilder,
@@ -30,6 +31,7 @@ export class AddressFormComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/addresses';
     this.initForm();
     this.checkEditMode();
   }
@@ -140,7 +142,7 @@ export class AddressFormComponent implements OnInit {
         this.isSubmitting = false;
         if (address) {
           this.toastService.success('Đã thêm địa chỉ thành công');
-          this.router.navigate(['/addresses']);
+          this.router.navigateByUrl(this.returnUrl);
         }
       });
   }
@@ -163,13 +165,13 @@ export class AddressFormComponent implements OnInit {
         this.isSubmitting = false;
         if (address) {
           this.toastService.success('Đã cập nhật địa chỉ thành công');
-          this.router.navigate(['/addresses']);
+          this.router.navigateByUrl(this.returnUrl);
         }
       });
   }
 
   cancel(): void {
-    this.router.navigate(['/addresses']);
+    this.router.navigateByUrl(this.returnUrl);
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

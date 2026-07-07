@@ -61,7 +61,7 @@ export class CartComponent implements OnInit {
     private readonly dailyStockService: DailyStockService,
     private readonly toast: ToastNotificationService,
     private readonly confirmDialog: ConfirmDialogService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadBranch();
@@ -82,19 +82,19 @@ export class CartComponent implements OnInit {
     this.loading = true;
     this.checkingAvailability = true;
     this.errorMessage = '';
-    
+
     this.cartService.getActiveCart(branchId).pipe(
       switchMap(cart => {
         this.cartItems = cart.items || [];
-        
+
         if (this.cartItems.length === 0) {
           return of([[], []]);
         }
-        
+
         const now = new Date();
         const offset = now.getTimezoneOffset() * 60000;
         const todayKey = new Date(now.getTime() - offset).toISOString().slice(0, 10);
-        
+
         return forkJoin([
           this.branchAvailabilityService.getProductAvailabilities(branchId).pipe(
             catchError(() => of([] as BranchProductAvailability[]))
@@ -108,7 +108,7 @@ export class CartComponent implements OnInit {
       next: ([availabilities, stocks]: any) => {
         this.branchProductAvailabilities = availabilities as BranchProductAvailability[];
         this.dailyStocks = stocks as DailyStock[];
-        
+
         this.loading = false;
         this.checkingAvailability = false;
         this.calculateTotal();
@@ -296,21 +296,34 @@ export class CartComponent implements OnInit {
       }
       this.selectedVoucher = voucher;
       this.voucherCode = voucher.code;
-    } else {
-      const foundVoucher = this.availableVouchers.find(v => v.code.toUpperCase() === this.voucherCode.trim().toUpperCase());
-      if (foundVoucher) {
-        const minOrderAmount = foundVoucher.minOrderAmount || 0;
-        if (this.subtotal < minOrderAmount) {
-          warnMinOrder(minOrderAmount);
-          return;
-        }
-        this.selectedVoucher = foundVoucher;
-      } else {
-        this.toast.warning('Mã voucher không hợp lệ');
+      this.calculateTotal();
+      return;
+    }
+
+    const normalizedCode = this.voucherCode.trim().toUpperCase();
+    if (!normalizedCode) {
+      this.toast.warning('Vui lòng nhập mã voucher');
+      return;
+    }
+
+    const foundVoucher = this.availableVouchers.find(v => v.code.toUpperCase() === normalizedCode);
+    if (foundVoucher) {
+      const minOrderAmount = foundVoucher.minOrderAmount || 0;
+      if (this.subtotal < minOrderAmount) {
+        warnMinOrder(minOrderAmount);
         return;
       }
+      this.selectedVoucher = foundVoucher;
+      this.voucherCode = foundVoucher.code;
+      this.calculateTotal();
+      return;
     }
+
+    this.selectedVoucher = null;
+    this.voucherCode = normalizedCode;
+    this.discount = 0;
     this.calculateTotal();
+    this.toast.info('Mã voucher sẽ được kiểm tra khi đặt hàng');
   }
 
   removeVoucher(): void {
@@ -424,7 +437,7 @@ export class CartComponent implements OnInit {
 
   handleMomoPayment(orderId: string, orderCode: string): void {
     const orderInfo = `Thanh toán đơn hàng ${orderCode}`;
-    
+
     this.paymentService.createMomoPayment({
       orderId,
       orderInfo,
