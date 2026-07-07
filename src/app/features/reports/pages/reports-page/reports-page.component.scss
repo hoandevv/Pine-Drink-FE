@@ -503,78 +503,66 @@
   border-color: var(--report-border);
 }
 
-/* Pagination */
 .pagination-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   margin-top: 18px;
   padding: 14px 16px;
-  border: 1px solid #e0e7ff;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+  border-top: 1px solid rgba(15, 74, 42, 0.08);
+  background: linear-gradient(135deg, rgba(255, 253, 244, 0.92), rgba(239, 255, 238, 0.82));
 }
 
-.pagination-info {
-  font-size: 13px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.pagination-size,
-.pagination-actions {
+.page-size-control,
+.page-status,
+.page-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  color: #53635a;
+  font-size: 11px;
+  font-weight: 850;
 }
 
-.pagination-size label {
-  font-size: 13px;
-  color: #64748b;
-}
-
-.page-size-select {
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #fff;
-  color: #0f172a;
+.page-size-control select {
+  height: 28px;
+  min-width: 54px;
+  padding: 0 8px;
+  border: 1px solid rgba(15, 74, 42, 0.12);
+  border-radius: 10px;
+  color: #102018;
+  background: #fffdf4;
+  font-size: 11px;
+  font-weight: 850;
   outline: none;
 }
 
-.page-btn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid #c7d2fe;
-  border-radius: 10px;
-  background: #fff;
-  color: #2563eb;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1;
+.page-actions button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 13px;
+  color: #102018;
+  background: rgba(15, 74, 42, 0.08);
   cursor: pointer;
   transition: all 0.2s ease;
-}
 
-.page-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  border-color: #2563eb;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.16);
-}
+  .material-symbols-outlined {
+    font-size: 20px;
+  }
 
-.page-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+  &:hover:not(:disabled) {
+    background: #ffe66d;
+    transform: translateY(-1px);
+  }
 
-.page-current {
-  min-width: 118px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 600;
-  color: #1e293b;
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
 }
 
 /* Empty State */

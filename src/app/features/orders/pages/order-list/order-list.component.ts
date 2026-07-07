@@ -9,6 +9,7 @@ import { OrderService } from '../../services/order.service';
 import { PaymentService, RecordOfflinePaymentRequest } from '../../services/payment.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { PromptDialogService } from '../../../../shared/components/prompt-dialog/prompt-dialog.service';
 
 @Component({
   selector: 'app-order-list',
@@ -55,7 +56,8 @@ export class OrderListComponent implements OnInit, OnDestroy {
     private readonly orderRealtimeService: OrderRealtimeService,
     private readonly paymentService: PaymentService,
     private readonly toastService: ToastService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly promptDialog: PromptDialogService
   ) {}
 
   ngOnInit(): void {
@@ -239,15 +241,33 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   handleSecondaryAction(order: Order): void {
     if (order.status === 'PENDING') {
-      const reason = window.prompt('Enter rejection reason:');
-      if (reason !== null) {
-        this.updateOrderStatusWithReason(order, 'REJECTED', reason.trim());
-      }
+      this.promptDialog.prompt({
+        title: 'Nhập lý do từ chối đơn',
+        message: `Đơn ${order.orderCode || order.id} sẽ được chuyển sang trạng thái từ chối.`,
+        label: 'Lý do từ chối',
+        placeholder: 'Ví dụ: Hết món / ngoài khu vực giao',
+        confirmText: 'Từ chối đơn',
+        cancelText: 'Hủy',
+        type: 'danger'
+      }).subscribe((reason) => {
+        if (reason !== null) {
+          this.updateOrderStatusWithReason(order, 'REJECTED', reason.trim());
+        }
+      });
     } else if (['CONFIRMED', 'PREPARING', 'READY'].includes(order.status)) {
-      const reason = window.prompt('Enter cancellation reason:');
-      if (reason !== null) {
-        this.updateOrderStatusWithReason(order, 'CANCELLED', reason.trim());
-      }
+      this.promptDialog.prompt({
+        title: 'Nhập lý do hủy đơn',
+        message: `Đơn ${order.orderCode || order.id} sẽ được chuyển sang trạng thái hủy.`,
+        label: 'Lý do hủy',
+        placeholder: 'Ví dụ: Khách yêu cầu hủy',
+        confirmText: 'Hủy đơn',
+        cancelText: 'Đóng',
+        type: 'warning'
+      }).subscribe((reason) => {
+        if (reason !== null) {
+          this.updateOrderStatusWithReason(order, 'CANCELLED', reason.trim());
+        }
+      });
     } else if (order.status === 'COMPLETED') {
       this.printReceipt(order);
     }

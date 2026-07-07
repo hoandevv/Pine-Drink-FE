@@ -1,20 +1,27 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, map } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class LoadingService {
-  private readonly loadingSubject = new BehaviorSubject<boolean>(false);
+export interface LoadingOverlayState {
+  visible: boolean;
+  message: string;
+  subtitle?: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class LoadingOverlayService {
   private pendingRequests = 0;
+  private readonly stateSubject = new BehaviorSubject<LoadingOverlayState>({
+    visible: false,
+    message: 'Đang xử lý...',
+    subtitle: 'Vui lòng chờ trong giây lát'
+  });
 
-  readonly loading$ = this.loadingSubject.asObservable();
+  readonly state$ = this.stateSubject.asObservable();
+  readonly loading$ = this.state$.pipe(map((state) => state.visible));
 
-  show(): void {
+  show(message = 'Đang xử lý...', subtitle = 'Vui lòng chờ trong giây lát'): void {
     this.pendingRequests += 1;
-    if (!this.loadingSubject.value) {
-      this.loadingSubject.next(true);
-    }
+    this.stateSubject.next({ visible: true, message, subtitle });
   }
 
   hide(): void {
@@ -23,12 +30,36 @@ export class LoadingService {
     }
 
     if (this.pendingRequests === 0) {
-      this.loadingSubject.next(false);
+      this.stateSubject.next({ ...this.stateSubject.value, visible: false });
     }
   }
 
   reset(): void {
     this.pendingRequests = 0;
-    this.loadingSubject.next(false);
+    this.stateSubject.next({
+      visible: false,
+      message: 'Đang xử lý...',
+      subtitle: 'Vui lòng chờ trong giây lát'
+    });
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class LoadingService {
+  constructor(private readonly overlay: LoadingOverlayService) {}
+
+  readonly state$ = this.overlay.state$;
+  readonly loading$ = this.overlay.loading$;
+
+  show(message?: string, subtitle?: string): void {
+    this.overlay.show(message, subtitle);
+  }
+
+  hide(): void {
+    this.overlay.hide();
+  }
+
+  reset(): void {
+    this.overlay.reset();
   }
 }

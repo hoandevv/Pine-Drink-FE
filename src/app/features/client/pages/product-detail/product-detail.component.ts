@@ -16,6 +16,7 @@ import { DailyStockService } from '../../../products/services/daily-stock.servic
 import { ProductService } from '../../../products/services/product.service';
 import { ProductToppingService } from '../../../products/services/product-topping.service';
 import { ProductVariantService } from '../../../products/services/product-variant.service';
+import { ToastNotificationService } from '../../../../core/services/toast.service';
 
 interface SizeOption {
   id: string;
@@ -89,7 +90,8 @@ export class ProductDetailComponent implements OnInit {
     private readonly branchService: BranchService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
     private readonly dailyStockService: DailyStockService,
-    private readonly cartService: CartService
+    private readonly cartService: CartService,
+    private readonly toast: ToastNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -300,11 +302,11 @@ export class ProductDetailComponent implements OnInit {
       toppings: this.selectedToppings.map(topping => ({ toppingId: topping.id, quantity: 1 }))
     }).subscribe({
       next: () => {
-        alert(`Đã thêm ${this.quantity} ${this.product?.name} vào giỏ hàng!`);
+        this.toast.success(`Đã thêm ${this.quantity} ${this.product?.name} vào giỏ hàng!`);
         this.router.navigate(['/cart']);
       },
       error: () => {
-        alert('Không thêm được vào giỏ hàng. Vui lòng đăng nhập hoặc thử lại.');
+        this.toast.error('Không thêm được vào giỏ hàng. Vui lòng đăng nhập hoặc thử lại.');
       }
     });
   }

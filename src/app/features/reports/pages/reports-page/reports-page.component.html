@@ -47,7 +47,7 @@
   </div>
 
   <!-- Create Report Section -->
-  <div class="create-section">
+  <div class="create-section" *ngIf="canCreateReport">
     <h2 class="section-title">Tạo báo cáo</h2>
     
     <div class="create-content">
@@ -176,41 +176,38 @@
       </ng-template>
 
       <div class="pagination-bar" *ngIf="historyTotalElements > 0">
-        <div class="pagination-info">
-          {{ getHistoryRangeLabel() }}
-        </div>
-
-        <div class="pagination-size">
-          <label for="historyPageSize">Hiển thị</label>
+        <div class="page-size-control">
+          <span>Hiển thị</span>
           <select
             id="historyPageSize"
-            class="page-size-select"
-            [value]="historySize"
-            (change)="changeHistorySize($any($event.target).value)">
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="50">50</option>
+            [ngModel]="historySize"
+            (ngModelChange)="changeHistorySize($event)">
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="20">20</option>
+            <option [ngValue]="50">50</option>
           </select>
+          <span>/ trang</span>
         </div>
 
-        <div class="pagination-actions">
+        <div class="page-status">
+          Trang {{ historyPage + 1 }} / {{ historyTotalPages || 1 }} · {{ historyTotalElements }} báo cáo
+        </div>
+
+        <div class="page-actions">
           <button
+            id="historyPrevPageBtn"
             type="button"
-            class="page-btn"
-            [disabled]="historyFirst || isLoadingHistory"
-            (click)="goToHistoryPage(historyPage - 1)">
-            ‹
+            (click)="goToHistoryPage(historyPage - 1)"
+            [disabled]="historyFirst || isLoadingHistory">
+            <span class="material-symbols-outlined">chevron_left</span>
           </button>
-          <span class="page-current">
-            Trang {{ historyPage + 1 }} / {{ historyTotalPages }}
-          </span>
           <button
+            id="historyNextPageBtn"
             type="button"
-            class="page-btn"
-            [disabled]="historyLast || isLoadingHistory"
-            (click)="goToHistoryPage(historyPage + 1)">
-            ›
+            (click)="goToHistoryPage(historyPage + 1)"
+            [disabled]="historyLast || isLoadingHistory">
+            <span class="material-symbols-outlined">chevron_right</span>
           </button>
         </div>
       </div>

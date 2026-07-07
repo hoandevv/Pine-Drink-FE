@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription, TimeoutError, finalize, timeout, timer } from 'rxjs';
 
+import { AccessControlService } from '../../../../core/services/access-control.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Category } from '../../../categories/models/category.model';
@@ -58,7 +59,8 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     private readonly fb: FormBuilder,
     private readonly reportService: ReportService,
     private readonly categoryService: CategoryService,
-    private readonly toastService: ToastService
+    private readonly toastService: ToastService,
+    private readonly accessControl: AccessControlService
   ) {
     this.filterForm = this.fb.group({
       categoryId: [''],
@@ -103,7 +105,16 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     this.loadReportHistory(0);
   }
 
+  get canCreateReport(): boolean {
+    return this.accessControl.can('REPORT_CREATE');
+  }
+
   createReport(): void {
+    if (!this.canCreateReport) {
+      this.toastService.error('Bạn không có quyền tạo báo cáo');
+      return;
+    }
+
     if (this.isExporting) return;
 
     this.isSubmitting = true;

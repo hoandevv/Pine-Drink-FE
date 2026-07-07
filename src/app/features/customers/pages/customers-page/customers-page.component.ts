@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { AccountService, AccountListItemResponse } from 'src/app/core/services/account.service';
 import { finalize } from 'rxjs';
+import { ToastNotificationService } from 'src/app/core/services/toast.service';
+import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';
 
 interface CustomerRow extends AccountListItemResponse {
   displayName: string;
@@ -35,7 +37,11 @@ export class CustomersPageComponent implements OnInit {
 
   readonly statuses = ['All', 'ACTIVE', 'PENDING', 'LOCKED', 'INACTIVE'];
 
-  constructor(private accountService: AccountService) {}
+  constructor(
+    private accountService: AccountService,
+    private readonly toast: ToastNotificationService,
+    private readonly confirmDialog: ConfirmDialogService
+  ) {}
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -105,22 +111,26 @@ export class CustomersPageComponent implements OnInit {
     const isUnlocking = customer.status === 'LOCKED';
     const nextStatus = isUnlocking ? 'ACTIVE' : 'LOCKED';
     const actionLabel = isUnlocking ? 'mở khóa' : 'khóa';
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn ${actionLabel} tài khoản "${customer.displayName}" không?`
-    );
 
-    if (!confirmed) {
-      return;
-    }
+    this.confirmDialog.confirm({
+      title: `Xác nhận ${actionLabel} khách hàng?`,
+      message: `Bạn có chắc muốn ${actionLabel} tài khoản "${customer.displayName}" không?`,
+      confirmText: isUnlocking ? 'Mở khóa' : 'Khóa tài khoản',
+      cancelText: 'Hủy',
+      type: isUnlocking ? 'success' : 'danger',
+      affectedItems: [customer.displayName]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.accountService.updateAccountStatus(customer.id, nextStatus).subscribe({
-      next: () => {
-        window.alert(`Đã ${actionLabel} tài khoản "${customer.displayName}".`);
-        this.loadCustomers();
-      },
-      error: () => {
-        window.alert(`Không thể ${actionLabel} tài khoản. Vui lòng thử lại.`);
-      }
+      this.accountService.updateAccountStatus(customer.id, nextStatus).subscribe({
+        next: () => {
+          this.toast.success(`Đã ${actionLabel} tài khoản "${customer.displayName}".`);
+          this.loadCustomers();
+        },
+        error: () => {
+          this.toast.error(`Không thể ${actionLabel} tài khoản. Vui lòng thử lại.`);
+        }
+      });
     });
   }
 

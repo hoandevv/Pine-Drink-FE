@@ -7,6 +7,7 @@ import { Product } from '../../models/product.model';
 import { ProductVariant } from '../../models/product-variant.model';
 import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-product-variants-page',
@@ -43,7 +44,8 @@ export class ProductVariantsPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly productService: ProductService,
-    private readonly variantService: ProductVariantService
+    private readonly variantService: ProductVariantService,
+    private readonly confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -179,21 +181,31 @@ export class ProductVariantsPageComponent implements OnInit {
   }
 
   deleteVariant(variant: ProductVariant): void {
-    if (!this.selectedProductId || !window.confirm(`Xóa biến thể ${variant.variantName}? Thao tác này không thể hoàn tác.`)) {
-      return;
-    }
+    if (!this.selectedProductId) { return; }
 
-    this.loading = true;
-    this.errorMessage = '';
+    this.confirmDialog.confirm({
+      title: 'Xác nhận xóa biến thể?',
+      message: `Biến thể ${variant.variantName} sẽ bị xóa khỏi sản phẩm.`,
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa biến thể',
+      cancelText: 'Hủy',
+      type: 'danger',
+      affectedItems: [variant.variantName]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.variantService.deleteVariant(this.selectedProductId, variant.id)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadVariants(this.pageData.page),
-        error: () => {
-          this.errorMessage = 'Không xóa được biến thể. Vui lòng thử lại.';
-        }
-      });
+      this.loading = true;
+      this.errorMessage = '';
+
+      this.variantService.deleteVariant(this.selectedProductId, variant.id)
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: () => this.loadVariants(this.pageData.page),
+          error: () => {
+            this.errorMessage = 'Không xóa được biến thể. Vui lòng thử lại.';
+          }
+        });
+    });
   }
 
   refresh(): void {

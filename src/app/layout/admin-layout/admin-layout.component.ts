@@ -76,7 +76,7 @@ export class AdminLayoutComponent implements AfterViewInit {
       title: 'Kinh doanh',
       items: [
         { label: 'Vouchers', icon: 'confirmation_number', route: '/admin/vouchers', roles: ['ADMIN', 'MANAGER'] },
-        { label: 'Reports', icon: 'monitoring', route: '/admin/reports', roles: ['ADMIN', 'MANAGER'] }
+        { label: 'Reports', icon: 'monitoring', route: '/admin/reports', permission: 'REPORT_VIEW' }
       ]
     }
   ];
