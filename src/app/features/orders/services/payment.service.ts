@@ -8,7 +8,7 @@ import { PaymentMethod, PaymentStatus } from '../models/order.model';
 
 export interface RecordOfflinePaymentRequest {
   orderId: string;
-  paymentMethod: 'CASH' | 'COD';
+  paymentMethod: PaymentMethod;
 }
 
 export interface PaymentTransactionResponse {

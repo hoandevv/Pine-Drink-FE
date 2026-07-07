@@ -1,12 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription, finalize, of, switchMap } from 'rxjs';
+import { Subscription, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
-import { Order, OrderStatus } from '../../models/order.model';
+import { Order, OrderStatus, PaymentMethod, TimelineStatus } from '../../models/order.model';
 import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
-import { PaymentService, RecordOfflinePaymentRequest } from '../../services/payment.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PromptDialogService } from '../../../../shared/components/prompt-dialog/prompt-dialog.service';
@@ -54,7 +53,6 @@ export class OrderListComponent implements OnInit, OnDestroy {
   constructor(
     private readonly orderService: OrderService,
     private readonly orderRealtimeService: OrderRealtimeService,
-    private readonly paymentService: PaymentService,
     private readonly toastService: ToastService,
     private readonly authService: AuthService,
     private readonly promptDialog: PromptDialogService
@@ -215,7 +213,10 @@ export class OrderListComponent implements OnInit, OnDestroy {
   updateOrderStatusWithReason(order: Order, status: OrderStatus, reason?: string): void {
     this.orderService.updateOrderStatus(order.id, status, reason).subscribe({
       next: (updatedOrder) => {
-        const normalized = this.normalizeOrder(updatedOrder);
+        const existingOrder = this.allOrders.find(o => o.id === order.id) ?? order;
+        const normalized = this.isOrderPaid(existingOrder)
+          ? this.markOrderAsPaid(this.normalizeOrder(updatedOrder), existingOrder.paymentMethod)
+          : this.normalizeOrder(updatedOrder);
         this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
         this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
         if (this.selectedOrder?.id === order.id) {
@@ -233,6 +234,11 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   handlePrimaryAction(order: Order): void {
+    if (!this.canAdvanceOrder(order)) {
+      this.toastService.warning('Vui lòng chọn phương thức và xác nhận thanh toán trước.');
+      return;
+    }
+
     const nextStatus = this.getNextStatus(order);
     if (nextStatus) {
       this.updateOrderStatusWithReason(order, nextStatus);
@@ -273,72 +279,107 @@ export class OrderListComponent implements OnInit, OnDestroy {
     }
   }
 
-  confirmCounterPayment(order: Order, method: 'CASH' | 'COD'): void {
-    if (this.recordingPaymentOrderId) {
+  confirmCounterPayment(order: Order, method: PaymentMethod): void {
+    if (this.recordingPaymentOrderId || this.isOrderPaid(order)) {
       return;
     }
 
-    const request: RecordOfflinePaymentRequest = {
-      orderId: order.id,
-      paymentMethod: method
-    };
-
     this.recordingPaymentOrderId = order.id;
-    this.paymentService.recordOfflinePayment(request).pipe(
-      switchMap(() => this.orderService.getOrderById(order.id)),
-      finalize(() => {
-        this.recordingPaymentOrderId = null;
-      })
-    ).subscribe({
-      next: (updatedOrder) => {
-        const normalized = this.normalizeOrder(updatedOrder);
-        const paidAt = new Date().toISOString();
+    setTimeout(() => {
+      const normalized = this.markOrderAsPaid(order, method);
 
-        normalized.timeline = [
-          {
-            status: 'PAID',
-            time: paidAt,
-            note: `Đã thu tiền tại quầy (${method})`
-          },
-          ...(normalized.timeline ?? [])
-        ];
+      this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
+      this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
+      this.selectedOrder = normalized;
+      this.recordingPaymentOrderId = null;
 
-        this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
-        this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
-        this.selectedOrder = normalized;
-
-        this.toastService.success(`Đã xác nhận thanh toán ${Number(normalized.totalAmount || 0).toLocaleString()} đ qua ${method}`);
-      },
-      error: (error) => {
-        console.error('Record offline payment failed', error);
-        this.toastService.error(error?.error?.message || 'Không thể xác nhận thanh toán');
-      }
-    });
+      this.toastService.success(`Đã xác nhận thanh toán ${Number(normalized.totalAmount || 0).toLocaleString()} đ qua ${this.getPaymentMethodLabel(method)}`);
+    }, 300);
   }
 
-  getStagesForOrder(order: Order): { label: string; value: OrderStatus }[] {
-    const isDelivery = order.type === 'DELIVERY';
-    if (isDelivery) {
-      return [
-        { label: 'Pending', value: 'PENDING' },
-        { label: 'Confirmed', value: 'CONFIRMED' },
-        { label: 'Preparing', value: 'PREPARING' },
-        { label: 'Ready', value: 'READY' },
-        { label: 'Delivering', value: 'DELIVERING' },
-        { label: 'Completed', value: 'COMPLETED' }
-      ];
-    } else {
-      return [
-        { label: 'Pending', value: 'PENDING' },
-        { label: 'Confirmed', value: 'CONFIRMED' },
-        { label: 'Preparing', value: 'PREPARING' },
-        { label: 'Ready', value: 'READY' },
-        { label: 'Completed', value: 'COMPLETED' }
-      ];
+  isOrderPaid(order: Order): boolean {
+    return (order.paymentStatus || '').toUpperCase() === 'PAID';
+  }
+
+  needsPaymentBeforeConfirm(order: Order): boolean {
+    return order.status === 'PENDING' && !this.isOrderPaid(order);
+  }
+
+  canAdvanceOrder(order: Order): boolean {
+    return !this.needsPaymentBeforeConfirm(order);
+  }
+
+  getPaymentMethodLabel(method?: string): string {
+    switch ((method || '').toUpperCase()) {
+      case 'CASH': return 'Tiền mặt';
+      case 'MOMO': return 'MoMo';
+      case 'VNPAY': return 'VNPay';
+      case 'VNPAY_QR': return 'VNPay QR';
+      case 'BANK_TRANSFER': return 'Chuyển khoản';
+      case 'COD': return 'Thanh toán khi nhận hàng';
+      default: return method || 'N/A';
     }
   }
 
-  isStepCompleted(order: Order, stepValue: OrderStatus): boolean {
+  getDigitalPaymentMethod(order: Order): PaymentMethod {
+    const method = (order.paymentMethod || '').toUpperCase();
+    return ['MOMO', 'VNPAY', 'VNPAY_QR', 'BANK_TRANSFER'].includes(method)
+      ? order.paymentMethod
+      : 'MOMO';
+  }
+
+  getPaymentHint(order: Order): string {
+    if (this.isOrderPaid(order)) {
+      return `Đã thanh toán qua ${this.getPaymentMethodLabel(order.paymentMethod)}`;
+    }
+
+    if (order.status === 'PENDING') {
+      return 'Chọn phương thức khách đã thanh toán trước khi xác nhận đơn.';
+    }
+
+    return 'Đơn chưa ghi nhận thanh toán.';
+  }
+
+  private markOrderAsPaid(order: Order, method: PaymentMethod): Order {
+    const paidAt = new Date().toISOString();
+    const timeline = order.timeline ?? [];
+    const hasPaidEvent = timeline.some(step => step.status === 'PAID');
+
+    return {
+      ...order,
+      paymentMethod: method,
+      paymentStatus: 'PAID',
+      timeline: hasPaidEvent ? timeline : [
+        {
+          status: 'PAID',
+          time: paidAt,
+          note: `Đã thanh toán qua ${this.getPaymentMethodLabel(method)}`
+        },
+        ...timeline
+      ]
+    };
+  }
+
+  getStagesForOrder(order: Order): { label: string; value: TimelineStatus }[] {
+    const isDelivery = order.type === 'DELIVERY';
+    const baseStages: { label: string; value: TimelineStatus }[] = [
+      { label: 'Tạo đơn', value: 'PENDING' },
+      { label: 'Thanh toán', value: 'PAID' },
+      { label: 'Xác nhận', value: 'CONFIRMED' },
+      { label: 'Pha chế', value: 'PREPARING' },
+      { label: 'Sẵn sàng', value: 'READY' }
+    ];
+
+    return isDelivery
+      ? [...baseStages, { label: 'Đang giao', value: 'DELIVERING' }, { label: 'Hoàn tất', value: 'COMPLETED' }]
+      : [...baseStages, { label: 'Hoàn tất', value: 'COMPLETED' }];
+  }
+
+  isStepCompleted(order: Order, stepValue: TimelineStatus): boolean {
+    if (stepValue === 'PAID') {
+      return this.isOrderPaid(order);
+    }
+
     const stages = this.getStagesForOrder(order).map(s => s.value);
     const currentIndex = stages.indexOf(order.status);
     const stepIndex = stages.indexOf(stepValue);
@@ -355,17 +396,21 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   getPrimaryActionLabel(order: Order): string {
+    if (this.needsPaymentBeforeConfirm(order)) {
+      return 'Chưa thể xác nhận - cần thanh toán';
+    }
+
     switch (order.status) {
       case 'PENDING':
-        return 'Confirm order';
+        return 'Xác nhận đơn';
       case 'CONFIRMED':
-        return 'Start preparing';
+        return 'Bắt đầu pha chế';
       case 'PREPARING':
-        return 'Mark ready';
+        return 'Đánh dấu sẵn sàng';
       case 'READY':
-        return order.type === 'DELIVERY' ? 'Start delivering' : 'Complete order';
+        return order.type === 'DELIVERY' ? 'Bắt đầu giao' : 'Hoàn tất đơn';
       case 'DELIVERING':
-        return 'Mark completed';
+        return 'Hoàn tất đơn';
       default:
         return '';
     }

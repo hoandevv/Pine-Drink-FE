@@ -144,6 +144,7 @@
                  [class.active]="selectedOrder.status === step.value">
               <div class="stage-dot">
                 <span class="material-symbols-outlined" *ngIf="isStepCompleted(selectedOrder, step.value) && selectedOrder.status !== step.value">check</span>
+                <span class="material-symbols-outlined" *ngIf="step.value === 'PAID' && !isStepCompleted(selectedOrder, step.value)">payments</span>
               </div>
               <span class="stage-label">{{ step.label }}</span>
             </div>
@@ -272,6 +273,16 @@
             </div>
           </div>
 
+          <div class="payment-status-card" [class.paid]="isOrderPaid(selectedOrder)" [class.unpaid]="!isOrderPaid(selectedOrder)">
+            <div class="payment-status-icon">
+              <span class="material-symbols-outlined">{{ isOrderPaid(selectedOrder) ? 'verified' : 'priority_high' }}</span>
+            </div>
+            <div class="payment-status-copy">
+              <strong>{{ isOrderPaid(selectedOrder) ? 'Đã thanh toán' : 'Chờ xác nhận thanh toán' }}</strong>
+              <span>{{ getPaymentHint(selectedOrder) }}</span>
+            </div>
+          </div>
+
           <!-- Thu tiền tại quầy interface -->
           <div class="counter-payment-action" *ngIf="selectedOrder.paymentStatus !== 'PAID' && (selectedOrder.type === 'WALK_IN' || selectedOrder.type === 'PICKUP') && selectedOrder.status !== 'COMPLETED' && selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REJECTED'">
             <div class="payment-panel">
@@ -279,21 +290,21 @@
                 <span class="material-symbols-outlined">payments</span>
                 <strong>Thu tiền tại quầy</strong>
               </div>
-              <p>Chọn phương thức thanh toán của khách hàng để xác nhận thu tiền trực tiếp:</p>
+              <p>Bước bắt buộc: chọn cách khách thanh toán. Sau khi confirm, trạng thái sẽ hiển thị <strong>Đã thanh toán</strong> và mới được xác nhận đơn:</p>
               <div class="payment-options offline-only">
                 <button
                   class="btn-pay-option cash"
                   [disabled]="recordingPaymentOrderId === selectedOrder.id"
                   (click)="confirmCounterPayment(selectedOrder, 'CASH')">
                   <span class="material-symbols-outlined">payments</span>
-                  {{ recordingPaymentOrderId === selectedOrder.id ? 'Đang xử lý...' : 'Tiền mặt' }}
+                  <span>{{ recordingPaymentOrderId === selectedOrder.id ? 'Đang xử lý...' : 'Khách trả tiền mặt' }}</span>
                 </button>
                 <button
-                  class="btn-pay-option cod"
+                  class="btn-pay-option digital"
                   [disabled]="recordingPaymentOrderId === selectedOrder.id"
-                  (click)="confirmCounterPayment(selectedOrder, 'COD')">
-                  <span class="material-symbols-outlined">local_shipping</span>
-                  COD
+                  (click)="confirmCounterPayment(selectedOrder, getDigitalPaymentMethod(selectedOrder))">
+                  <span class="material-symbols-outlined">account_balance_wallet</span>
+                  <span>Thanh toán {{ getPaymentMethodLabel(getDigitalPaymentMethod(selectedOrder)) }}</span>
                 </button>
               </div>
             </div>
@@ -357,7 +368,7 @@
           </button>
 
           <!-- Primary Action -->
-          <button class="btn-action-primary" (click)="handlePrimaryAction(selectedOrder)">
+          <button class="btn-action-primary" [disabled]="!canAdvanceOrder(selectedOrder)" (click)="handlePrimaryAction(selectedOrder)">
             {{ getPrimaryActionLabel(selectedOrder) }}
           </button>
         </div>

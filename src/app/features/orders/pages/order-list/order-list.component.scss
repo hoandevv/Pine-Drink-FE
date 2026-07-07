@@ -930,6 +930,76 @@ $color-rejected: $status-rejected;
   }
 }
 
+.payment-status-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+
+  .payment-status-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    .material-symbols-outlined {
+      font-size: 20px;
+    }
+  }
+
+  .payment-status-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    strong {
+      font-size: 13px;
+    }
+
+    span {
+      font-size: 12px;
+      line-height: 1.35;
+      color: $text-secondary;
+    }
+  }
+
+  &.paid {
+    background: linear-gradient(135deg, rgba($pine-green, 0.12), rgba($pine-green, 0.04));
+    border-color: rgba($pine-green, 0.22);
+
+    .payment-status-icon {
+      background-color: $pine-green;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba($pine-green, 0.22);
+    }
+
+    strong {
+      color: $pine-dark;
+    }
+  }
+
+  &.unpaid {
+    background: linear-gradient(135deg, #fff7ed, #fff1f2);
+    border-color: #fed7aa;
+
+    .payment-status-icon {
+      background-color: #f97316;
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(249, 115, 22, 0.22);
+    }
+
+    strong {
+      color: #9a3412;
+    }
+  }
+}
+
 // Counter Payment Panel
 .counter-payment-action {
   margin-top: 12px;
@@ -1015,7 +1085,7 @@ $color-rejected: $status-rejected;
     }
   }
 
-  &.cod {
+  &.digital {
     color: $pine-green;
     border-color: rgba($pine-green, 0.28);
 
@@ -1178,8 +1248,16 @@ $color-rejected: $status-rejected;
   cursor: pointer;
   transition: background-color 0.15s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: $pine-dark;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    background: #94a3b8;
+    color: #f8fafc;
+    box-shadow: none;
+    opacity: 0.82;
   }
 }
 
