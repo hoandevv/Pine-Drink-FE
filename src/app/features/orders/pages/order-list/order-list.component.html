@@ -15,6 +15,24 @@
                placeholder="Search code, customer, phone...">
       </div>
       
+      <div class="inbox-date-filter">
+        <label for="orderDateFilter">
+          <span class="material-symbols-outlined">calendar_month</span>
+          Ngày đặt
+        </label>
+        <input id="orderDateFilter"
+               type="date"
+               [value]="selectedDate"
+               (change)="onDateFilterChange($event)">
+        <button *ngIf="selectedDate"
+                type="button"
+                class="date-clear-btn"
+                (click)="clearDateFilter()"
+                title="Xóa lọc ngày">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      
       <!-- Filters list (Horizontal Scrollable Chips) -->
       <div class="inbox-filters">
         <button *ngFor="let tab of tabs" 
@@ -38,10 +56,11 @@
         <p>No orders found</p>
       </div>
       
-      <div *ngFor="let order of orders" 
+      <div *ngFor="let order of paginatedOrders" 
            class="inbox-item"
            [class.active]="selectedOrder?.id === order.id"
            [class.unread]="!readOrderIds.has(order.id)"
+           [class.new-order]="!readOrderIds.has(order.id)"
            (click)="openDetail(order)">
         
         <!-- Dot indicator at start -->
@@ -51,7 +70,13 @@
           <!-- Top row: Code & Time -->
           <div class="item-row item-header-row">
             <span class="item-code">{{ order.orderCode }}</span>
-            <span class="item-time">{{ getRelativeTime(order.createdAt) }}</span>
+            <div class="item-header-actions">
+              <span *ngIf="!readOrderIds.has(order.id)" class="new-order-badge">
+                <span class="material-symbols-outlined">bolt</span>
+                Đơn mới
+              </span>
+              <span class="item-time">{{ getRelativeTime(order.createdAt) }}</span>
+            </div>
           </div>
 
           <!-- Middle row: Customer & Type Badge -->
@@ -79,6 +104,17 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="inbox-pagination" *ngIf="paginatedOrders.length > 0">
+      <button class="page-btn" [disabled]="currentPage === 1" (click)="prevPage()">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+      <span class="page-info">Trang {{ currentPage }} / {{ totalPages }}</span>
+      <button class="page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
     </div>
   </aside>
 
@@ -290,23 +326,21 @@
                 <span class="material-symbols-outlined">payments</span>
                 <strong>Thu tiền tại quầy</strong>
               </div>
-              <p>Bước bắt buộc: chọn cách khách thanh toán. Sau khi confirm, trạng thái sẽ hiển thị <strong>Đã thanh toán</strong> và mới được xác nhận đơn:</p>
-              <div class="payment-options offline-only">
+              <p>Bước bắt buộc: xác nhận khoản thanh toán thực tế. Sau khi xác nhận, trạng thái sẽ hiển thị <strong>Đã thanh toán</strong> và mới được xác nhận đơn:</p>
+              <div class="payment-options offline-only" *ngIf="canRecordOfflinePayment(selectedOrder); else manualPaymentUnavailable">
                 <button
                   class="btn-pay-option cash"
                   [disabled]="recordingPaymentOrderId === selectedOrder.id"
-                  (click)="confirmCounterPayment(selectedOrder, 'CASH')">
+                  (click)="confirmCounterPayment(selectedOrder, selectedOrder.paymentMethod)">
                   <span class="material-symbols-outlined">payments</span>
-                  <span>{{ recordingPaymentOrderId === selectedOrder.id ? 'Đang xử lý...' : 'Khách trả tiền mặt' }}</span>
-                </button>
-                <button
-                  class="btn-pay-option digital"
-                  [disabled]="recordingPaymentOrderId === selectedOrder.id"
-                  (click)="confirmCounterPayment(selectedOrder, getDigitalPaymentMethod(selectedOrder))">
-                  <span class="material-symbols-outlined">account_balance_wallet</span>
-                  <span>Thanh toán {{ getPaymentMethodLabel(getDigitalPaymentMethod(selectedOrder)) }}</span>
+                  <span>{{ recordingPaymentOrderId === selectedOrder.id ? 'Đang xử lý...' : 'Xác nhận ' + getPaymentMethodLabel(selectedOrder.paymentMethod) }}</span>
                 </button>
               </div>
+              <ng-template #manualPaymentUnavailable>
+                <div class="payment-unavailable-note">
+                  Phương thức {{ getPaymentMethodLabel(selectedOrder.paymentMethod) }} cần cổng thanh toán xác nhận tự động.
+                </div>
+              </ng-template>
             </div>
           </div>
         </section>

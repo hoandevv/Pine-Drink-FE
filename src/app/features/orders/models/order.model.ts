@@ -26,6 +26,7 @@ export interface CreateOrderRequest {
 export interface UpdateOrderStatusRequest {
   status: OrderStatus;
   reason?: string;
+  paymentMethod?: PaymentMethod;
 }
 
 export interface CancelOrderRequest {
