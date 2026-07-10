@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, map, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -140,6 +140,24 @@ export class AuthService {
       );
   }
 
+  bootstrapCurrentUser(): Observable<AuthUser | null> {
+    if (!this.tokenService.getAccessToken()) {
+      this.currentUserSubject.next(null);
+      return of(null);
+    }
+
+    const tokenUser = this.tokenService.getCurrentUserFromToken();
+    this.currentUserSubject.next(tokenUser);
+
+    return this.getProfile().pipe(
+      map((user) => user),
+      catchError(() => {
+        this.currentUserSubject.next(tokenUser);
+        return of(tokenUser);
+      })
+    );
+  }
+
   loadCurrentPermissions(forceRefresh = false): Observable<string[]> {
     if (!this.tokenService.getAccessToken()) {
       return of([]);
@@ -212,7 +230,7 @@ export class AuthService {
   }
 
   private setAuthenticatedUser(user: AuthUser): void {
-    const currentPermissions = this.tokenService.getStoredUser()?.permissions ?? [];
+    const currentPermissions = this.currentUserSubject.value?.permissions ?? [];
     const nextUser: AuthUser = {
       ...user,
       permissions: user.permissions?.length ? user.permissions : currentPermissions
@@ -223,7 +241,7 @@ export class AuthService {
   }
 
   private mergePermissions(permissions: string[]): void {
-    const user = this.tokenService.getCurrentUserFromToken();
+    const user = this.currentUserSubject.value ?? this.tokenService.getCurrentUserFromToken();
     if (!user) {
       return;
     }
@@ -239,7 +257,7 @@ export class AuthService {
   }
 
   private getCachedPermissions(): string[] | null {
-    const user = this.tokenService.getStoredUser();
+    const user = this.currentUserSubject.value;
     if (!user?.permissions?.length || !user.permissionsLoadedAt) {
       return null;
     }

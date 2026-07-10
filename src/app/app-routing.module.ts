@@ -38,10 +38,10 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'orders' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
         path: 'dashboard',
-        data: { roles: ['ADMIN', 'MANAGER', 'DELIVERY'] },
+        data: { permission: 'REPORT_VIEW' },
         loadChildren: () => import('./features/dashboard/dashboard.module').then((m) => m.DashboardModule)
       },
       {
