@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { forkJoin, map, Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import {
   BranchPerformanceResponse,
@@ -16,7 +17,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class DashboardAnalyticsService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/admin/dashboard`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.dashboard.admin}`;
 
   constructor(private readonly http: HttpClient) {}
 

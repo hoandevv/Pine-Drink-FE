@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest, AccountDetailResponse, AccountRoleAssignmentResponse } from 'src/app/core/services/account.service';
+import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest, AccountDetailResponse, AccountRoleAssignmentResponse } from 'src/app/features/accounts/services/account.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { finalize } from 'rxjs';
 import { AccessControlService } from 'src/app/core/services/access-control.service';

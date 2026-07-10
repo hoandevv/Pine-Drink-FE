@@ -3,13 +3,14 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
 import { CreateReportJobRequest, ReportJobResponse, ReportJobStatsResponse } from '../models/report.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReportService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/reports/jobs`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.reports.jobs}`;
 
   constructor(private readonly http: HttpClient) {}
 

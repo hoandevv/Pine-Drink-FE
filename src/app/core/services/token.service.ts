@@ -8,21 +8,12 @@ import { AuthUser } from '../../shared/models/user.model';
 export class TokenService {
   private readonly accessTokenKey = 'pine_drink_access_token';
   private readonly refreshTokenKey = 'pine_drink_refresh_token';
-  private readonly currentUserKey = 'pine_drink_current_user';
-
-  constructor() {
-    localStorage.removeItem(this.currentUserKey);
-  }
 
   setTokens(accessToken: string, refreshToken?: string): void {
     localStorage.setItem(this.accessTokenKey, accessToken);
     if (refreshToken) {
       localStorage.setItem(this.refreshTokenKey, refreshToken);
     }
-  }
-
-  setCurrentUser(user: AuthUser): void {
-    localStorage.removeItem(this.currentUserKey);
   }
 
   getAccessToken(): string | null {
@@ -33,14 +24,9 @@ export class TokenService {
     return localStorage.getItem(this.refreshTokenKey);
   }
 
-  getStoredUser(): AuthUser | null {
-    return null;
-  }
-
   clearTokens(): void {
     localStorage.removeItem(this.accessTokenKey);
     localStorage.removeItem(this.refreshTokenKey);
-    localStorage.removeItem(this.currentUserKey);
   }
 
   isLoggedIn(): boolean {

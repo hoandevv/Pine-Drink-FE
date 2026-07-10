@@ -47,11 +47,20 @@ export interface FileUploadResponseData {
   fileSize?: number;
 }
 
+/**
+ * Quản lý toàn bộ luồng xác thực phía FE.
+ *
+ * Bao gồm đăng ký, OTP, đăng nhập, Google login, refresh token,
+ * logout, profile, password, upload avatar và permission hiện tại.
+ *
+ * Service này giữ user hiện tại bằng BehaviorSubject trong memory.
+ * Token được quản lý riêng bởi TokenService.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly authBaseUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly authBaseUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.auth.base}`;
   private readonly permissionCacheTtlMs = 15 * 60 * 1000;
   private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.tokenService.getCurrentUserFromToken());
   public readonly currentUser$ = this.currentUserSubject.asObservable();
@@ -61,24 +70,42 @@ export class AuthService {
     private readonly tokenService: TokenService
   ) {}
 
+  /**
+   * Gửi yêu cầu đăng ký tài khoản mới.
+   */
   register(request: RegisterRequest): Observable<RegisterResponseData> {
     return this.http
       .post<BaseResponse<RegisterResponseData>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.register}`, request)
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Xác thực OTP cho luồng đăng ký tài khoản.
+   */
   verifyRegistrationOtp(request: VerifyRegisterOtpRequest): Observable<void> {
     return this.http
       .post<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.verifyRegisterOtp}`, request)
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Gửi lại OTP đăng ký.
+   */
   resendRegistrationOtp(request: ResendRegisterOtpRequest): Observable<void> {
     return this.http
       .post<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.resendRegisterOtp}`, request)
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Đăng nhập bằng username/password.
+   *
+   * Sau khi thành công, service lưu access/refresh token, cập nhật user hiện tại,
+   * rồi tải permission mới nhất từ backend/Redis.
+   *
+   * @param request Username và password.
+   * @returns Observable chứa dữ liệu đăng nhập từ backend.
+   */
   login(request: LoginRequest): Observable<LoginResponseData> {
     return this.http.post<BaseResponse<LoginResponseData>>(`${this.authBaseUrl}/login`, request).pipe(
       tap((response) => {
@@ -91,6 +118,15 @@ export class AuthService {
     );
   }
 
+  /**
+   * Đăng nhập bằng Google ID token.
+   *
+   * Sau khi thành công, service lưu token hệ thống, cập nhật user hiện tại,
+   * rồi tải permission mới nhất từ backend/Redis.
+   *
+   * @param idToken Google credential token lấy từ Google Identity Services.
+   * @returns Observable chứa dữ liệu đăng nhập từ backend.
+   */
   googleLogin(idToken: string): Observable<LoginResponseData> {
     return this.http
       .post<BaseResponse<LoginResponseData>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.google}`, { idToken })
@@ -105,6 +141,11 @@ export class AuthService {
       );
   }
 
+  /**
+   * Làm mới access token bằng refresh token hiện tại.
+   *
+   * @returns Observable chứa cặp token mới từ backend.
+   */
   refreshToken(): Observable<RefreshTokenResponseData> {
     const refreshToken = this.tokenService.getRefreshToken();
 
@@ -116,6 +157,12 @@ export class AuthService {
       );
   }
 
+  /**
+   * Đăng xuất tài khoản hiện tại.
+   *
+   * Gửi refresh token cho backend để revoke nếu có, sau đó xóa token local
+   * và reset currentUser trong memory.
+   */
   logout(): void {
     const refreshToken = this.tokenService.getRefreshToken();
 
@@ -129,6 +176,14 @@ export class AuthService {
     this.currentUserSubject.next(null);
   }
 
+  /**
+   * Lấy profile tài khoản đang đăng nhập.
+   *
+   * Profile response có thể không chứa roles/permissions, nên setAuthenticatedUser()
+   * sẽ merge với user/token hiện có để không mất quyền admin.
+   *
+   * @returns Observable chứa AuthUser đã đồng bộ permission hiện tại.
+   */
   getProfile(): Observable<AuthUser> {
     return this.http
       .get<BaseResponse<AuthUser>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.base}`)
@@ -140,6 +195,14 @@ export class AuthService {
       );
   }
 
+  /**
+   * Khởi tạo currentUser khi app reload.
+   *
+   * Đọc user sơ bộ từ JWT trước để guard/menu có dữ liệu ngay,
+   * sau đó gọi profile thật từ backend. Nếu profile lỗi, giữ user từ token.
+   *
+   * @returns Observable chứa user hiện tại hoặc null nếu chưa đăng nhập.
+   */
   bootstrapCurrentUser(): Observable<AuthUser | null> {
     if (!this.tokenService.getAccessToken()) {
       this.currentUserSubject.next(null);
@@ -158,6 +221,15 @@ export class AuthService {
     );
   }
 
+  /**
+   * Tải danh sách permission hiện tại từ backend.
+   *
+   * Backend là nguồn sự thật; permission thường được backend lấy từ Redis/cache.
+   * FE chỉ cache ngắn trong memory để giảm request lặp.
+   *
+   * @param forceRefresh Bỏ qua cache FE và gọi backend ngay.
+   * @returns Observable chứa danh sách permission code dạng string.
+   */
   loadCurrentPermissions(forceRefresh = false): Observable<string[]> {
     if (!this.tokenService.getAccessToken()) {
       return of([]);
@@ -176,12 +248,24 @@ export class AuthService {
       );
   }
 
+  /**
+   * Gửi yêu cầu quên mật khẩu.
+   *
+   * @param request Email/tài khoản cần đặt lại mật khẩu.
+   * @returns Observable hoàn tất khi OTP reset được gửi.
+   */
   forgotPassword(request: ForgotPasswordRequest): Observable<void> {
     return this.http
       .post<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.forgotPassword}`, request)
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Xác thực OTP quên mật khẩu.
+   *
+   * @param request Thông tin OTP reset password.
+   * @returns Observable chứa reset token hoặc dữ liệu xác thực OTP từ backend.
+   */
   verifyForgotPasswordOtp(request: VerifyForgotPasswordOtpRequest): Observable<ForgotPasswordOtpResponseData> {
     return this.http
       .post<BaseResponse<ForgotPasswordOtpResponseData>>(
@@ -191,6 +275,13 @@ export class AuthService {
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Đặt lại mật khẩu bằng reset token.
+   *
+   * @param request Mật khẩu mới và xác nhận mật khẩu.
+   * @param resetToken Token reset password do backend cấp sau khi xác thực OTP.
+   * @returns Observable hoàn tất khi đổi mật khẩu thành công.
+   */
   resetPassword(request: ResetPasswordRequest, resetToken: string): Observable<void> {
     return this.http
       .post<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.auth.resetPassword}`, request, {
@@ -199,6 +290,12 @@ export class AuthService {
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Cập nhật profile tài khoản đang đăng nhập.
+   *
+   * @param request Các trường profile cần cập nhật.
+   * @returns Observable chứa AuthUser mới từ backend.
+   */
   updateProfile(request: UpdateProfileRequest): Observable<AuthUser> {
     return this.http
       .put<BaseResponse<AuthUser>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.base}`, request)
@@ -208,18 +305,38 @@ export class AuthService {
       );
   }
 
+  /**
+   * Đổi mật khẩu local bằng mật khẩu hiện tại.
+   *
+   * @param request Mật khẩu hiện tại, mật khẩu mới và xác nhận.
+   * @returns Observable hoàn tất khi đổi mật khẩu thành công.
+   */
   changePassword(request: ChangePasswordRequest): Observable<void> {
     return this.http
       .put<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.password}`, request)
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Tạo mật khẩu local cho tài khoản chưa có mật khẩu.
+   *
+   * Thường dùng cho tài khoản đăng ký/đăng nhập bằng Google.
+   *
+   * @param request Mật khẩu mới và xác nhận.
+   * @returns Observable hoàn tất khi tạo mật khẩu thành công.
+   */
   setPassword(request: SetPasswordRequest): Observable<void> {
     return this.http
       .post<BaseResponse<void>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.setPassword}`, request)
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Upload ảnh đại diện của user hiện tại.
+   *
+   * @param file File ảnh cần upload.
+   * @returns Observable chứa thông tin file đã lưu.
+   */
   uploadAvatar(file: File): Observable<FileUploadResponseData> {
     const formData = new FormData();
     formData.append('file', file);
@@ -229,17 +346,32 @@ export class AuthService {
       .pipe(map((response) => response.data));
   }
 
+  /**
+   * Cập nhật currentUser trong memory.
+   *
+   * Hàm này merge roles/permissions thay vì ghi đè mù, vì một số API profile
+   * không trả roles hoặc permissions. Roles được ưu tiên từ response, sau đó
+   * user hiện tại, cuối cùng là JWT.
+   *
+   * @param user User mới nhận từ backend.
+   */
   private setAuthenticatedUser(user: AuthUser): void {
-    const currentPermissions = this.currentUserSubject.value?.permissions ?? [];
+    const tokenUser = this.tokenService.getCurrentUserFromToken();
+    const currentUser = this.currentUserSubject.value;
     const nextUser: AuthUser = {
       ...user,
-      permissions: user.permissions?.length ? user.permissions : currentPermissions
+      roles: user.roles?.length ? user.roles : currentUser?.roles ?? tokenUser?.roles ?? [],
+      permissions: user.permissions?.length ? user.permissions : currentUser?.permissions ?? []
     };
 
-    this.tokenService.setCurrentUser(nextUser);
     this.currentUserSubject.next(nextUser);
   }
 
+  /**
+   * Gắn danh sách permission mới vào currentUser.
+   *
+   * @param permissions Danh sách permission code lấy từ backend.
+   */
   private mergePermissions(permissions: string[]): void {
     const user = this.currentUserSubject.value ?? this.tokenService.getCurrentUserFromToken();
     if (!user) {
@@ -252,10 +384,14 @@ export class AuthService {
       permissionsLoadedAt: Date.now()
     };
 
-    this.tokenService.setCurrentUser(nextUser);
     this.currentUserSubject.next(nextUser);
   }
 
+  /**
+   * Lấy permission cache trong memory nếu còn hạn.
+   *
+   * @returns Danh sách permission còn fresh, hoặc null nếu chưa có/hết hạn.
+   */
   private getCachedPermissions(): string[] | null {
     const user = this.currentUserSubject.value;
     if (!user?.permissions?.length || !user.permissionsLoadedAt) {
@@ -266,10 +402,20 @@ export class AuthService {
     return isFresh ? user.permissions : null;
   }
 
+  /**
+   * Lấy user hiện tại đang lưu trong memory.
+   *
+   * @returns AuthUser hiện tại hoặc null nếu chưa đăng nhập.
+   */
   getCurrentUser(): AuthUser | null {
     return this.currentUserSubject.value;
   }
 
+  /**
+   * Kiểm tra trạng thái đăng nhập dựa trên access token hợp lệ.
+   *
+   * @returns true nếu có access token và token chưa hết hạn.
+   */
   isAuthenticated(): boolean {
     return this.tokenService.isLoggedIn();
   }

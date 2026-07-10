@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
 import {
@@ -16,8 +17,8 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class DailyStockService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/admin/daily-stocks`;
-  private readonly publicApiUrl = `${environment.apiBaseUrl}/branches`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.dailyStocks.admin}`;
+  private readonly publicApiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.branches}`;
 
   constructor(private readonly http: HttpClient) {}
 

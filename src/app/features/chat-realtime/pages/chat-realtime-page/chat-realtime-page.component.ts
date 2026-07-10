@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, AfterViewChecked, ElementRef, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ChatMessageResponse, ChatRealtimeService, ChatRoomResponse } from 'src/app/core/services/chat-realtime.service';
+import { ChatMessageResponse, ChatRealtimeService, ChatRoomResponse } from 'src/app/features/chat-realtime/pages/services/chat-realtime.service';
 import { TokenService } from 'src/app/core/services/token.service';
 import { Branch } from 'src/app/features/branches/models/branch.model';
 import { BranchService } from 'src/app/features/branches/services/branch.service';
