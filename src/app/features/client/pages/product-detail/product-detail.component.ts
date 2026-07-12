@@ -2,7 +2,7 @@ import { Location } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MockTopping } from '../../../../shared/mock-data';
+import { Topping } from '../../../products/models/topping.model';
 import { BranchProductAvailability, BranchToppingAvailability } from '../../../branches/models/branch-availability.model';
 import { CartService } from '../../services/cart.service';
 import { Branch } from '../../../branches/models/branch.model';
@@ -16,6 +16,7 @@ import { DailyStockService } from '../../../products/services/daily-stock.servic
 import { ProductService } from '../../../products/services/product.service';
 import { ProductToppingService } from '../../../products/services/product-topping.service';
 import { ProductVariantService } from '../../../products/services/product-variant.service';
+import { ToastNotificationService } from '../../../../core/services/toast.service';
 
 interface SizeOption {
   id: string;
@@ -37,7 +38,7 @@ interface LevelOption {
 })
 export class ProductDetailComponent implements OnInit {
   product: Product | null = null;
-  availableToppings: MockTopping[] = [];
+  availableToppings: Topping[] = [];
   loading = false;
   errorMessage = '';
 
@@ -55,7 +56,7 @@ export class ProductDetailComponent implements OnInit {
   selectedVariant: ProductVariant | null = null;
   selectedIceLevel = 70;
   selectedSugarLevel = 100;
-  selectedToppings: MockTopping[] = [];
+  selectedToppings: Topping[] = [];
   quantity = 1;
   note = '';
 
@@ -89,7 +90,8 @@ export class ProductDetailComponent implements OnInit {
     private readonly branchService: BranchService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
     private readonly dailyStockService: DailyStockService,
-    private readonly cartService: CartService
+    private readonly cartService: CartService,
+    private readonly toast: ToastNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -172,7 +174,7 @@ export class ProductDetailComponent implements OnInit {
     this.selectedSugarLevel = level;
   }
 
-  toggleTopping(topping: MockTopping): void {
+  toggleTopping(topping: Topping): void {
     const index = this.selectedToppings.findIndex(t => t.id === topping.id);
     if (index > -1) {
       this.selectedToppings.splice(index, 1);
@@ -181,7 +183,7 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
-  isToppingSelected(topping: MockTopping): boolean {
+  isToppingSelected(topping: Topping): boolean {
     return this.selectedToppings.some(t => t.id === topping.id);
   }
 
@@ -300,11 +302,11 @@ export class ProductDetailComponent implements OnInit {
       toppings: this.selectedToppings.map(topping => ({ toppingId: topping.id, quantity: 1 }))
     }).subscribe({
       next: () => {
-        alert(`Đã thêm ${this.quantity} ${this.product?.name} vào giỏ hàng!`);
+        this.toast.success(`Đã thêm ${this.quantity} ${this.product?.name} vào giỏ hàng!`);
         this.router.navigate(['/cart']);
       },
       error: () => {
-        alert('Không thêm được vào giỏ hàng. Vui lòng đăng nhập hoặc thử lại.');
+        this.toast.error('Không thêm được vào giỏ hàng. Vui lòng đăng nhập hoặc thử lại.');
       }
     });
   }
@@ -317,7 +319,7 @@ export class ProductDetailComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
-  getToppingsByCategory(category: string): MockTopping[] {
+  getToppingsByCategory(category: string): Topping[] {
     return this.availableToppings.filter(t => t.category === category);
   }
 
@@ -397,7 +399,7 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
-  private mapProductToppings(productToppings: ProductTopping[]): MockTopping[] {
+  private mapProductToppings(productToppings: ProductTopping[]): Topping[] {
     return productToppings
       .filter(item => item.status === 'ACTIVE')
       .map(item => ({
@@ -498,7 +500,7 @@ export class ProductDetailComponent implements OnInit {
     return new Date(now.getTime() - offset).toISOString().slice(0, 10);
   }
 
-  private applyToppingAvailability(toppings: MockTopping[]): MockTopping[] {
+  private applyToppingAvailability(toppings: Topping[]): Topping[] {
     if (!this.selectedBranchId) { return toppings; }
 
     this.branchAvailabilityService.getToppingAvailabilities(this.selectedBranchId).subscribe({
@@ -519,9 +521,9 @@ export class ProductDetailComponent implements OnInit {
   }
 
   private filterToppingsByAvailability(
-    toppings: MockTopping[],
+    toppings: Topping[],
     availabilities: BranchToppingAvailability[]
-  ): MockTopping[] {
+  ): Topping[] {
     if (!availabilities.length) { return toppings; }
 
     return toppings.filter(topping => {

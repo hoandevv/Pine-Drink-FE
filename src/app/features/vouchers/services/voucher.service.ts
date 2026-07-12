@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { API_ENDPOINTS } from 'src/app/core/constants/api-endpoints';
 import { BaseResponse } from 'src/app/shared/models/base-response.model';
 import { PageResponse } from 'src/app/shared/models/page-response.model';
 
@@ -56,7 +57,7 @@ export interface VoucherSearchParams {
 
 @Injectable({ providedIn: 'root' })
 export class VoucherService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/vouchers`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.vouchers.base}`;
 
   constructor(private readonly http: HttpClient) {}
 

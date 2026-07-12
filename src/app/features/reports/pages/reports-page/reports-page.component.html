@@ -1,21 +1,221 @@
-<app-page-header title="Reports" description="Báo cáo doanh thu, hiệu suất đơn hàng và insight khách hàng.">
-  <button type="button" class="btn btn-primary">Tải báo cáo PDF</button>
-</app-page-header>
-
-<section class="report-kpis">
-  <article *ngFor="let kpi of kpis">
-    <p>{{ kpi.label }}</p>
-    <h3>{{ kpi.value }}</h3>
-    <strong>{{ kpi.trend }}</strong>
-  </article>
-</section>
-
-<section class="report-chart">
-  <header>
-    <h3>Doanh thu 12 tháng</h3>
-    <span>Mock analytics</span>
-  </header>
-  <div class="bars">
-    <i *ngFor="let bar of bars" [style.height.%]="bar"></i>
+<div class="report-page">
+  <!-- Header -->
+  <div class="report-header">
+    <h1 class="report-title">Báo cáo</h1>
   </div>
-</section>
+
+  <!-- Stats & Filter Section -->
+  <div class="stats-filter-section">
+    <div class="quick-stats">
+      <div class="stat-card" *ngFor="let stat of quickStats">
+        <span class="stat-label">{{ stat.label }}</span>
+        <strong class="stat-value">{{ stat.value }}</strong>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <form [formGroup]="filterForm" class="filter-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="categoryId">Danh mục sản phẩm</label>
+          <select id="categoryId" formControlName="categoryId" class="form-control">
+            <option value="">Tất cả danh mục</option>
+            <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="productStatus">Trạng thái sản phẩm</label>
+          <select id="productStatus" formControlName="status" class="form-control">
+            <option value="">Tất cả</option>
+            <option value="ACTIVE">Đang bán</option>
+            <option value="INACTIVE">Ngừng bán</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="resetFilter()">
+          Đặt lại
+        </button>
+        <button type="button" class="btn btn-primary" (click)="applyFilter()">
+          Lọc
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Create Report Section -->
+  <div class="create-section" *ngIf="canCreateReport">
+    <h2 class="section-title">Tạo báo cáo</h2>
+    
+    <div class="create-content">
+      <div class="format-selection">
+        <label>Định dạng xuất:</label>
+        <div class="format-options" role="group" aria-label="Định dạng xuất báo cáo">
+          <button 
+            type="button" 
+            class="format-btn"
+            [class.active]="selectedFormat === 'PDF'"
+            [disabled]="isExporting"
+            (click)="selectedFormat = 'PDF'">
+            PDF
+          </button>
+          <button 
+            type="button" 
+            class="format-btn"
+            [class.active]="selectedFormat === 'XLSX'"
+            [disabled]="isExporting"
+            (click)="selectedFormat = 'XLSX'">
+            Excel
+          </button>
+        </div>
+      </div>
+
+      <p class="create-note">
+        <span class="note-icon">ℹ️</span>
+        Báo cáo sẽ được xử lý trong nền và có thể tải xuống sau khi hoàn tất.
+      </p>
+
+      <div
+        class="report-action-panel"
+        [class.is-active]="exportStatus !== 'idle'"
+        [class.is-success]="exportStatus === 'success'"
+        [class.is-error]="exportStatus === 'error'"
+        aria-live="polite">
+        <button 
+          type="button" 
+          class="btn btn-create" 
+          id="createReportButton"
+          [class.is-success]="exportStatus === 'success'"
+          [class.is-error]="exportStatus === 'error'"
+          (click)="createReport()"
+          [disabled]="isExporting"
+          [attr.aria-busy]="isExporting">
+          <span class="btn-spinner" *ngIf="shouldShowExportSpinner()" aria-hidden="true"></span>
+          <span class="btn-state-icon" *ngIf="exportStatus === 'success'" aria-hidden="true">✓</span>
+          <span class="btn-state-icon" *ngIf="exportStatus === 'error'" aria-hidden="true">!</span>
+          <span>{{ getExportButtonText() }}</span>
+        </button>
+
+        <div class="export-status-box" *ngIf="exportStatus !== 'idle'">
+          <span class="inline-spinner" *ngIf="shouldShowExportSpinner()" aria-hidden="true"></span>
+          <span class="status-dot success" *ngIf="exportStatus === 'success'" aria-hidden="true">✓</span>
+          <span class="status-dot error" *ngIf="exportStatus === 'error'" aria-hidden="true">!</span>
+          <div>
+            <strong>{{ getExportButtonText() }}</strong>
+            <p>{{ exportMessage }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report History Table -->
+  <div class="history-section">
+    <h2 class="section-title">Lịch sử xuất báo cáo</h2>
+
+    <div class="table-container" *ngIf="!isLoadingHistory">
+      <table class="report-table" *ngIf="reportHistory.length > 0; else emptyState">
+        <thead>
+          <tr>
+            <th>Mã báo cáo</th>
+            <th>Loại báo cáo</th>
+            <th>Thời gian tạo</th>
+            <th>Trạng thái</th>
+            <th>Định dạng</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let job of reportHistory">
+            <td class="col-code">{{ job.id }}</td>
+            <td>Báo cáo sản phẩm</td>
+            <td>{{ formatDate(job.requestedAt) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusBadgeClass(job.status)">
+                {{ getStatusLabel(job.status) }}
+              </span>
+            </td>
+            <td>
+              <span class="format-badge">{{ job.fileFormat }}</span>
+            </td>
+            <td class="col-actions">
+              <button 
+                type="button" 
+                class="action-btn btn-download"
+                [class.is-loading]="isDownloading(job.id)"
+                [disabled]="job.status !== 'DONE' || isDownloading(job.id)"
+                (click)="downloadReport(job)"
+                [attr.aria-label]="isDownloading(job.id) ? 'Đang tải xuống báo cáo' : 'Tải xuống báo cáo'"
+                [attr.aria-busy]="isDownloading(job.id)"
+                [title]="isDownloading(job.id) ? 'Đang tải xuống...' : 'Tải xuống'">
+                <span class="action-spinner" *ngIf="isDownloading(job.id)" aria-hidden="true"></span>
+                <span *ngIf="!isDownloading(job.id)" aria-hidden="true">↓</span>
+              </button>
+              <button 
+                type="button" 
+                class="action-btn btn-retry"
+                *ngIf="job.status === 'FAILED'"
+                (click)="retryReport(job)"
+                title="Tạo lại">
+                🔄
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <ng-template #emptyState>
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <h3>Chưa có báo cáo nào</h3>
+          <p>Tạo báo cáo đầu tiên để bắt đầu theo dõi lịch sử</p>
+        </div>
+      </ng-template>
+
+      <div class="pagination-bar" *ngIf="historyTotalElements > 0">
+        <div class="page-size-control">
+          <span>Hiển thị</span>
+          <select
+            id="historyPageSize"
+            [ngModel]="historySize"
+            (ngModelChange)="changeHistorySize($event)">
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="20">20</option>
+            <option [ngValue]="50">50</option>
+          </select>
+          <span>/ trang</span>
+        </div>
+
+        <div class="page-status">
+          Trang {{ historyPage + 1 }} / {{ historyTotalPages || 1 }} · {{ historyTotalElements }} báo cáo
+        </div>
+
+        <div class="page-actions">
+          <button
+            id="historyPrevPageBtn"
+            type="button"
+            (click)="goToHistoryPage(historyPage - 1)"
+            [disabled]="historyFirst || isLoadingHistory">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+          <button
+            id="historyNextPageBtn"
+            type="button"
+            (click)="goToHistoryPage(historyPage + 1)"
+            [disabled]="historyLast || isLoadingHistory">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-state" *ngIf="isLoadingHistory">
+      <div class="spinner"></div>
+      <p>Đang tải lịch sử báo cáo...</p>
+    </div>
+  </div>
+</div>

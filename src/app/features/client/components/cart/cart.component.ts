@@ -7,8 +7,8 @@ import { CreateOrderRequest } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
 import { PaymentService } from '../../../orders/services/payment.service';
 import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
-import { CustomerAddressService } from '../../../../core/services/customer-address.service';
-import { CustomerAddress } from '../../../../shared/models/customer-address.model';
+import { CustomerAddressService } from 'src/app/features/client/services/customer-address.service';
+import { CustomerAddress } from 'src/app/features/client/models/customer-address.model';
 import { CartItem, CartService } from '../../services/cart.service';
 import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
 import { DailyStockService } from '../../../products/services/daily-stock.service';
@@ -16,6 +16,8 @@ import { BranchProductAvailability } from '../../../branches/models/branch-avail
 import { DailyStock } from '../../../products/models/daily-stock.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
+import { ToastNotificationService } from '../../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-cart',
@@ -56,8 +58,10 @@ export class CartComponent implements OnInit {
     private readonly orderService: OrderService,
     private readonly paymentService: PaymentService,
     private readonly branchAvailabilityService: BranchAvailabilityService,
-    private readonly dailyStockService: DailyStockService
-  ) {}
+    private readonly dailyStockService: DailyStockService,
+    private readonly toast: ToastNotificationService,
+    private readonly confirmDialog: ConfirmDialogService
+  ) { }
 
   ngOnInit(): void {
     this.loadBranch();
@@ -78,19 +82,19 @@ export class CartComponent implements OnInit {
     this.loading = true;
     this.checkingAvailability = true;
     this.errorMessage = '';
-    
+
     this.cartService.getActiveCart(branchId).pipe(
       switchMap(cart => {
         this.cartItems = cart.items || [];
-        
+
         if (this.cartItems.length === 0) {
           return of([[], []]);
         }
-        
+
         const now = new Date();
         const offset = now.getTimezoneOffset() * 60000;
         const todayKey = new Date(now.getTime() - offset).toISOString().slice(0, 10);
-        
+
         return forkJoin([
           this.branchAvailabilityService.getProductAvailabilities(branchId).pipe(
             catchError(() => of([] as BranchProductAvailability[]))
@@ -104,7 +108,7 @@ export class CartComponent implements OnInit {
       next: ([availabilities, stocks]: any) => {
         this.branchProductAvailabilities = availabilities as BranchProductAvailability[];
         this.dailyStocks = stocks as DailyStock[];
-        
+
         this.loading = false;
         this.checkingAvailability = false;
         this.calculateTotal();
@@ -252,7 +256,7 @@ export class CartComponent implements OnInit {
           .filter(i => i.variantId === item.variantId)
           .reduce((sum, i) => sum + i.quantity, 0);
         if (currentCartQty + change > Number(stock.availableQuantity)) {
-          alert('Không đủ số lượng sản phẩm để thêm thêm.');
+          this.toast.warning('Không đủ số lượng sản phẩm để thêm thêm.');
           return;
         }
       }
@@ -275,35 +279,51 @@ export class CartComponent implements OnInit {
         this.calculateTotal();
       },
       error: err => {
-        alert(err?.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.');
+        this.toast.error(err?.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.');
       }
     });
   }
 
   applyVoucher(voucher?: VoucherResponse): void {
+    const warnMinOrder = (minOrderAmount: number) =>
+      this.toast.warning(`Đơn hàng tối thiểu ${this.formatPrice(minOrderAmount)} để áp dụng mã này`);
+
     if (voucher) {
       const minOrderAmount = voucher.minOrderAmount || 0;
       if (this.subtotal < minOrderAmount) {
-        alert(`Đơn hàng tối thiểu ${this.formatPrice(minOrderAmount)} để áp dụng mã này`);
+        warnMinOrder(minOrderAmount);
         return;
       }
       this.selectedVoucher = voucher;
       this.voucherCode = voucher.code;
-    } else {
-      const foundVoucher = this.availableVouchers.find(v => v.code.toUpperCase() === this.voucherCode.trim().toUpperCase());
-      if (foundVoucher) {
-        const minOrderAmount = foundVoucher.minOrderAmount || 0;
-        if (this.subtotal < minOrderAmount) {
-          alert(`Đơn hàng tối thiểu ${this.formatPrice(minOrderAmount)} để áp dụng mã này`);
-          return;
-        }
-        this.selectedVoucher = foundVoucher;
-      } else {
-        alert('Mã voucher không hợp lệ');
+      this.calculateTotal();
+      return;
+    }
+
+    const normalizedCode = this.voucherCode.trim().toUpperCase();
+    if (!normalizedCode) {
+      this.toast.warning('Vui lòng nhập mã voucher');
+      return;
+    }
+
+    const foundVoucher = this.availableVouchers.find(v => v.code.toUpperCase() === normalizedCode);
+    if (foundVoucher) {
+      const minOrderAmount = foundVoucher.minOrderAmount || 0;
+      if (this.subtotal < minOrderAmount) {
+        warnMinOrder(minOrderAmount);
         return;
       }
+      this.selectedVoucher = foundVoucher;
+      this.voucherCode = foundVoucher.code;
+      this.calculateTotal();
+      return;
     }
+
+    this.selectedVoucher = null;
+    this.voucherCode = normalizedCode;
+    this.discount = 0;
     this.calculateTotal();
+    this.toast.info('Mã voucher sẽ được kiểm tra khi đặt hàng');
   }
 
   removeVoucher(): void {
@@ -337,28 +357,28 @@ export class CartComponent implements OnInit {
 
   proceedToCheckout(): void {
     if (this.cartItems.length === 0) {
-      alert('Giỏ hàng trống');
+      this.toast.warning('Giỏ hàng trống');
       return;
     }
 
     if (this.hasOutOfStockItems) {
-      alert('Vui lòng loại bỏ hoặc giảm số lượng sản phẩm đã hết hàng trong giỏ trước khi đặt.');
+      this.toast.warning('Vui lòng loại bỏ hoặc giảm số lượng sản phẩm đã hết hàng trong giỏ trước khi đặt.');
       return;
     }
 
     const branchId = sessionStorage.getItem('selectedBranchId') || '';
     if (!branchId) {
-      alert('Vui lòng chọn chi nhánh trước khi đặt hàng');
+      this.toast.warning('Vui lòng chọn chi nhánh trước khi đặt hàng');
       return;
     }
 
     if (this.orderType === 'DELIVERY') {
       if (!this.selectedAddressId) {
-        alert('Vui lòng chọn địa chỉ giao hàng');
+        this.toast.warning('Vui lòng chọn địa chỉ giao hàng');
         return;
       }
       if (this.deliveryError) {
-        alert(this.deliveryError);
+        this.toast.warning(this.deliveryError);
         return;
       }
     }
@@ -372,6 +392,27 @@ export class CartComponent implements OnInit {
       voucherCode: this.selectedVoucher?.code || this.voucherCode.trim() || undefined
     };
 
+    this.confirmDialog.confirm({
+      title: 'Xác nhận đặt hàng?',
+      message: `Bạn sắp đặt đơn hàng ${this.orderType === 'DELIVERY' ? 'giao tận nơi' : 'nhận tại quán'} với tổng tiền ${this.formatPrice(this.total)}.`,
+      description: this.paymentMethod === 'MOMO'
+        ? 'Sau khi tạo đơn, hệ thống sẽ chuyển bạn sang trang thanh toán MoMo.'
+        : 'Vui lòng kiểm tra lại thông tin đơn hàng trước khi xác nhận.',
+      confirmText: 'Đặt hàng',
+      cancelText: 'Kiểm tra lại',
+      type: 'info',
+      affectedItems: [
+        `${this.cartItems.length} sản phẩm`,
+        `Thanh toán: ${this.paymentMethod === 'MOMO' ? 'Ví MoMo' : (this.orderType === 'DELIVERY' ? 'COD' : 'Tại quầy')}`,
+        `Tổng tiền: ${this.formatPrice(this.total)}`
+      ]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+      this.createOrder(request);
+    });
+  }
+
+  private createOrder(request: CreateOrderRequest): void {
     this.checkingOut = true;
     this.orderService.createOrder(request).subscribe({
       next: order => {
@@ -385,7 +426,7 @@ export class CartComponent implements OnInit {
       },
       error: err => {
         this.checkingOut = false;
-        alert(err?.error?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+        this.toast.error(err?.error?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
       }
     });
   }
@@ -396,7 +437,7 @@ export class CartComponent implements OnInit {
 
   handleMomoPayment(orderId: string, orderCode: string): void {
     const orderInfo = `Thanh toán đơn hàng ${orderCode}`;
-    
+
     this.paymentService.createMomoPayment({
       orderId,
       orderInfo,
@@ -408,13 +449,13 @@ export class CartComponent implements OnInit {
           // Redirect to MoMo payment page
           window.location.href = response.payUrl;
         } else {
-          alert('Không thể tạo thanh toán MoMo. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
+          this.toast.error('Không thể tạo thanh toán MoMo. Vui lòng thử lại hoặc chọn phương thức thanh toán khác.');
           this.router.navigate(['/track-order', orderId]);
         }
       },
       error: err => {
         this.checkingOut = false;
-        alert(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
+        this.toast.error(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
         this.router.navigate(['/track-order', orderId]);
       }
     });

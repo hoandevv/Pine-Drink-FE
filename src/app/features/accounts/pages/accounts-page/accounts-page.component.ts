@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest, AccountDetailResponse, AccountRoleAssignmentResponse } from 'src/app/core/services/account.service';
+import { AccountService, AccountListItemResponse, CreateAccountRequest, UpdateAccountRequest, AccountDetailResponse, AccountRoleAssignmentResponse } from 'src/app/features/accounts/services/account.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 import { finalize } from 'rxjs';
 import { AccessControlService } from 'src/app/core/services/access-control.service';
 import { BranchService } from 'src/app/features/branches/services/branch.service';
 import { Branch } from 'src/app/features/branches/models/branch.model';
+import { ToastNotificationService } from 'src/app/core/services/toast.service';
+import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';
 
 interface AccountRow extends AccountListItemResponse {
   displayName: string;
@@ -57,7 +59,9 @@ export class AccountsPageComponent implements OnInit {
     private accountService: AccountService,
     private authService: AuthService,
     public readonly accessControl: AccessControlService,
-    private readonly branchService: BranchService
+    private readonly branchService: BranchService,
+    private readonly toast: ToastNotificationService,
+    private readonly confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -204,12 +208,12 @@ export class AccountsPageComponent implements OnInit {
       })
     ).subscribe({
       next: () => {
-        window.alert('Đã cập nhật tài khoản.');
+        this.toast.success('Đã cập nhật tài khoản.');
         this.closeEditDrawer();
         this.loadAccounts();
       },
       error: () => {
-        window.alert('Không thể cập nhật tài khoản. Vui lòng kiểm tra dữ liệu.');
+        this.toast.error('Không thể cập nhật tài khoản. Vui lòng kiểm tra dữ liệu.');
       }
     });
   }
@@ -223,13 +227,13 @@ export class AccountsPageComponent implements OnInit {
     }
 
     if (!file.type.startsWith('image/')) {
-      window.alert('Vui lòng chọn file ảnh.');
+      this.toast.warning('Vui lòng chọn file ảnh.');
       input.value = '';
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      window.alert('Ảnh không được vượt quá 5MB.');
+      this.toast.warning('Ảnh không được vượt quá 5MB.');
       input.value = '';
       return;
     }
@@ -245,7 +249,7 @@ export class AccountsPageComponent implements OnInit {
         this.updateForm.avatarUrl = response.fileUrl;
       },
       error: () => {
-        window.alert('Không thể upload avatar. Vui lòng thử lại.');
+        this.toast.error('Không thể upload avatar. Vui lòng thử lại.');
       }
     });
   }
@@ -254,22 +258,25 @@ export class AccountsPageComponent implements OnInit {
     const isUnlocking = account.statusClass === 'locked';
     const nextStatus = isUnlocking ? 'ACTIVE' : 'LOCKED';
     const actionLabel = isUnlocking ? 'mở khóa' : 'khóa';
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn ${actionLabel} tài khoản "${account.displayName}" không?`
-    );
+    this.confirmDialog.confirm({
+      title: `Xác nhận ${actionLabel} tài khoản?`,
+      message: `Bạn có chắc muốn ${actionLabel} tài khoản "${account.displayName}" không?`,
+      confirmText: isUnlocking ? 'Mở khóa' : 'Khóa tài khoản',
+      cancelText: 'Hủy',
+      type: isUnlocking ? 'success' : 'danger',
+      affectedItems: [account.displayName]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    if (!confirmed) {
-      return;
-    }
-
-    this.accountService.updateAccountStatus(account.id, nextStatus).subscribe({
-      next: () => {
-        window.alert(`Đã ${actionLabel} tài khoản "${account.displayName}".`);
-        this.loadAccounts();
-      },
-      error: () => {
-        window.alert(`Không thể ${actionLabel} tài khoản. Vui lòng thử lại.`);
-      }
+      this.accountService.updateAccountStatus(account.id, nextStatus).subscribe({
+        next: () => {
+          this.toast.success(`Đã ${actionLabel} tài khoản "${account.displayName}".`);
+          this.loadAccounts();
+        },
+        error: () => {
+          this.toast.error(`Không thể ${actionLabel} tài khoản. Vui lòng thử lại.`);
+        }
+      });
     });
   }
 
@@ -288,7 +295,7 @@ export class AccountsPageComponent implements OnInit {
 
     const validationMessage = this.getCreateValidationMessage(payload);
     if (validationMessage) {
-      window.alert(validationMessage);
+      this.toast.warning(validationMessage);
       return;
     }
 
@@ -299,12 +306,12 @@ export class AccountsPageComponent implements OnInit {
       })
     ).subscribe({
       next: () => {
-        window.alert('Đã tạo tài khoản nội bộ.');
+        this.toast.success('Đã tạo tài khoản nội bộ.');
         this.isDrawerOpen = false;
         this.loadAccounts();
       },
       error: (error) => {
-        window.alert(this.getAccountErrorMessage(error, 'Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.'));
+        this.toast.error(this.getAccountErrorMessage(error, 'Không thể tạo tài khoản. Kiểm tra dữ liệu hoặc thử lại.'));
       }
     });
   }
@@ -445,7 +452,7 @@ export class AccountsPageComponent implements OnInit {
         }
       },
       error: () => {
-        window.alert('Không thể tải đầy đủ thông tin tài khoản.');
+        this.toast.error('Không thể tải đầy đủ thông tin tài khoản.');
       }
     });
   }

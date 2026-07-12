@@ -2,10 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
-import { CustomerAddressService } from '../../../../core/services/customer-address.service';
+import { CustomerAddressService } from 'src/app/features/client/services/customer-address.service';
 import { LoadingService } from '../../../../core/services/loading.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { CustomerAddress } from '../../../../shared/models/customer-address.model';
+import { CustomerAddress } from 'src/app/features/client/models/customer-address.model';
 
 @Component({
   selector: 'app-address-list',

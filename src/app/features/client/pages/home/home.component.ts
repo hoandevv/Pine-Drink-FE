@@ -31,7 +31,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private readonly productService: ProductService,
     private readonly branchService: BranchService,
     private readonly voucherService: VoucherService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.loadData();

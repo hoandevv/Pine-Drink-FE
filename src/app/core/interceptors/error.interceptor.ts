@@ -28,15 +28,26 @@ export class ErrorInterceptor implements HttpInterceptor {
   ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    this.loadingService.show();
+    const skipLoading = request.headers.has('X-Skip-Loading');
+    const handledRequest = skipLoading
+      ? request.clone({ headers: request.headers.delete('X-Skip-Loading') })
+      : request;
 
-    return next.handle(request).pipe(
+    if (!skipLoading) {
+      this.loadingService.show();
+    }
+
+    return next.handle(handledRequest).pipe(
       catchError((error: HttpErrorResponse) => {
         const apiError = this.mapApiError(error);
         this.handleError(apiError);
         return throwError(() => apiError);
       }),
-      finalize(() => this.loadingService.hide())
+      finalize(() => {
+        if (!skipLoading) {
+          this.loadingService.hide();
+        }
+      })
     );
   }
 

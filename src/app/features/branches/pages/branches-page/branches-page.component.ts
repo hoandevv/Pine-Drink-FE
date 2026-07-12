@@ -9,6 +9,7 @@ import { Branch } from '../../models/branch.model';
 import { BranchService } from '../../services/branch.service';
 import { MapPickerResult } from '../../../../features/client/components/map-picker/map-picker.component';
 import { AccessControlService } from '../../../../core/services/access-control.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-branches-page',
@@ -80,7 +81,8 @@ export class BranchesPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly branchService: BranchService,
-    public readonly accessControl: AccessControlService
+    public readonly accessControl: AccessControlService,
+    private readonly confirmDialog: ConfirmDialogService
   ) { }
 
   ngOnInit(): void {
@@ -204,22 +206,36 @@ export class BranchesPageComponent implements OnInit {
   }
 
   closeBranch(branch: Branch): void {
-    if (!window.confirm(`Đóng chi nhánh ${branch.name}?`)) {
-      return;
-    }
+    this.confirmDialog.confirm({
+      title: 'Xác nhận đóng chi nhánh?',
+      message: `Chi nhánh ${branch.name} sẽ tạm ngưng nhận đơn.`,
+      confirmText: 'Đóng chi nhánh',
+      cancelText: 'Hủy',
+      type: 'warning',
+      affectedItems: [branch.name]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.branchService.closeBranch(branch.id).subscribe({
-      next: () => this.loadBranches(this.pageData.page)
+      this.branchService.closeBranch(branch.id).subscribe({
+        next: () => this.loadBranches(this.pageData.page)
+      });
     });
   }
 
   restoreBranch(branch: Branch): void {
-    if (!window.confirm(`Mở lại chi nhánh ${branch.name}?`)) {
-      return;
-    }
+    this.confirmDialog.confirm({
+      title: 'Xác nhận mở lại chi nhánh?',
+      message: `Chi nhánh ${branch.name} sẽ hoạt động trở lại.`,
+      confirmText: 'Mở lại',
+      cancelText: 'Hủy',
+      type: 'success',
+      affectedItems: [branch.name]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.branchService.restoreBranch(branch.id).subscribe({
-      next: () => this.loadBranches(this.pageData.page)
+      this.branchService.restoreBranch(branch.id).subscribe({
+        next: () => this.loadBranches(this.pageData.page)
+      });
     });
   }
 
@@ -357,12 +373,20 @@ export class BranchesPageComponent implements OnInit {
   }
 
   deleteBranchHours(hours: BranchHours): void {
-    if (!this.editingBranch || !window.confirm(`Xóa giờ mở cửa ${this.dayLabel(hours.dayOfWeek)}?`)) {
-      return;
-    }
+    if (!this.editingBranch) { return; }
 
-    this.branchService.deleteBranchHours(this.editingBranch.id, hours.id).subscribe({
-      next: () => this.loadBranchHours(this.editingBranch!.id)
+    this.confirmDialog.confirm({
+      title: 'Xác nhận xóa giờ mở cửa?',
+      message: `Khung giờ ${this.dayLabel(hours.dayOfWeek)} sẽ bị xóa khỏi chi nhánh.`,
+      confirmText: 'Xóa giờ',
+      cancelText: 'Hủy',
+      type: 'danger'
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.branchService.deleteBranchHours(this.editingBranch!.id, hours.id).subscribe({
+        next: () => this.loadBranchHours(this.editingBranch!.id)
+      });
     });
   }
 

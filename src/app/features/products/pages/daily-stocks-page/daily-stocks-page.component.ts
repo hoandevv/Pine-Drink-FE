@@ -1,14 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { finalize, forkJoin } from 'rxjs';
+import { finalize } from 'rxjs';
 
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { Product } from '../../models/product.model';
 import { ProductVariant } from '../../models/product-variant.model';
 import { DailyStock, DailyStockLog } from '../../models/daily-stock.model';
 import { DailyStockService } from '../../services/daily-stock.service';
-import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
 
 interface VariantOption extends ProductVariant { productId: string; productName: string; }
@@ -32,17 +30,18 @@ export class DailyStocksPageComponent implements OnInit {
   });
 
   branches: Branch[] = [];
-  products: Product[] = [];
   variants: VariantOption[] = [];
   stocks: DailyStock[] = [];
   logs: DailyStockLog[] = [];
   selectedBranchId = '';
   selectedDate = this.toDateInput(new Date());
   selectedStock: DailyStock | null = null;
+  variantSearchTerm = '';
   loading = false;
   saving = false;
   bootLoading = false;
   logLoading = false;
+  variantsLoading = false;
   drawerOpen = false;
   copyOpen = false;
   errorMessage = '';
@@ -51,10 +50,9 @@ export class DailyStocksPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly branchService: BranchService,
-    private readonly productService: ProductService,
     private readonly variantService: ProductVariantService,
     private readonly dailyStockService: DailyStockService
-  ) {}
+  ) { }
 
   ngOnInit(): void { this.loadInitialData(); }
 
@@ -63,6 +61,14 @@ export class DailyStocksPageComponent implements OnInit {
   get totalReserved(): number { return this.stocks.reduce((sum, stock) => sum + (stock.reservedQuantity || 0), 0); }
   get totalSold(): number { return this.stocks.reduce((sum, stock) => sum + (stock.soldQuantity || 0), 0); }
   get selectedBranch(): Branch | undefined { return this.branches.find((branch) => branch.id === this.selectedBranchId); }
+  get filteredVariants(): VariantOption[] {
+    if (!this.variantSearchTerm.trim()) { return this.variants; }
+    const term = this.variantSearchTerm.toLowerCase();
+    return this.variants.filter((v) =>
+      v.productName.toLowerCase().includes(term) ||
+      v.variantName.toLowerCase().includes(term)
+    );
+  }
 
   onBranchChange(branchId: string): void { this.selectedBranchId = branchId; this.loadStocks(); }
   onDateChange(date: string): void { this.selectedDate = date; this.loadStocks(); }
@@ -70,8 +76,13 @@ export class DailyStocksPageComponent implements OnInit {
 
   openCreateDrawer(): void {
     this.selectedStock = null;
+    this.variantSearchTerm = '';
     this.quotaForm.reset({ variantId: '', dailyQuantity: 0, reason: 'Set quota đầu ngày' });
     this.drawerOpen = true;
+    // Lazy load variants only when drawer opens
+    if (this.variants.length === 0 && !this.variantsLoading) {
+      this.loadAllVariants();
+    }
   }
 
   openEditDrawer(stock: DailyStock): void {
@@ -98,12 +109,12 @@ export class DailyStocksPageComponent implements OnInit {
     const request$ = this.selectedStock
       ? this.dailyStockService.updateQuota(this.selectedStock.id, { dailyQuantity: value.dailyQuantity, reason: value.reason })
       : this.dailyStockService.setQuota({
-          branchId: this.selectedBranchId,
-          variantId: value.variantId,
-          stockDate: this.selectedDate,
-          dailyQuantity: value.dailyQuantity,
-          reason: value.reason
-        });
+        branchId: this.selectedBranchId,
+        variantId: value.variantId,
+        stockDate: this.selectedDate,
+        dailyQuantity: value.dailyQuantity,
+        reason: value.reason
+      });
 
     request$.pipe(finalize(() => (this.saving = false))).subscribe({
       next: () => { this.successMessage = 'Đã lưu quota tồn kho ngày.'; this.drawerOpen = false; this.loadStocks(); },
@@ -161,33 +172,35 @@ export class DailyStocksPageComponent implements OnInit {
   private loadInitialData(): void {
     this.bootLoading = true;
     this.clearMessages();
-    forkJoin({
-      branches: this.branchService.getActiveBranches(0, 100),
-      products: this.productService.getProducts(0, 100)
-    }).pipe(finalize(() => (this.bootLoading = false))).subscribe({
-      next: ({ branches, products }) => {
-        this.branches = branches.content || [];
-        this.products = products.content || [];
-        this.selectedBranchId = this.branches[0]?.id || '';
-        this.loadAllVariants();
-        if (this.selectedBranchId) { this.loadStocks(); }
-      },
-      error: () => { this.errorMessage = 'Không tải được dữ liệu chi nhánh/sản phẩm.'; }
-    });
+    this.branchService.getActiveBranches(0, 100)
+      .pipe(finalize(() => (this.bootLoading = false)))
+      .subscribe({
+        next: (branches) => {
+          this.branches = branches.content || [];
+          this.selectedBranchId = this.branches[0]?.id || '';
+          if (this.selectedBranchId) { this.loadStocks(); }
+        },
+        error: () => { this.errorMessage = 'Không tải được dữ liệu chi nhánh.'; }
+      });
   }
 
   private loadAllVariants(): void {
-    if (!this.products.length) { this.variants = []; return; }
-    forkJoin(this.products.map((product) => this.variantService.getActiveVariants(product.id))).subscribe({
-      next: (groups) => {
-        this.variants = groups.flatMap((items, index) => items.map((variant) => ({
-          ...variant,
-          productId: this.products[index].id,
-          productName: this.products[index].name
-        })));
-      },
-      error: () => { this.variants = []; }
-    });
+    this.variantsLoading = true;
+    this.variantService.getAllActiveVariants()
+      .pipe(finalize(() => (this.variantsLoading = false)))
+      .subscribe({
+        next: (variants) => {
+          this.variants = variants.map((variant) => ({
+            ...variant,
+            productId: variant.productId,
+            productName: variant.productName || variant.productCode || 'Sản phẩm'
+          }));
+        },
+        error: () => {
+          this.variants = [];
+          this.errorMessage = 'Không tải được danh sách biến thể active.';
+        }
+      });
   }
 
   private loadStocks(): void {

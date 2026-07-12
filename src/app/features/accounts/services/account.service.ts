@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { API_ENDPOINTS } from 'src/app/core/constants/api-endpoints';
 import { BaseResponse } from 'src/app/shared/models/base-response.model';
 import { PageResponse } from 'src/app/shared/models/page-response.model';
 
@@ -75,7 +76,7 @@ export interface AssignRoleRequest {
   providedIn: 'root'
 })
 export class AccountService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/accounts`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.accounts.base}`;
 
   constructor(private http: HttpClient) {}
 

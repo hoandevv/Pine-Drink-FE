@@ -73,7 +73,7 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly toastService: ToastService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Check for reset password success message

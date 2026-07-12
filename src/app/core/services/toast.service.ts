@@ -10,10 +10,8 @@ export interface ToastMessage {
   title?: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
-export class ToastService {
+@Injectable({ providedIn: 'root' })
+export class ToastNotificationService {
   private readonly toastsSubject = new BehaviorSubject<ToastMessage[]>([]);
   private sequence = 0;
 
@@ -49,5 +47,38 @@ export class ToastService {
 
   dismiss(id: number): void {
     this.toastsSubject.next(this.toastsSubject.value.filter((toast) => toast.id !== id));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class ToastService {
+  constructor(private readonly notifications: ToastNotificationService) {}
+
+  get toasts$() {
+    return this.notifications.toasts$;
+  }
+
+  show(message: string, type: ToastType = 'info', title?: string, duration = 3500): void {
+    this.notifications.show(message, type, title, duration);
+  }
+
+  success(message: string, title?: string): void {
+    this.notifications.success(message, title);
+  }
+
+  error(message: string, title?: string): void {
+    this.notifications.error(message, title);
+  }
+
+  warning(message: string, title?: string): void {
+    this.notifications.warning(message, title);
+  }
+
+  info(message: string, title?: string): void {
+    this.notifications.info(message, title);
+  }
+
+  dismiss(id: number): void {
+    this.notifications.dismiss(id);
   }
 }

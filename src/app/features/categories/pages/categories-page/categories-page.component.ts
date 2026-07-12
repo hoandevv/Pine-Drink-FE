@@ -3,6 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { Category } from '../../models/category.model';
 import { CategoryService } from '../../services/category.service';
 
@@ -38,7 +39,8 @@ export class CategoriesPageComponent implements OnInit {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly categoryService: CategoryService
+    private readonly categoryService: CategoryService,
+    private readonly confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -149,21 +151,29 @@ export class CategoriesPageComponent implements OnInit {
   }
 
   deleteCategory(category: Category): void {
-    if (!window.confirm(`Xóa danh mục ${category.name}? Thao tác này không thể hoàn tác.`)) {
-      return;
-    }
+    this.confirmDialog.confirm({
+      title: 'Xác nhận xóa danh mục?',
+      message: `Danh mục ${category.name} sẽ bị xóa khỏi hệ thống.`,
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa danh mục',
+      cancelText: 'Hủy',
+      type: 'danger',
+      risks: ['Sản phẩm thuộc danh mục có thể bị ảnh hưởng', 'Không thể khôi phục sau khi xóa']
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.loading = true;
-    this.errorMessage = '';
+      this.loading = true;
+      this.errorMessage = '';
 
-    this.categoryService.deleteCategory(category.id)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadCategories(this.pageData.page),
-        error: () => {
-          this.errorMessage = 'Không xóa được danh mục. Có thể danh mục đang được sản phẩm sử dụng.';
-        }
-      });
+      this.categoryService.deleteCategory(category.id)
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: () => this.loadCategories(this.pageData.page),
+          error: () => {
+            this.errorMessage = 'Không xóa được danh mục. Có thể danh mục đang được sản phẩm sử dụng.';
+          }
+        });
+    });
   }
 
   refresh(): void {

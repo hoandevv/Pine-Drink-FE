@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ToastService } from 'src/app/core/services/toast.service';
+import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
 import { VoucherPayload, VoucherResponse, VoucherService } from '../../services/voucher.service';
@@ -50,8 +51,9 @@ export class VouchersPageComponent implements OnInit {
     private readonly fb: FormBuilder,
     private readonly voucherService: VoucherService,
     private readonly branchService: BranchService,
-    private readonly toast: ToastService
-  ) {}
+    private readonly toast: ToastService,
+    private readonly confirmDialog: ConfirmDialogService
+  ) { }
 
   ngOnInit(): void {
     this.loadVouchers();
@@ -143,25 +145,45 @@ export class VouchersPageComponent implements OnInit {
 
   updateStatus(voucher: VoucherResponse, status: string): void {
     const action = status === 'ACTIVE' ? 'bật' : 'tắt';
-    if (!confirm(`Bạn chắc muốn ${action} voucher ${voucher.code}?`)) return;
+    this.confirmDialog.confirm({
+      title: `Xác nhận ${action} voucher?`,
+      message: `Bạn chắc muốn ${action} voucher ${voucher.code}?`,
+      confirmText: status === 'ACTIVE' ? 'Bật voucher' : 'Tắt voucher',
+      cancelText: 'Hủy',
+      type: status === 'ACTIVE' ? 'success' : 'warning',
+      affectedItems: [voucher.name || voucher.code]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.voucherService.updateStatus(voucher.id, status).subscribe({
-      next: () => {
-        this.toast.success('Đã cập nhật trạng thái');
-        this.loadVouchers();
-      },
-      error: () => this.toast.error('Cập nhật trạng thái thất bại')
+      this.voucherService.updateStatus(voucher.id, status).subscribe({
+        next: () => {
+          this.toast.success('Đã cập nhật trạng thái');
+          this.loadVouchers();
+        },
+        error: () => this.toast.error('Cập nhật trạng thái thất bại')
+      });
     });
   }
 
   remove(voucher: VoucherResponse): void {
-    if (!confirm(`Xóa voucher ${voucher.code}?`)) return;
-    this.voucherService.delete(voucher.id).subscribe({
-      next: () => {
-        this.toast.success('Đã xóa voucher');
-        this.loadVouchers();
-      },
-      error: () => this.toast.error('Xóa voucher thất bại')
+    this.confirmDialog.confirm({
+      title: 'Xác nhận xóa voucher?',
+      message: `Voucher ${voucher.code} sẽ bị xóa khỏi hệ thống.`,
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa voucher',
+      cancelText: 'Hủy',
+      type: 'danger',
+      risks: ['Mất cấu hình mã giảm giá', 'Không thể khôi phục sau khi xóa']
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.voucherService.delete(voucher.id).subscribe({
+        next: () => {
+          this.toast.success('Đã xóa voucher');
+          this.loadVouchers();
+        },
+        error: () => this.toast.error('Xóa voucher thất bại')
+      });
     });
   }
 

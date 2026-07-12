@@ -3,6 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { Topping } from '../../models/topping.model';
 import { ToppingService } from '../../services/topping.service';
 
@@ -35,7 +36,8 @@ export class ToppingsPageComponent implements OnInit {
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly toppingService: ToppingService
+    private readonly toppingService: ToppingService,
+    private readonly confirmDialog: ConfirmDialogService
   ) { }
 
   ngOnInit(): void {
@@ -132,21 +134,29 @@ export class ToppingsPageComponent implements OnInit {
   }
 
   deleteTopping(topping: Topping): void {
-    if (!window.confirm(`Xóa topping ${topping.name}? Thao tác này không thể hoàn tác.`)) {
-      return;
-    }
+    this.confirmDialog.confirm({
+      title: 'Xác nhận xóa topping?',
+      message: `Topping ${topping.name} sẽ bị xóa khỏi hệ thống.`,
+      description: 'Thao tác này không thể hoàn tác.',
+      confirmText: 'Xóa topping',
+      cancelText: 'Hủy',
+      type: 'danger',
+      risks: ['Topping có thể đang gắn với sản phẩm', 'Không thể khôi phục sau khi xóa']
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.loading = true;
-    this.errorMessage = '';
+      this.loading = true;
+      this.errorMessage = '';
 
-    this.toppingService.deleteTopping(topping.id)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadToppings(this.pageData.page),
-        error: () => {
-          this.errorMessage = 'Không xóa được topping. Có thể topping đang được gắn với sản phẩm.';
-        }
-      });
+      this.toppingService.deleteTopping(topping.id)
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: () => this.loadToppings(this.pageData.page),
+          error: () => {
+            this.errorMessage = 'Không xóa được topping. Có thể topping đang được gắn với sản phẩm.';
+          }
+        });
+    });
   }
 
   refresh(): void {

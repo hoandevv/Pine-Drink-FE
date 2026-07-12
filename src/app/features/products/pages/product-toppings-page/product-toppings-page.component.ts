@@ -9,6 +9,7 @@ import { Product } from '../../models/product.model';
 import { ProductTopping } from '../../models/product-topping.model';
 import { ProductService } from '../../services/product.service';
 import { ProductToppingService } from '../../services/product-topping.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
   selector: 'app-product-toppings-page',
@@ -45,7 +46,8 @@ export class ProductToppingsPageComponent implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly productService: ProductService,
     private readonly toppingService: ToppingService,
-    private readonly productToppingService: ProductToppingService
+    private readonly productToppingService: ProductToppingService,
+    private readonly confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -170,21 +172,30 @@ export class ProductToppingsPageComponent implements OnInit {
   }
 
   deleteProductTopping(item: ProductTopping): void {
-    if (!this.selectedProductId || !window.confirm(`Gỡ topping ${item.toppingName} khỏi sản phẩm?`)) {
-      return;
-    }
+    if (!this.selectedProductId) { return; }
 
-    this.loading = true;
-    this.errorMessage = '';
+    this.confirmDialog.confirm({
+      title: 'Xác nhận gỡ topping?',
+      message: `Topping ${item.toppingName} sẽ được gỡ khỏi sản phẩm.`,
+      confirmText: 'Gỡ topping',
+      cancelText: 'Hủy',
+      type: 'warning',
+      affectedItems: [item.toppingName]
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
 
-    this.productToppingService.deleteProductTopping(this.selectedProductId, item.id)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadProductToppings(this.pageData.page),
-        error: () => {
-          this.errorMessage = 'Không gỡ được topping khỏi sản phẩm.';
-        }
-      });
+      this.loading = true;
+      this.errorMessage = '';
+
+      this.productToppingService.deleteProductTopping(this.selectedProductId, item.id)
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: () => this.loadProductToppings(this.pageData.page),
+          error: () => {
+            this.errorMessage = 'Không gỡ được topping khỏi sản phẩm.';
+          }
+        });
+    });
   }
 
   refresh(): void {

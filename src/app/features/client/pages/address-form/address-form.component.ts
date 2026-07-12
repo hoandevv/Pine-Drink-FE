@@ -3,10 +3,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
-import { CustomerAddressService } from '../../../../core/services/customer-address.service';
+import { CustomerAddressService } from 'src/app/features/client/services/customer-address.service';
 import { LoadingService } from '../../../../core/services/loading.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { CreateAddressRequest, CustomerAddress, UpdateAddressRequest } from '../../../../shared/models/customer-address.model';
+import { CreateAddressRequest, CustomerAddress, UpdateAddressRequest } from 'src/app/features/client/models/customer-address.model';
 import { MapPickerResult } from '../../components/map-picker/map-picker.component';
 
 @Component({
@@ -19,6 +19,7 @@ export class AddressFormComponent implements OnInit {
   isEditMode = false;
   addressId: string | null = null;
   isSubmitting = false;
+  returnUrl = '/addresses';
 
   constructor(
     private readonly fb: FormBuilder,
@@ -30,6 +31,7 @@ export class AddressFormComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/addresses';
     this.initForm();
     this.checkEditMode();
   }
@@ -140,7 +142,7 @@ export class AddressFormComponent implements OnInit {
         this.isSubmitting = false;
         if (address) {
           this.toastService.success('Đã thêm địa chỉ thành công');
-          this.router.navigate(['/addresses']);
+          this.router.navigateByUrl(this.returnUrl);
         }
       });
   }
@@ -163,13 +165,13 @@ export class AddressFormComponent implements OnInit {
         this.isSubmitting = false;
         if (address) {
           this.toastService.success('Đã cập nhật địa chỉ thành công');
-          this.router.navigate(['/addresses']);
+          this.router.navigateByUrl(this.returnUrl);
         }
       });
   }
 
   cancel(): void {
-    this.router.navigate(['/addresses']);
+    this.router.navigateByUrl(this.returnUrl);
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

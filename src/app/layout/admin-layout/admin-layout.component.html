@@ -24,7 +24,7 @@
       <i></i>
     </div>
 
-    <nav class="module-nav" aria-label="Admin modules">
+    <nav #sidebarScrollContainer class="module-nav" aria-label="Admin modules" (scroll)="onSidebarScroll($event)">
       <section *ngFor="let section of visibleNavSections" class="module-group">
         <h3 class="module-group__title">{{ section.title }}</h3>
         <a *ngFor="let item of section.items" [routerLink]="item.route" class="module-link"

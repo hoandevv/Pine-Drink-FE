@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
 import { AccessControlService } from '../../../../core/services/access-control.service';
+import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PermissionDefinition, PermissionService, RolePermissionMatrix } from '../../services/permission.service';
 
 interface PermissionGroup {
@@ -32,7 +33,8 @@ export class PermissionsPageComponent implements OnInit {
 
   constructor(
     private readonly permissionService: PermissionService,
-    public readonly accessControl: AccessControlService
+    public readonly accessControl: AccessControlService,
+    private readonly confirmDialog: ConfirmDialogService
   ) {}
 
   ngOnInit(): void {
@@ -113,6 +115,29 @@ export class PermissionsPageComponent implements OnInit {
   }
 
   resetManagerSafePreset(): void {
+    this.confirmDialog.confirm({
+      title: 'Áp dụng preset an toàn cho Quản lý?',
+      message: 'Thao tác này sẽ gỡ các quyền rủi ro cao khỏi vai trò MANAGER.',
+      description: 'Sau khi áp dụng, bạn vẫn cần bấm "Lưu quyền" để ghi nhận thay đổi xuống hệ thống.',
+      confirmText: 'Áp dụng preset',
+      cancelText: 'Hủy',
+      type: 'warning',
+      risks: [
+        'Đổi trạng thái tài khoản',
+        'Reset mật khẩu',
+        'Cập nhật phân quyền',
+        'Xóa chi nhánh'
+      ]
+    }).subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
+
+      this.applyManagerSafePreset();
+    });
+  }
+
+  private applyManagerSafePreset(): void {
     const manager = this.roles.find((role) => role.role === 'MANAGER');
     if (!manager || !this.canEditRole(manager)) {
       return;

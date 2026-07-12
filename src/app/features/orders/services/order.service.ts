@@ -73,10 +73,13 @@ export class OrderService {
       .pipe(map((response) => response.data));
   }
 
-  updateOrderStatus(id: string, status: OrderStatus, reason?: string): Observable<Order> {
+  updateOrderStatus(id: string, status: OrderStatus, reason?: string, paymentMethod?: string): Observable<Order> {
     const request: UpdateOrderStatusRequest = { status };
     if (reason && reason.trim()) {
       request.reason = reason.trim();
+    }
+    if (paymentMethod && paymentMethod.trim()) {
+      request.paymentMethod = paymentMethod.trim();
     }
     return this.http
       .patch<BaseResponse<Order>>(`${this.apiUrl}/${id}/status`, request)

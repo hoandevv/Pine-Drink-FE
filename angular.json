@@ -79,6 +79,11 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "headers": {
+              "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+            }
+          },
           "configurations": {
             "production": {
               "browserTarget": "pine-drink-fe:build:production"
@@ -120,5 +125,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "e6fadea7-13f1-4427-924a-9b8248a66921"
   }
 }

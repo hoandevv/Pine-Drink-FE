@@ -1,14 +1,15 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { Subscription, finalize, of, switchMap } from 'rxjs';
+import { Subscription, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
-import { Order, OrderStatus } from '../../models/order.model';
+import { Order, OrderStatus, PaymentMethod, TimelineStatus } from '../../models/order.model';
 import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
-import { PaymentService, RecordOfflinePaymentRequest } from '../../services/payment.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { PromptDialogService } from '../../../../shared/components/prompt-dialog/prompt-dialog.service';
+import { PaymentService } from '../../services/payment.service';
 
 @Component({
   selector: 'app-order-list',
@@ -24,6 +25,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
   activeTab: OrderStatus | 'ALL' = 'ALL';
   showTimelineDrawer = false;
   searchQuery = '';
+  selectedDate = '';
   recordingPaymentOrderId: string | null = null;
 
   private readonly subscriptions = new Subscription();
@@ -33,10 +35,18 @@ export class OrderListComponent implements OnInit, OnDestroy {
   readOrderIds = new Set<string>();
   stats: any[] = []; // Replaced by simpler stats representation if needed
   orders: Order[] = [];
+  paginatedOrders: Order[] = [];
   allOrders: Order[] = [];
+  currentPage = 1;
+  pageSize = 8;
+  
   pageData: PageResponse<Order> = {
     content: [], page: 0, size: 10, totalElements: 0, totalPages: 0, first: true, last: true
   };
+
+  get totalPages(): number {
+    return Math.ceil(this.orders.length / this.pageSize) || 1;
+  }
 
   readonly tabs: { label: string; value: OrderStatus | 'ALL'; count: number }[] = [
     { label: 'All', value: 'ALL', count: 0 },
@@ -53,9 +63,10 @@ export class OrderListComponent implements OnInit, OnDestroy {
   constructor(
     private readonly orderService: OrderService,
     private readonly orderRealtimeService: OrderRealtimeService,
-    private readonly paymentService: PaymentService,
     private readonly toastService: ToastService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly promptDialog: PromptDialogService,
+    private readonly paymentService: PaymentService
   ) {}
 
   ngOnInit(): void {
@@ -157,6 +168,16 @@ export class OrderListComponent implements OnInit, OnDestroy {
     this.applyLocalFilters();
   }
 
+  onDateFilterChange(event: Event): void {
+    this.selectedDate = (event.target as HTMLInputElement).value;
+    this.applyLocalFilters();
+  }
+
+  clearDateFilter(): void {
+    this.selectedDate = '';
+    this.applyLocalFilters();
+  }
+
   applyLocalFilters(): void {
     let filtered = this.allOrders;
 
@@ -175,7 +196,49 @@ export class OrderListComponent implements OnInit, OnDestroy {
       );
     }
 
+    // 3. Filter by created date
+    if (this.selectedDate) {
+      filtered = filtered.filter(o => this.toDateInputValue(o.createdAt) === this.selectedDate);
+    }
+
     this.orders = filtered;
+    this.currentPage = 1;
+    this.updatePaginatedOrders();
+  }
+
+  updatePaginatedOrders(): void {
+    const start = (this.currentPage - 1) * this.pageSize;
+    this.paginatedOrders = this.orders.slice(start, start + this.pageSize);
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePaginatedOrders();
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePaginatedOrders();
+    }
+  }
+
+  private toDateInputValue(value: string | Date | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   openDetail(order: Order): void {
@@ -211,9 +274,16 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   updateOrderStatusWithReason(order: Order, status: OrderStatus, reason?: string): void {
-    this.orderService.updateOrderStatus(order.id, status, reason).subscribe({
+    const paymentMethod = status === 'COMPLETED' && !this.isOrderPaid(order)
+      ? order.paymentMethod
+      : undefined;
+
+    this.orderService.updateOrderStatus(order.id, status, reason, paymentMethod).subscribe({
       next: (updatedOrder) => {
-        const normalized = this.normalizeOrder(updatedOrder);
+        const existingOrder = this.allOrders.find(o => o.id === order.id) ?? order;
+        const normalized = this.isOrderPaid(existingOrder)
+          ? this.markOrderAsPaid(this.normalizeOrder(updatedOrder), existingOrder.paymentMethod)
+          : this.normalizeOrder(updatedOrder);
         this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
         this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
         if (this.selectedOrder?.id === order.id) {
@@ -231,6 +301,11 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   handlePrimaryAction(order: Order): void {
+    if (!this.canAdvanceOrder(order)) {
+      this.toastService.warning('Vui lòng chọn phương thức và xác nhận thanh toán trước.');
+      return;
+    }
+
     const nextStatus = this.getNextStatus(order);
     if (nextStatus) {
       this.updateOrderStatusWithReason(order, nextStatus);
@@ -239,86 +314,156 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   handleSecondaryAction(order: Order): void {
     if (order.status === 'PENDING') {
-      const reason = window.prompt('Enter rejection reason:');
-      if (reason !== null) {
-        this.updateOrderStatusWithReason(order, 'REJECTED', reason.trim());
-      }
-    } else if (['CONFIRMED', 'PREPARING', 'READY'].includes(order.status)) {
-      const reason = window.prompt('Enter cancellation reason:');
-      if (reason !== null) {
-        this.updateOrderStatusWithReason(order, 'CANCELLED', reason.trim());
-      }
+      this.promptDialog.prompt({
+        title: 'Nhập lý do từ chối đơn',
+        message: `Đơn ${order.orderCode || order.id} sẽ được chuyển sang trạng thái từ chối.`,
+        label: 'Lý do từ chối',
+        placeholder: 'Ví dụ: Hết món / ngoài khu vực giao',
+        confirmText: 'Từ chối đơn',
+        cancelText: 'Hủy',
+        type: 'danger'
+      }).subscribe((reason) => {
+        if (reason !== null) {
+          this.updateOrderStatusWithReason(order, 'REJECTED', reason.trim());
+        }
+      });
+    } else if (['CONFIRMED', 'PREPARING', 'READY', 'DELIVERING'].includes(order.status)) {
+      this.promptDialog.prompt({
+        title: 'Nhập lý do hủy/từ chối đơn',
+        message: `Đơn ${order.orderCode || order.id} sẽ được chuyển sang trạng thái từ chối.`,
+        label: 'Lý do hủy/từ chối',
+        placeholder: 'Ví dụ: Khách yêu cầu hủy',
+        confirmText: 'Xác nhận',
+        cancelText: 'Đóng',
+        type: 'warning'
+      }).subscribe((reason) => {
+        if (reason !== null) {
+          this.updateOrderStatusWithReason(order, 'REJECTED', reason.trim());
+        }
+      });
     } else if (order.status === 'COMPLETED') {
       this.printReceipt(order);
     }
   }
 
-  confirmCounterPayment(order: Order, method: 'CASH' | 'COD'): void {
-    if (this.recordingPaymentOrderId) {
+  confirmCounterPayment(order: Order, method: PaymentMethod): void {
+    if (this.recordingPaymentOrderId || this.isOrderPaid(order)) {
       return;
     }
 
-    const request: RecordOfflinePaymentRequest = {
-      orderId: order.id,
-      paymentMethod: method
-    };
+    if (!this.canRecordOfflinePayment(order)) {
+      this.toastService.warning('Phương thức thanh toán này không thể xác nhận thủ công.');
+      return;
+    }
 
     this.recordingPaymentOrderId = order.id;
-    this.paymentService.recordOfflinePayment(request).pipe(
-      switchMap(() => this.orderService.getOrderById(order.id)),
-      finalize(() => {
-        this.recordingPaymentOrderId = null;
-      })
-    ).subscribe({
-      next: (updatedOrder) => {
-        const normalized = this.normalizeOrder(updatedOrder);
-        const paidAt = new Date().toISOString();
-
-        normalized.timeline = [
-          {
-            status: 'PAID',
-            time: paidAt,
-            note: `Đã thu tiền tại quầy (${method})`
-          },
-          ...(normalized.timeline ?? [])
-        ];
+    this.paymentService.recordOfflinePayment({
+      orderId: order.id,
+      paymentMethod: method
+    }).subscribe({
+      next: (transaction) => {
+        const normalized = this.markOrderAsPaid(order, transaction.paymentMethod || method);
 
         this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
         this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
         this.selectedOrder = normalized;
 
-        this.toastService.success(`Đã xác nhận thanh toán ${Number(normalized.totalAmount || 0).toLocaleString()} đ qua ${method}`);
+        this.toastService.success(`Đã xác nhận thanh toán ${Number(transaction.amount || normalized.totalAmount || 0).toLocaleString()} đ qua ${this.getPaymentMethodLabel(normalized.paymentMethod)}`);
       },
       error: (error) => {
         console.error('Record offline payment failed', error);
-        this.toastService.error(error?.error?.message || 'Không thể xác nhận thanh toán');
+        this.toastService.error('Không thể xác nhận thanh toán. Vui lòng thử lại.');
+      },
+      complete: () => {
+        this.recordingPaymentOrderId = null;
       }
     });
   }
 
-  getStagesForOrder(order: Order): { label: string; value: OrderStatus }[] {
-    const isDelivery = order.type === 'DELIVERY';
-    if (isDelivery) {
-      return [
-        { label: 'Pending', value: 'PENDING' },
-        { label: 'Confirmed', value: 'CONFIRMED' },
-        { label: 'Preparing', value: 'PREPARING' },
-        { label: 'Ready', value: 'READY' },
-        { label: 'Delivering', value: 'DELIVERING' },
-        { label: 'Completed', value: 'COMPLETED' }
-      ];
-    } else {
-      return [
-        { label: 'Pending', value: 'PENDING' },
-        { label: 'Confirmed', value: 'CONFIRMED' },
-        { label: 'Preparing', value: 'PREPARING' },
-        { label: 'Ready', value: 'READY' },
-        { label: 'Completed', value: 'COMPLETED' }
-      ];
+  isOrderPaid(order: Order): boolean {
+    return (order.paymentStatus || '').toUpperCase() === 'PAID';
+  }
+
+  canRecordOfflinePayment(order: Order): boolean {
+    const method = (order.paymentMethod || '').toUpperCase();
+    return ['CASH', 'COD', 'BANK_TRANSFER'].includes(method);
+  }
+
+  needsPaymentBeforeConfirm(order: Order): boolean {
+    return order.status === 'PENDING' && !this.isOrderPaid(order);
+  }
+
+  canAdvanceOrder(order: Order): boolean {
+    return !this.needsPaymentBeforeConfirm(order)
+      && !(order.status === 'COMPLETED' || order.status === 'CANCELLED' || order.status === 'REJECTED');
+  }
+
+  getPaymentMethodLabel(method?: string): string {
+    switch ((method || '').toUpperCase()) {
+      case 'CASH': return 'Tiền mặt';
+      case 'MOMO': return 'MoMo';
+      case 'VNPAY': return 'VNPay';
+      case 'VNPAY_QR': return 'VNPay QR';
+      case 'BANK_TRANSFER': return 'Chuyển khoản';
+      case 'COD': return 'Thanh toán khi nhận hàng';
+      default: return method || 'N/A';
     }
   }
 
-  isStepCompleted(order: Order, stepValue: OrderStatus): boolean {
+  getPaymentHint(order: Order): string {
+    if (this.isOrderPaid(order)) {
+      return `Đã thanh toán qua ${this.getPaymentMethodLabel(order.paymentMethod)}`;
+    }
+
+    if (order.status === 'PENDING') {
+      return this.canRecordOfflinePayment(order)
+        ? 'Xác nhận thanh toán thực tế qua backend trước khi xác nhận đơn.'
+        : 'Đang chờ cổng thanh toán xác nhận, không thể xác nhận thủ công.';
+    }
+
+    return 'Đơn chưa ghi nhận thanh toán.';
+  }
+
+  private markOrderAsPaid(order: Order, method: PaymentMethod): Order {
+    const paidAt = new Date().toISOString();
+    const timeline = order.timeline ?? [];
+    const hasPaidEvent = timeline.some(step => step.status === 'PAID');
+
+    return {
+      ...order,
+      paymentMethod: method,
+      paymentStatus: 'PAID',
+      timeline: hasPaidEvent ? timeline : [
+        {
+          status: 'PAID',
+          time: paidAt,
+          note: `Đã thanh toán qua ${this.getPaymentMethodLabel(method)}`
+        },
+        ...timeline
+      ]
+    };
+  }
+
+  getStagesForOrder(order: Order): { label: string; value: TimelineStatus }[] {
+    const isDelivery = order.type === 'DELIVERY';
+    const baseStages: { label: string; value: TimelineStatus }[] = [
+      { label: 'Tạo đơn', value: 'PENDING' },
+      { label: 'Thanh toán', value: 'PAID' },
+      { label: 'Xác nhận', value: 'CONFIRMED' },
+      { label: 'Pha chế', value: 'PREPARING' },
+      { label: 'Sẵn sàng', value: 'READY' }
+    ];
+
+    return isDelivery
+      ? [...baseStages, { label: 'Đang giao', value: 'DELIVERING' }, { label: 'Hoàn tất', value: 'COMPLETED' }]
+      : [...baseStages, { label: 'Hoàn tất', value: 'COMPLETED' }];
+  }
+
+  isStepCompleted(order: Order, stepValue: TimelineStatus): boolean {
+    if (stepValue === 'PAID') {
+      return this.isOrderPaid(order);
+    }
+
     const stages = this.getStagesForOrder(order).map(s => s.value);
     const currentIndex = stages.indexOf(order.status);
     const stepIndex = stages.indexOf(stepValue);
@@ -335,17 +480,21 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   getPrimaryActionLabel(order: Order): string {
+    if (this.needsPaymentBeforeConfirm(order)) {
+      return 'Chưa thể xác nhận - cần thanh toán';
+    }
+
     switch (order.status) {
       case 'PENDING':
-        return 'Confirm order';
+        return 'Xác nhận đơn';
       case 'CONFIRMED':
-        return 'Start preparing';
+        return 'Bắt đầu pha chế';
       case 'PREPARING':
-        return 'Mark ready';
+        return 'Đánh dấu sẵn sàng';
       case 'READY':
-        return order.type === 'DELIVERY' ? 'Start delivering' : 'Complete order';
+        return order.type === 'DELIVERY' ? 'Bắt đầu giao' : 'Hoàn tất đơn';
       case 'DELIVERING':
-        return 'Mark completed';
+        return 'Hoàn tất đơn';
       default:
         return '';
     }

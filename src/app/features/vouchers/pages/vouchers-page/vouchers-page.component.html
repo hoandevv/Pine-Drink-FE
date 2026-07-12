@@ -81,9 +81,9 @@
   </form>
 </section>
 
-<div *ngIf="loading" class="loading-card">Đang tải vouchers...</div>
+<div *ngIf="loading && !vouchers.length" class="loading-card">Đang tải vouchers...</div>
 
-<section class="voucher-list" *ngIf="!loading && vouchers.length">
+<section class="voucher-list" *ngIf="vouchers.length">
   <div class="voucher-list-head">
     <span>Voucher</span>
     <span>Giảm giá</span>
