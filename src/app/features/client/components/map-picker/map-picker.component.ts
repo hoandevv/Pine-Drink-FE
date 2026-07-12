@@ -2,8 +2,8 @@ import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/cor
 import * as L from 'leaflet';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, catchError, of } from 'rxjs';
 
-import { GeocodingService } from '../../../../core/services/geocoding.service';
-import { GeocodingResult } from '../../../../shared/models/geocoding.model';
+import { GeocodingService } from 'src/app/features/client/services/geocoding.service';
+import { GeocodingResult } from 'src/app/features/client/models/geocoding.model';
 
 export interface MapPickerResult {
   latitude: number;

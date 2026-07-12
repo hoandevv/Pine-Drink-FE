@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client';
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { TokenService } from '../../../core/services/token.service';
 import { Order } from '../models/order.model';
 
@@ -28,7 +29,7 @@ export interface OrderRealtimeEnvelope<T = Order | Partial<Order> | Record<strin
 
 @Injectable({ providedIn: 'root' })
 export class OrderRealtimeService implements OnDestroy {
-  private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}/ws`;
+  private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}${API_ENDPOINTS.websocket.base}`;
   private client?: Client;
   private readonly orderSubscriptions = new Map<string, StompSubscription>();
   private readonly branchSubscriptions = new Map<string, StompSubscription>();

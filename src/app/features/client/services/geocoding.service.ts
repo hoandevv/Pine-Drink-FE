@@ -2,10 +2,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
-import { BaseResponse } from '../../shared/models/base-response.model';
-import { GeocodingResult, GeocodingSearchRequest, ReverseGeocodingResult } from '../../shared/models/geocoding.model';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { environment } from 'src/environments/environment';
+import { BaseResponse } from 'src/app/shared/models/base-response.model';
+import { GeocodingResult, GeocodingSearchRequest, ReverseGeocodingResult } from 'src/app/features/client/models/geocoding.model';
+import { API_ENDPOINTS } from 'src/app/core/constants/api-endpoints';
 
 @Injectable({
   providedIn: 'root'

@@ -4,9 +4,10 @@ import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { API_ENDPOINTS } from 'src/app/core/constants/api-endpoints';
 import { BaseResponse } from 'src/app/shared/models/base-response.model';
 import { PageResponse } from 'src/app/shared/models/page-response.model';
-import { TokenService } from './token.service';
+import { TokenService } from 'src/app/core/services/token.service';
 
 export interface ChatRoomResponse {
   id: string;
@@ -93,8 +94,8 @@ interface RealtimeEnvelope<T> {
 
 @Injectable({ providedIn: 'root' })
 export class ChatRealtimeService implements OnDestroy {
-  private readonly apiUrl = `${environment.apiBaseUrl}/chat/rooms`;
-  private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}/ws`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.chat.rooms}`;
+  private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}${API_ENDPOINTS.websocket.base}`;
   private client?: Client;
   private roomSubscription?: StompSubscription;
   private branchSubscription?: StompSubscription;

@@ -5,8 +5,8 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { TokenService } from '../../../../core/services/token.service';
 import { LanguageService, Language } from '../../../../core/services/language.service';
 import { TranslateService } from '@ngx-translate/core';
-import { CustomerAddressService } from '../../../../core/services/customer-address.service';
-import { CustomerAddress } from '../../../../shared/models/customer-address.model';
+import { CustomerAddressService } from 'src/app/features/client/services/customer-address.service';
+import { CustomerAddress } from 'src/app/features/client/models/customer-address.model';
 import { catchError, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
@@ -388,11 +388,6 @@ export class ProfileComponent implements OnInit {
       next: () => {
         this.changingPassword = false;
         this.user.hasLocalPassword = true;
-        const storedUser = this.tokenService.getStoredUser();
-        if (storedUser) {
-          storedUser.hasLocalPassword = true;
-          this.tokenService.setCurrentUser(storedUser);
-        }
         this.successMessage = wasGoogleOnlyAccount ? 'Thiết lập mật khẩu thành công!' : 'Đổi mật khẩu thành công!';
         setTimeout(() => {
           this.showChangePasswordModal = false;
@@ -459,16 +454,8 @@ export class ProfileComponent implements OnInit {
           return;
         }
 
-        // Add cache-busting timestamp to force browser to reload the image
         this.user.avatar = avatarUrl + (avatarUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
         console.log('[Avatar Upload] Avatar URL set to:', this.user.avatar);
-
-        // Update stored user data
-        const storedUser = this.tokenService.getStoredUser();
-        if (storedUser) {
-          storedUser.avatarUrl = avatarUrl;
-          this.tokenService.setCurrentUser(storedUser);
-        }
 
         this.successMessage = 'Cập nhật ảnh đại diện thành công!';
         setTimeout(() => {

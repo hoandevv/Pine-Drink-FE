@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { AccountService, AccountListItemResponse } from 'src/app/core/services/account.service';
+import { AccountService, AccountListItemResponse } from 'src/app/features/accounts/services/account.service';
 import { finalize } from 'rxjs';
 import { ToastNotificationService } from 'src/app/core/services/toast.service';
 import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';

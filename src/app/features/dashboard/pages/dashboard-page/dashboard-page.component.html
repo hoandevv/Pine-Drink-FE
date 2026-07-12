@@ -176,135 +176,179 @@
 
 <ng-template #adminDashboard>
   <section class="dashboard-shell">
-    <div class="hero-card">
-      <div class="hero-card__content">
-        <span class="eyebrow">Pine Drink Admin</span>
-        <h1>Dashboard vận hành hôm nay</h1>
-        <p>Theo dõi doanh thu, đơn hàng, sản phẩm bán chạy và nhịp vận hành cửa hàng trong một màn hình.</p>
-
-        <div class="hero-actions">
-          <button type="button" class="primary-action">
-            <span class="material-symbols-outlined">add_shopping_cart</span>
-            Tạo đơn nhanh
-          </button>
-          <button type="button" class="ghost-action">
-            <span class="material-symbols-outlined">download</span>
-            Xuất báo cáo
-          </button>
-        </div>
+    <section class="dashboard-overview" aria-label="Tổng quan Dashboard Pine Drink">
+      <div class="dashboard-overview__copy">
+        <span class="dashboard-badge">Pine Drink Admin</span>
+        <h1>Dashboard vận hành</h1>
+        <p>Dữ liệu doanh thu, đơn hàng, sản phẩm và chi nhánh theo thời gian thực từ hệ thống.</p>
       </div>
 
-      <div class="hero-card__visual" aria-hidden="true">
-        <div class="drink-glass">
-          <span>🍍</span>
+      <div class="dashboard-overview__meta" aria-label="Thông tin nhanh">
+        <div>
+          <span>Kỳ báo cáo</span>
+          <strong>{{ fromDate | date:'dd/MM' }} - {{ toDate | date:'dd/MM/yyyy' }}</strong>
         </div>
-        <div class="floating-chip floating-chip--top">+8.4% Revenue</div>
-        <div class="floating-chip floating-chip--bottom">18 Pending</div>
+        <div>
+          <span>Phạm vi</span>
+          <strong>{{ selectedBranchId ? 'Theo chi nhánh' : 'Toàn hệ thống' }}</strong>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <form class="analytics-filters" (ngSubmit)="loadDashboard()" aria-label="Bộ lọc dashboard">
+      <label>
+        <span>Từ ngày</span>
+        <input id="dashboard-from-date" type="date" name="fromDate" [(ngModel)]="fromDate">
+      </label>
+      <label>
+        <span>Đến ngày</span>
+        <input id="dashboard-to-date" type="date" name="toDate" [(ngModel)]="toDate">
+      </label>
+      <label>
+        <span>Chi nhánh</span>
+        <select id="dashboard-branch" name="branchId" [(ngModel)]="selectedBranchId">
+          <option value="">Toàn hệ thống</option>
+          <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
+        </select>
+      </label>
+      <label>
+        <span>Top sản phẩm</span>
+        <select id="dashboard-limit" name="limit" [(ngModel)]="topProductLimit">
+          <option [ngValue]="5">Top 5</option>
+          <option [ngValue]="10">Top 10</option>
+          <option [ngValue]="20">Top 20</option>
+          <option [ngValue]="50">Top 50</option>
+        </select>
+      </label>
+      <div class="filter-actions">
+        <button id="dashboard-refresh" type="submit" class="primary-action" [disabled]="isLoading">
+          <span class="material-symbols-outlined">refresh</span>
+          {{ isLoading ? 'Đang tải...' : 'Cập nhật' }}
+        </button>
+        <button id="dashboard-reset" type="button" class="ghost-action" (click)="resetFilters()">
+          <span class="material-symbols-outlined">restart_alt</span>
+          Reset
+        </button>
+      </div>
+    </form>
+
+    <p class="dashboard-error" *ngIf="errorMessage">{{ errorMessage }}</p>
 
     <section class="metrics-grid" aria-label="Chỉ số tổng quan">
       <article class="metric-card" [class]="'metric-card tone-' + metric.tone" *ngFor="let metric of metrics">
         <div class="metric-card__top">
-          <span class="metric-card__icon material-symbols-outlined">{{ metric.icon }}</span>
+          <div class="metric-card__icon material-symbols-outlined">{{ metric.icon }}</div>
           <span class="metric-card__delta">{{ metric.delta }}</span>
         </div>
         <p>{{ metric.title }}</p>
         <h3>{{ metric.value }}</h3>
+        <small>{{ metric.description }}</small>
       </article>
     </section>
 
     <section class="dashboard-grid">
-      <article class="panel sales-panel">
+      <article class="panel chart-panel">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Best sellers</span>
-            <h2>Đồ uống bán chạy</h2>
+            <span class="eyebrow">Revenue analytics</span>
+            <h2>Doanh thu theo ngày</h2>
           </div>
-          <button type="button" class="panel-link">Xem tất cả</button>
+          <span class="panel-note">{{ revenueTrend.length }} điểm dữ liệu</span>
         </div>
 
-        <div class="seller-list">
-          <div class="seller-row" *ngFor="let item of bestSellers; let index = index">
-            <div class="seller-rank">#{{ index + 1 }}</div>
-            <div class="seller-emoji">{{ item.emoji }}</div>
-            <div class="seller-info">
-              <strong>{{ item.name }}</strong>
-              <p>{{ item.category }} · {{ item.sold }} ly</p>
-              <div class="progress-track">
-                <span [style.width.%]="item.percent"></span>
+        <div class="revenue-chart" *ngIf="revenueTrend.length; else emptyRevenue">
+          <div class="chart-y-axis" aria-hidden="true">
+            <span *ngFor="let label of revenueAxisLabels">{{ label }}</span>
+          </div>
+          <div class="chart-plot">
+            <div class="chart-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+            <div class="chart-column" *ngFor="let item of revenueTrend" [attr.title]="(item.date | date:'dd/MM/yyyy') + ' · ' + formatCurrency(item.revenue)">
+              <div class="chart-bar-wrap">
+                <span class="chart-bar" [style.height.%]="getRevenueHeight(item)"></span>
               </div>
+              <small>{{ item.date | date:'dd/MM' }}</small>
             </div>
-            <span class="seller-percent">{{ item.percent }}%</span>
           </div>
         </div>
+        <ng-template #emptyRevenue><p class="empty-copy">Chưa có dữ liệu doanh thu trong kỳ lọc.</p></ng-template>
       </article>
 
       <article class="panel orders-panel">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Realtime</span>
-            <h2>Đơn hàng gần đây</h2>
+            <span class="eyebrow">Order status</span>
+            <h2>Trạng thái đơn hàng</h2>
           </div>
-          <button type="button" class="panel-link">Quản lý đơn</button>
+          <span class="panel-note">{{ formatNumber(totalStatusCount) }} đơn</span>
         </div>
-
-        <div class="order-list">
-          <div class="order-row" *ngFor="let order of recentOrders">
-            <div>
-              <strong>{{ order.code }}</strong>
-              <p>{{ order.customer }} · {{ order.time }}</p>
+        <div class="status-list" *ngIf="orderStatus.length; else emptyStatus">
+          <div class="status-row" *ngFor="let item of orderStatus" [class]="'status-row ' + getStatusTone(item.status)">
+            <div class="status-row__header">
+              <strong>{{ getStatusLabel(item.status) }}</strong>
+              <span>{{ formatNumber(item.count) }} đơn</span>
             </div>
-            <div class="order-meta">
-              <strong>{{ order.amount }}</strong>
-              <span class="status-chip" [class.is-done]="order.status === 'Hoàn tất'"
-                [class.is-pending]="order.status === 'Chờ xử lý'">
-                {{ order.status }}
-              </span>
-            </div>
+            <div class="progress-track"><span [style.width.%]="getStatusPercent(item)"></span></div>
           </div>
         </div>
+        <ng-template #emptyStatus><p class="empty-copy">Chưa có dữ liệu trạng thái đơn.</p></ng-template>
       </article>
     </section>
 
     <section class="bottom-grid">
-      <article class="panel chart-panel">
+      <article class="panel sales-panel">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Revenue flow</span>
-            <h2>Nhịp doanh thu 7 ngày</h2>
+            <span class="eyebrow">Top products</span>
+            <h2>Sản phẩm bán chạy</h2>
           </div>
+          <span class="panel-note">Theo doanh thu</span>
         </div>
-        <div class="mini-chart" aria-label="Biểu đồ doanh thu minh họa">
-          <span style="height: 42%"></span>
-          <span style="height: 58%"></span>
-          <span style="height: 46%"></span>
-          <span style="height: 74%"></span>
-          <span style="height: 66%"></span>
-          <span style="height: 88%"></span>
-          <span style="height: 96%"></span>
-        </div>
-        <p class="chart-note">Doanh thu cuối tuần đang tăng mạnh nhờ nhóm sản phẩm Pine Signature.</p>
-      </article>
-
-      <article class="panel activity-panel">
-        <div class="panel-heading">
-          <div>
-            <span class="eyebrow">Operations</span>
-            <h2>Gợi ý vận hành</h2>
-          </div>
-        </div>
-
-        <div class="activity-list">
-          <div class="activity-row" *ngFor="let item of activities">
-            <span class="activity-icon material-symbols-outlined">{{ item.icon }}</span>
-            <div>
-              <strong>{{ item.title }}</strong>
-              <p>{{ item.description }}</p>
+        <div class="seller-list" *ngIf="topProducts.length; else emptyProducts">
+          <div class="seller-row" *ngFor="let item of topProducts; let index = index">
+            <div class="seller-rank">#{{ index + 1 }}</div>
+            <div class="seller-info">
+              <div class="seller-info__main">
+                <strong>{{ item.productName }}</strong>
+                <span>{{ formatCurrency(item.revenue) }}</span>
+              </div>
+              <p>{{ formatNumber(item.quantitySold) }} ly đã bán</p>
+              <div class="progress-track"><span [style.width.%]="getProductPercent(item)"></span></div>
             </div>
           </div>
         </div>
+        <ng-template #emptyProducts><p class="empty-copy">Chưa có sản phẩm bán chạy trong kỳ lọc.</p></ng-template>
+      </article>
+
+      <article class="panel branch-panel">
+        <div class="panel-heading">
+          <div>
+            <span class="eyebrow">Branch performance</span>
+            <h2>Hiệu suất chi nhánh</h2>
+          </div>
+          <span class="panel-note">Doanh thu & AOV</span>
+        </div>
+        <div class="branch-table" *ngIf="branchPerformance.length; else emptyBranches">
+          <div class="branch-table__head" aria-hidden="true">
+            <span>Chi nhánh</span>
+            <span>Hoàn tất</span>
+            <span>Hủy</span>
+            <span>AOV</span>
+            <span>Doanh thu</span>
+          </div>
+          <div class="branch-row" *ngFor="let branch of branchPerformance">
+            <div class="branch-name">
+              <strong>{{ branch.branchName }}</strong>
+              <small [class.is-empty]="!branch.revenue">{{ getBranchBadge(branch) }}</small>
+            </div>
+            <span>{{ formatNumber(branch.completedOrders) }}</span>
+            <span>{{ formatNumber(branch.cancelledOrders) }}</span>
+            <span>{{ formatCurrency(branch.averageOrderValue) }}</span>
+            <strong>{{ formatCurrency(branch.revenue) }}</strong>
+          </div>
+        </div>
+        <ng-template #emptyBranches><p class="empty-copy">Chưa có dữ liệu chi nhánh trong kỳ lọc.</p></ng-template>
       </article>
     </section>
   </section>
 </ng-template>
+

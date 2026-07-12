@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 
 export interface PermissionDefinition {
@@ -49,7 +50,7 @@ interface RolePermissionsMatrixApiResponse {
 
 @Injectable()
 export class PermissionService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/authorization`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.authorization.base}`;
   private readonly highRiskPermissions = new Set([
     'ACCOUNT_CHANGE_STATUS',
     'ACCOUNT_RESET_PASSWORD',

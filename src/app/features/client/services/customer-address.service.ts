@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
-import { BaseResponse } from '../../shared/models/base-response.model';
-import { CreateAddressRequest, CustomerAddress, UpdateAddressRequest } from '../../shared/models/customer-address.model';
-import { API_ENDPOINTS } from '../constants/api-endpoints';
+import { environment } from 'src/environments/environment';
+import { BaseResponse } from 'src/app/shared/models/base-response.model';
+import { CreateAddressRequest, CustomerAddress, UpdateAddressRequest } from 'src/app/features/client/models/customer-address.model';
+import { API_ENDPOINTS } from 'src/app/core/constants/api-endpoints';
 
 @Injectable({
   providedIn: 'root'

@@ -8,7 +8,6 @@ import { AdminPaginationComponent } from './components/admin-pagination/admin-pa
 import { EmptyStateComponent } from './components/empty-state/empty-state.component';
 import { GlobalLoadingComponent } from './components/global-loading/global-loading.component';
 import { PageHeaderComponent } from './components/page-header/page-header.component';
-import { PaginationComponent } from './components/pagination/pagination.component';
 import { ToastContainerComponent } from './components/toast-container/toast-container.component';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { MapPickerComponent } from '../features/client/components/map-picker/map-picker.component';
@@ -19,7 +18,6 @@ import { MapPickerComponent } from '../features/client/components/map-picker/map
     ToastContainerComponent,
     PageHeaderComponent,
     EmptyStateComponent,
-    PaginationComponent,
     AdminPaginationComponent,
     MapPickerComponent,
     ConfirmDialogComponent
@@ -34,7 +32,6 @@ import { MapPickerComponent } from '../features/client/components/map-picker/map
     ToastContainerComponent,
     PageHeaderComponent,
     EmptyStateComponent,
-    PaginationComponent,
     AdminPaginationComponent,
     MapPickerComponent,
     ConfirmDialogComponent

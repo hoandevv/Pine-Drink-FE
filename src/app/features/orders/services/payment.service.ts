@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
+import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PaymentMethod, PaymentStatus } from '../models/order.model';
 
@@ -51,7 +52,7 @@ export interface MomoCreatePaymentResponse {
   providedIn: 'root'
 })
 export class PaymentService {
-  private readonly apiUrl = `${environment.apiBaseUrl}/payments`;
+  private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.payments.base}`;
 
   constructor(private readonly http: HttpClient) {}
 
