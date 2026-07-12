@@ -50,6 +50,15 @@ interface DeliveryNotice {
   unread: boolean;
 }
 
+interface OrderStatusGroup {
+  label: string;
+  count: number;
+  percent: number;
+  color: string;
+}
+
+type RevenuePeriod = '7days' | '30days' | 'month';
+
 @Component({
   selector: 'app-dashboard-page',
   templateUrl: './dashboard-page.component.html',
@@ -61,6 +70,7 @@ export class DashboardPageComponent implements OnInit {
   toDate = this.today;
   selectedBranchId = '';
   topProductLimit = 10;
+  selectedRevenuePeriod: RevenuePeriod = '7days';
 
   branches: Branch[] = [];
   isLoading = false;
@@ -153,6 +163,79 @@ export class DashboardPageComponent implements OnInit {
     return [max, max * 0.66, max * 0.33, 0].map((value) => this.formatCurrencyShort(value));
   }
 
+  get revenueAreaPath(): string {
+    const points = this.getRevenueChartCoordinates();
+    if (!points.length) {
+      return '';
+    }
+
+    return `${this.buildSmoothPath(points)} L 100,100 L 0,100 Z`;
+  }
+
+  get revenueLinePath(): string {
+    return this.buildSmoothPath(this.getRevenueChartCoordinates());
+  }
+
+  get revenueChartCoordinates(): Array<{ x: number; y: number; item: RevenueTrendResponse }> {
+    return this.getRevenueChartCoordinates();
+  }
+
+  get revenuePeak(): RevenueTrendResponse | null {
+    return this.revenueTrend.reduce<RevenueTrendResponse | null>((peak, item) => {
+      if (!peak || item.revenue > peak.revenue) {
+        return item;
+      }
+      return peak;
+    }, null);
+  }
+
+  get groupedOrderStatus(): OrderStatusGroup[] {
+    const counts = { preparing: 0, completed: 0, cancelled: 0 };
+    this.orderStatus.forEach((item) => {
+      const status = (item.status || '').toUpperCase();
+      if (['COMPLETED', 'DELIVERED'].includes(status)) {
+        counts.completed += item.count || 0;
+      } else if (['CANCELLED', 'REJECTED', 'FAILED'].includes(status)) {
+        counts.cancelled += item.count || 0;
+      } else {
+        counts.preparing += item.count || 0;
+      }
+    });
+    const total = counts.preparing + counts.completed + counts.cancelled;
+    return [
+      { label: 'Đang chuẩn bị', count: counts.preparing, color: '#d8b12d' },
+      { label: 'Hoàn tất', count: counts.completed, color: '#2f6f45' },
+      { label: 'Đã huỷ/Từ chối', count: counts.cancelled, color: '#9b443d' }
+    ].map((item) => ({ ...item, percent: total ? (item.count / total) * 100 : 0 }));
+  }
+
+  get orderStatusDoughnut(): string {
+    let cursor = 0;
+    const segments = this.groupedOrderStatus.map((item) => {
+      const start = cursor;
+      cursor += item.percent;
+      return `${item.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`;
+    });
+    return this.totalStatusCount ? `conic-gradient(${segments.join(', ')})` : 'conic-gradient(#edf1eb 0 100%)';
+  }
+
+  selectRevenuePeriod(period: RevenuePeriod): void {
+    this.selectedRevenuePeriod = period;
+    const now = new Date();
+    const start = period === 'month'
+      ? new Date(now.getFullYear(), now.getMonth(), 1)
+      : this.addDays(now, period === '30days' ? -29 : -6);
+    this.fromDate = this.formatDateInput(start);
+    this.toDate = this.formatDateInput(now);
+    this.loadDashboard();
+  }
+
+  showRevenueAxisLabel(index: number): boolean {
+    const length = this.revenueTrend.length;
+    const interval = length > 14 ? 5 : length > 7 ? 2 : 1;
+    return index === 0 || index === length - 1 || index % interval === 0;
+  }
+
   loadDashboard(): void {
     if (!this.fromDate || !this.toDate) {
       this.errorMessage = 'Vui lòng chọn đủ từ ngày và đến ngày.';
@@ -224,6 +307,10 @@ export class DashboardPageComponent implements OnInit {
 
   getRevenueHeight(item: RevenueTrendResponse): number {
     return Math.max((item.revenue / this.maxRevenue) * 100, item.revenue > 0 ? 8 : 2);
+  }
+
+  getRevenuePointLabel(item: RevenueTrendResponse): string {
+    return `${this.formatDateLabel(item.date)} · ${this.formatCurrency(item.revenue)} · ${this.formatNumber(item.orders)} đơn hàng`;
   }
 
   getStatusPercent(item: OrderStatusSummaryResponse): number {
@@ -328,7 +415,7 @@ export class DashboardPageComponent implements OnInit {
 
   private applyDashboardData(data: DashboardAnalyticsData): void {
     this.overview = data.overview || this.overview;
-    this.revenueTrend = data.revenueTrend || [];
+    this.revenueTrend = this.normalizeRevenueTrend(data.revenueTrend || []);
     this.orderStatus = data.orderStatus || [];
     this.topProducts = data.topProducts || [];
     this.branchPerformance = data.branchPerformance || [];
@@ -352,5 +439,47 @@ export class DashboardPageComponent implements OnInit {
     const month = `${date.getMonth() + 1}`.padStart(2, '0');
     const day = `${date.getDate()}`.padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private formatDateLabel(date: string): string {
+    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(new Date(date));
+  }
+
+  private getRevenueChartCoordinates(): Array<{ x: number; y: number; item: RevenueTrendResponse }> {
+    const max = this.maxRevenue;
+    const lastIndex = Math.max(this.revenueTrend.length - 1, 1);
+
+    return this.revenueTrend.map((item, index) => ({
+      // Keep edge points inside the plot so their markers are not clipped.
+      x: Number((1 + (index / lastIndex) * 98).toFixed(2)),
+      y: Number(Math.min(98, 100 - (item.revenue / max) * 88).toFixed(2)),
+      item
+    }));
+  }
+
+  private buildSmoothPath(points: Array<{ x: number; y: number }>): string {
+    if (!points.length) return '';
+    if (points.length === 1) return `M ${points[0].x},${points[0].y}`;
+    let path = `M ${points[0].x},${points[0].y}`;
+    for (let index = 0; index < points.length - 1; index++) {
+      const current = points[index];
+      const next = points[index + 1];
+      const controlX = (current.x + next.x) / 2;
+      path += ` C ${controlX},${current.y} ${controlX},${next.y} ${next.x},${next.y}`;
+    }
+    return path;
+  }
+
+  private normalizeRevenueTrend(items: RevenueTrendResponse[]): RevenueTrendResponse[] {
+    const byDate = new Map(items.map((item) => [item.date.slice(0, 10), item]));
+    const result: RevenueTrendResponse[] = [];
+    const cursor = new Date(`${this.fromDate}T00:00:00`);
+    const end = new Date(`${this.toDate}T00:00:00`);
+    while (cursor <= end) {
+      const date = this.formatDateInput(cursor);
+      result.push(byDate.get(date) || { date, revenue: 0, orders: 0, averageOrderValue: 0 });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
   }
 }

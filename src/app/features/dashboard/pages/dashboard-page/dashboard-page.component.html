@@ -250,23 +250,49 @@
       <article class="panel chart-panel">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Revenue analytics</span>
-            <h2>Doanh thu theo ngày</h2>
+            <span class="eyebrow">Phân tích doanh thu</span>
+            <h2>Xu hướng doanh thu</h2>
           </div>
-          <span class="panel-note">{{ revenueTrend.length }} điểm dữ liệu</span>
+          <div class="period-filter" aria-label="Chọn kỳ doanh thu">
+            <button type="button" [class.is-active]="selectedRevenuePeriod === '7days'" (click)="selectRevenuePeriod('7days')">7 ngày</button>
+            <button type="button" [class.is-active]="selectedRevenuePeriod === '30days'" (click)="selectRevenuePeriod('30days')">30 ngày</button>
+            <button type="button" [class.is-active]="selectedRevenuePeriod === 'month'" (click)="selectRevenuePeriod('month')">Tháng này</button>
+          </div>
         </div>
 
-        <div class="revenue-chart" *ngIf="revenueTrend.length; else emptyRevenue">
+        <div class="transaction-chart" *ngIf="revenueTrend.length; else emptyRevenue">
           <div class="chart-y-axis" aria-hidden="true">
             <span *ngFor="let label of revenueAxisLabels">{{ label }}</span>
           </div>
-          <div class="chart-plot">
+          <div class="area-chart-plot">
             <div class="chart-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-            <div class="chart-column" *ngFor="let item of revenueTrend" [attr.title]="(item.date | date:'dd/MM/yyyy') + ' · ' + formatCurrency(item.revenue)">
-              <div class="chart-bar-wrap">
-                <span class="chart-bar" [style.height.%]="getRevenueHeight(item)"></span>
+            <svg class="area-chart-svg" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Biểu đồ xu hướng doanh thu">
+              <defs>
+                <linearGradient id="transactionAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#164a2f" stop-opacity="0.16"></stop>
+                  <stop offset="58%" stop-color="#61b874" stop-opacity="0.07"></stop>
+                  <stop offset="100%" stop-color="#fff2b8" stop-opacity="0.02"></stop>
+                </linearGradient>
+              </defs>
+              <path class="area-fill" [attr.d]="revenueAreaPath"></path>
+              <path class="area-line" [attr.d]="revenueLinePath"></path>
+            </svg>
+
+            <div class="area-chart-points">
+            <div class="area-point" *ngFor="let point of revenueChartCoordinates"
+              [style.left.%]="point.x" [style.top.%]="point.y" [class.is-near-top]="point.y < 30"
+              [class.is-near-left]="point.x < 22" [class.is-near-right]="point.x > 78" tabindex="0">
+              <span></span>
+              <div class="chart-tooltip">
+                <strong>{{ point.item.date | date:'dd/MM/yyyy' }}</strong>
+                <span>Doanh thu <b>{{ formatCurrency(point.item.revenue) }}</b></span>
+                <span>Đơn hàng <b>{{ formatNumber(point.item.orders) }}</b></span>
               </div>
-              <small>{{ item.date | date:'dd/MM' }}</small>
+            </div>
+            </div>
+
+            <div class="area-x-axis">
+              <small *ngFor="let item of revenueTrend; let index = index" [class.is-hidden]="!showRevenueAxisLabel(index)">{{ item.date | date:'dd/MM' }}</small>
             </div>
           </div>
         </div>
@@ -276,18 +302,23 @@
       <article class="panel orders-panel">
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Order status</span>
+            <span class="eyebrow">Tổng quan đơn hàng</span>
             <h2>Trạng thái đơn hàng</h2>
           </div>
-          <span class="panel-note">{{ formatNumber(totalStatusCount) }} đơn</span>
         </div>
-        <div class="status-list" *ngIf="orderStatus.length; else emptyStatus">
-          <div class="status-row" *ngFor="let item of orderStatus" [class]="'status-row ' + getStatusTone(item.status)">
-            <div class="status-row__header">
-              <strong>{{ getStatusLabel(item.status) }}</strong>
-              <span>{{ formatNumber(item.count) }} đơn</span>
+        <div class="order-status-chart" *ngIf="orderStatus.length; else emptyStatus">
+          <div class="doughnut-chart" [style.background]="orderStatusDoughnut" role="img" aria-label="Tỷ lệ trạng thái đơn hàng">
+            <div class="doughnut-chart__center">
+              <strong>{{ formatNumber(totalStatusCount) }}</strong>
+              <span>Tổng đơn hàng</span>
             </div>
-            <div class="progress-track"><span [style.width.%]="getStatusPercent(item)"></span></div>
+          </div>
+          <div class="status-legend">
+            <div class="status-legend__item" *ngFor="let item of groupedOrderStatus">
+              <i [style.background]="item.color"></i>
+              <div><span>{{ item.label }}</span><strong>{{ formatNumber(item.count) }} đơn</strong></div>
+              <b>{{ item.percent | number:'1.0-0' }}%</b>
+            </div>
           </div>
         </div>
         <ng-template #emptyStatus><p class="empty-copy">Chưa có dữ liệu trạng thái đơn.</p></ng-template>
@@ -351,4 +382,4 @@
     </section>
   </section>
 </ng-template>
-
+
