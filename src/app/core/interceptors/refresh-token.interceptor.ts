@@ -7,7 +7,9 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
 import { TokenService } from '../services/token.service';
-
+/**
+ * Thực hiện làm mới accessToken khi hết hạn.
+ */
 @Injectable()
 export class RefreshTokenInterceptor implements HttpInterceptor {
   private isRefreshing = false;
