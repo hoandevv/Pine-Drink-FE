@@ -4,6 +4,9 @@ import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, Router, RouterSt
 import { TokenService } from '../services/token.service';
 import { AccessControlService } from '../services/access-control.service';
 
+/**
+ * Guard bảo vệ các route yêu cầu đăng nhập.
+ */
 @Injectable()
 export class AuthGuard implements CanActivate, CanActivateChild {
   constructor(

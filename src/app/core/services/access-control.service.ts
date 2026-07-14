@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
 
 import { AuthService } from './auth.service';
-
+/**
+ * Service quản lý quyền và vai trò của user.
+ *
+ * Cung cấp các method tiện ích để kiểm tra quyền (`can`, `canAny`) và vai trò (`hasAnyRole`).
+ */
 @Injectable({ providedIn: 'root' })
 export class AccessControlService {
   constructor(private readonly authService: AuthService) {}
