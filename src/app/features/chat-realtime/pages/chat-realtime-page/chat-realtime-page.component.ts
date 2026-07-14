@@ -272,6 +272,10 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     const roomId = this.activeRoom?.id;
     if (!content || !roomId) return;
 
+    const optimisticMessage = this.createOptimisticMessage(roomId, content);
+    this.messages = [...this.messages, optimisticMessage].sort((a, b) => this.toTime(a.createdAt) - this.toTime(b.createdAt));
+    this.bumpRoomPreview(optimisticMessage);
+
     this.chatRealtime.sendMessage({ roomId, messageType: 'TEXT', content, metadata: null });
     this.messageContent = '';
     this.shouldScrollToBottom = true;
@@ -311,7 +315,8 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
         }
         const exists = this.messages.some((item) => item.id === message.id);
         if (!exists) {
-          this.messages = [...this.messages, message].sort((a, b) => this.toTime(a.createdAt) - this.toTime(b.createdAt));
+          const withoutOptimisticDuplicate = this.messages.filter((item) => !this.isOptimisticDuplicate(item, message));
+          this.messages = [...withoutOptimisticDuplicate, message].sort((a, b) => this.toTime(a.createdAt) - this.toTime(b.createdAt));
           this.shouldScrollToBottom = true;
         }
         this.bumpRoomPreview(message);
@@ -367,6 +372,28 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
     // Sort: Newest message at top
     this.rooms.sort((a, b) => this.toTime(b.lastMessageAt || b.createdAt) - this.toTime(a.lastMessageAt || a.createdAt));
+  }
+
+  private createOptimisticMessage(roomId: string, content: string): ChatMessageResponse {
+    return {
+      id: `local-${roomId}-${Date.now()}`,
+      roomId,
+      senderAccountId: this.currentUserId || '',
+      senderType: this.isClientChat ? 'CUSTOMER' : 'STAFF',
+      senderName: null,
+      messageType: 'TEXT',
+      content,
+      metadata: null,
+      status: 'SENDING',
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  private isOptimisticDuplicate(local: ChatMessageResponse, incoming: ChatMessageResponse): boolean {
+    return local.id.startsWith('local-')
+      && local.roomId === incoming.roomId
+      && local.content === incoming.content
+      && local.senderAccountId === incoming.senderAccountId;
   }
 
   private loadBranches(): void {

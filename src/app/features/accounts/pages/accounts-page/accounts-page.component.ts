@@ -130,7 +130,7 @@ export class AccountsPageComponent implements OnInit {
     this.loadAccounts();
   }
 
-  changePageSize(size: string): void {
+  changePageSize(size: number | string): void {
     this.pageSize = Number(size);
     this.currentPage = 0;
     this.loadAccounts();

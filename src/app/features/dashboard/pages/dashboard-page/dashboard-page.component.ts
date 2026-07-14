@@ -1,9 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 
-import { AccessControlService } from '../../../../core/services/access-control.service';
 import { Branch } from '../../../branches/models/branch.model';
-import { BranchService } from '../../../branches/services/branch.service';
 import {
   BranchPerformanceResponse,
   DashboardAnalyticsData,
@@ -22,32 +20,6 @@ interface MetricCard {
   description: string;
   icon: string;
   tone: 'green' | 'yellow' | 'mint' | 'orange';
-}
-
-interface DeliveryMetric {
-  title: string;
-  value: string;
-  note: string;
-  icon: string;
-}
-
-interface DeliveryOrder {
-  code: string;
-  time: string;
-  status: 'READY_FOR_PICKUP' | 'DELIVERING' | 'DELIVERED' | 'FAILED';
-  customer: string;
-  phone: string;
-  address: string;
-  branch: string;
-  amount: string;
-  items: string;
-  action: string;
-}
-
-interface DeliveryNotice {
-  title: string;
-  description: string;
-  unread: boolean;
 }
 
 interface OrderStatusGroup {
@@ -88,21 +60,10 @@ export class DashboardPageComponent implements OnInit {
   topProducts: TopProductResponse[] = [];
   branchPerformance: BranchPerformanceResponse[] = [];
 
-  constructor(
-    private readonly accessControl: AccessControlService,
-    private readonly dashboardAnalyticsService: DashboardAnalyticsService,
-    private readonly branchService: BranchService
-  ) {}
+  constructor(private readonly dashboardAnalyticsService: DashboardAnalyticsService) {}
 
   ngOnInit(): void {
-    if (!this.isDeliveryOnly) {
-      this.loadBranches();
-      this.loadDashboard();
-    }
-  }
-
-  get isDeliveryOnly(): boolean {
-    return this.accessControl.hasAnyRole(['DELIVERY']) && !this.accessControl.hasAnyRole(['ADMIN', 'MANAGER']);
+    this.loadDashboard();
   }
 
   get metrics(): MetricCard[] {
@@ -361,57 +322,6 @@ export class DashboardPageComponent implements OnInit {
     return branch.cancelledOrders > branch.completedOrders ? 'Cần theo dõi' : 'Hoạt động tốt';
   }
 
-  readonly deliveryMetrics: DeliveryMetric[] = [
-    { title: 'Đơn được giao hôm nay', value: '12', note: '+3 đơn so với hôm qua', icon: 'inventory_2' },
-    { title: 'Đang giao', value: '3', note: 'Ưu tiên hoàn tất trước 15:00', icon: 'local_shipping' },
-    { title: 'Đã giao thành công', value: '9', note: 'Tỷ lệ hoàn thành 92%', icon: 'check_circle' },
-    { title: 'Giao thất bại', value: '1', note: 'Cần xác minh lại địa chỉ', icon: 'warning' }
-  ];
-
-  readonly deliveryOrders: DeliveryOrder[] = [
-    {
-      code: '#PD-1024',
-      time: 'Hôm nay, 10:30 AM',
-      status: 'DELIVERING',
-      customer: 'Lê Minh Tuấn',
-      phone: '090 123 4567',
-      address: '24 Lê Thánh Tôn, Bến Nghé, Quận 1, TP. Hồ Chí Minh',
-      branch: 'Pine Drink Flagship - Q.1',
-      amount: '450.000đ',
-      items: 'Pine Latte x2 · Matcha Cloud x1',
-      action: 'Chi tiết & Bản đồ'
-    },
-    {
-      code: '#PD-1025',
-      time: 'Hôm nay, 11:15 AM',
-      status: 'READY_FOR_PICKUP',
-      customer: 'Trần Thị Hoa',
-      phone: '098 765 4321',
-      address: '88 Võ Văn Tần, Phường 6, Quận 3, TP. Hồ Chí Minh',
-      branch: 'Pine Drink Station - Q.3',
-      amount: '185.000đ',
-      items: 'Mango Jasmine Tea x2',
-      action: 'Xác nhận lấy hàng'
-    },
-    {
-      code: '#PD-1026',
-      time: 'Hôm nay, 11:42 AM',
-      status: 'READY_FOR_PICKUP',
-      customer: 'Nguyễn Ngọc Anh',
-      phone: '091 777 2288',
-      address: '12 Nguyễn Trãi, Bến Thành, Quận 1, TP. Hồ Chí Minh',
-      branch: 'Pine Drink Express - Q.1',
-      amount: '212.000đ',
-      items: 'Caramel Freeze x1 · Topping Trân châu x2',
-      action: 'Nhận đơn'
-    }
-  ];
-
-  readonly deliveryNotices: DeliveryNotice[] = [
-    { title: 'Hệ thống: Thưởng nóng', description: '+50k cho mỗi 5 đơn hoàn thành trước 12h trưa nay.', unread: true },
-    { title: 'Điều phối: Đơn #PD-1025', description: 'Khách hàng yêu cầu giao trước cổng chính.', unread: true },
-    { title: 'Cập nhật ứng dụng', description: 'Phiên bản v2.4.1 đã sẵn sàng để nâng cấp.', unread: false }
-  ];
 
   private applyDashboardData(data: DashboardAnalyticsData): void {
     this.overview = data.overview || this.overview;
@@ -419,13 +329,7 @@ export class DashboardPageComponent implements OnInit {
     this.orderStatus = data.orderStatus || [];
     this.topProducts = data.topProducts || [];
     this.branchPerformance = data.branchPerformance || [];
-  }
-
-  private loadBranches(): void {
-    this.branchService.getActiveBranches(0, 100).subscribe({
-      next: (page) => (this.branches = page.content || []),
-      error: () => (this.branches = [])
-    });
+    this.branches = data.availableBranches || [];
   }
 
   private addDays(date: Date, days: number): Date {

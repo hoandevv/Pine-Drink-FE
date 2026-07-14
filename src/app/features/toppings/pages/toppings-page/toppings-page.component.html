@@ -159,28 +159,18 @@
     </ng-template>
   </section>
 
-  <section class="pagination-bar" *ngIf="pageData.totalElements > 0">
-    <div class="page-size-control">
-      <span>Hiển thị</span>
-      <select id="topping-master-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
-        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-      </select>
-      <span>/ trang</span>
-    </div>
-
-    <div class="page-status">
-      Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} topping
-    </div>
-
-    <div class="page-actions">
-      <button id="topping-master-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading">
-        <span class="material-symbols-outlined">chevron_left</span>
-      </button>
-      <button id="topping-master-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
-        <span class="material-symbols-outlined">chevron_right</span>
-      </button>
-    </div>
-  </section>
+  <app-admin-pagination
+    *ngIf="pageData.totalElements > 0"
+    [page]="pageData.page"
+    [totalPages]="pageData.totalPages"
+    [totalItems]="pageData.totalElements"
+    [pageSize]="pageData.size"
+    [pageSizeOptions]="pageSizeOptions"
+    itemLabel="topping"
+    [disabled]="loading"
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="changePageSize($event)">
+  </app-admin-pagination>
 </section>
 
 <div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>

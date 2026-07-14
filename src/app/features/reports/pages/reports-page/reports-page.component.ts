@@ -84,7 +84,7 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     this.loadReportHistory(page);
   }
 
-  changeHistorySize(size: string): void {
+  changeHistorySize(size: number | string): void {
     this.historySize = Number(size);
     this.loadReportHistory(0);
   }

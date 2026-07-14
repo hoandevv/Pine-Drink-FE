@@ -17,11 +17,32 @@
   </label>
 
   <div class="admin-pagination__actions">
+    <button type="button" aria-label="Trang đầu" title="Về đầu" (click)="first()" [disabled]="previousDisabled">
+      <span class="material-symbols-outlined" aria-hidden="true">first_page</span>
+    </button>
+
     <button type="button" aria-label="Trang trước" (click)="previous()" [disabled]="previousDisabled">
       <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
     </button>
+
+    <button
+      *ngFor="let pageItem of visiblePages"
+      type="button"
+      class="admin-pagination__page"
+      [class.is-active]="pageItem === page"
+      [attr.aria-label]="'Chuyển tới trang ' + (pageItem + 1)"
+      [attr.aria-current]="pageItem === page ? 'page' : null"
+      (click)="goToPage(pageItem)"
+      [disabled]="disabled || pageItem === page">
+      {{ pageItem + 1 }}
+    </button>
+
     <button type="button" aria-label="Trang sau" (click)="next()" [disabled]="nextDisabled">
       <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+    </button>
+
+    <button type="button" aria-label="Trang cuối" title="Về cuối" (click)="last()" [disabled]="nextDisabled">
+      <span class="material-symbols-outlined" aria-hidden="true">last_page</span>
     </button>
   </div>
 </nav>

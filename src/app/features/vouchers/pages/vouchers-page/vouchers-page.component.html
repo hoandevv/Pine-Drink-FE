@@ -137,25 +137,15 @@
 
 <app-empty-state *ngIf="!loading && !vouchers.length" icon="confirmation_number" title="Chưa có voucher" description="Tạo campaign đầu tiên để bắt đầu chạy ưu đãi."></app-empty-state>
 
-<div class="pagination-bar" *ngIf="totalElements > 0">
-  <div class="page-size-control">
-    <span>Hiển thị</span>
-    <select id="voucher-page-size-select" [ngModel]="size" (ngModelChange)="changePageSize($event)">
-      <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
-    </select>
-    <span>/ trang</span>
-  </div>
-
-  <div class="page-status">
-    Trang {{ page + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} voucher
-  </div>
-
-  <div class="page-actions">
-    <button id="voucher-prev-page-btn" type="button" (click)="changePage(page - 1)" [disabled]="page === 0 || loading">
-      <span class="material-symbols-outlined">chevron_left</span>
-    </button>
-    <button id="voucher-next-page-btn" type="button" (click)="changePage(page + 1)" [disabled]="page + 1 >= totalPages || loading">
-      <span class="material-symbols-outlined">chevron_right</span>
-    </button>
-  </div>
-</div>
+<app-admin-pagination
+  *ngIf="totalElements > 0"
+  [page]="page"
+  [totalPages]="totalPages"
+  [totalItems]="totalElements"
+  [pageSize]="size"
+  [pageSizeOptions]="pageSizeOptions"
+  itemLabel="voucher"
+  [disabled]="loading"
+  (pageChange)="changePage($event)"
+  (pageSizeChange)="changePageSize($event)">
+</app-admin-pagination>

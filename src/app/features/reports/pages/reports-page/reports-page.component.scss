@@ -110,9 +110,9 @@
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
   gap: 10px;
-}
+} 
 
 .form-group {
   display: flex;
@@ -622,20 +622,15 @@
   }
 
   .form-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .report-page {
-    padding: 16px;
-  }
-
   .quick-stats,
   .form-row {
     grid-template-columns: 1fr;
   }
-
   .format-selection {
     flex-direction: column;
     align-items: flex-start;

@@ -106,16 +106,17 @@
       </div>
     </div>
 
-    <!-- Pagination Controls -->
-    <div class="inbox-pagination" *ngIf="paginatedOrders.length > 0">
-      <button class="page-btn" [disabled]="currentPage === 1" (click)="prevPage()">
-        <span class="material-symbols-outlined">chevron_left</span>
-      </button>
-      <span class="page-info">Trang {{ currentPage }} / {{ totalPages }}</span>
-      <button class="page-btn" [disabled]="currentPage >= totalPages" (click)="nextPage()">
-        <span class="material-symbols-outlined">chevron_right</span>
-      </button>
-    </div>
+    <app-admin-pagination
+      *ngIf="paginatedOrders.length > 0"
+      [page]="currentPage - 1"
+      [totalPages]="totalPages"
+      [totalItems]="orders.length"
+      [pageSize]="pageSize"
+      [showPageSize]="false"
+      itemLabel="đơn hàng"
+      [disabled]="isLoading"
+      (pageChange)="goToOrderPage($event)">
+    </app-admin-pagination>
   </aside>
 
   <!-- COLUMN 2: ORDER DETAIL -->

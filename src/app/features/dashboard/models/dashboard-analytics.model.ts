@@ -1,3 +1,5 @@
+import { Branch } from '../../branches/models/branch.model';
+
 export interface DashboardOverviewResponse {
   totalRevenue: number;
   completedOrders: number;
@@ -47,12 +49,7 @@ export interface DashboardAnalyticsData {
   orderStatus: OrderStatusSummaryResponse[];
   topProducts: TopProductResponse[];
   branchPerformance: BranchPerformanceResponse[];
+  availableBranches?: Branch[];
 }
 
-export interface DashboardDataResponse {
-  overview: DashboardOverviewResponse;
-  revenueTrend: RevenueTrendResponse[];
-  orderStatus: OrderStatusSummaryResponse[];
-  topProducts: TopProductResponse[];
-  branchPerformance: BranchPerformanceResponse[];
-}
+export interface DashboardDataResponse extends DashboardAnalyticsData {}

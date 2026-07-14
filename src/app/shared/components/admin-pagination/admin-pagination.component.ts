@@ -50,6 +50,21 @@ export class AdminPaginationComponent {
     return this.disabled || this.page >= this.safeTotalPages - 1;
   }
 
+  get visiblePages(): number[] {
+    const maxVisiblePages = 5;
+    const totalPages = this.safeTotalPages;
+    const currentPage = Math.min(Math.max(this.page, 0), totalPages - 1);
+    const halfWindow = Math.floor(maxVisiblePages / 2);
+    const startPage = Math.max(0, Math.min(currentPage - halfWindow, totalPages - maxVisiblePages));
+    const pageCount = Math.min(totalPages, maxVisiblePages);
+
+    return Array.from({ length: pageCount }, (_, index) => startPage + index);
+  }
+
+  first(): void {
+    this.goToPage(0);
+  }
+
   previous(): void {
     if (!this.previousDisabled) {
       this.pageChange.emit(this.page - 1);
@@ -59,6 +74,16 @@ export class AdminPaginationComponent {
   next(): void {
     if (!this.nextDisabled) {
       this.pageChange.emit(this.page + 1);
+    }
+  }
+
+  last(): void {
+    this.goToPage(this.safeTotalPages - 1);
+  }
+
+  goToPage(page: number): void {
+    if (!this.disabled && page >= 0 && page < this.safeTotalPages && page !== this.page) {
+      this.pageChange.emit(page);
     }
   }
 

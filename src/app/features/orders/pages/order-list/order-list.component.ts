@@ -211,6 +211,14 @@ export class OrderListComponent implements OnInit, OnDestroy {
     this.paginatedOrders = this.orders.slice(start, start + this.pageSize);
   }
 
+  goToOrderPage(page: number): void {
+    const nextPage = page + 1;
+    if (nextPage >= 1 && nextPage <= this.totalPages && nextPage !== this.currentPage) {
+      this.currentPage = nextPage;
+      this.updatePaginatedOrders();
+    }
+  }
+
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
