@@ -9,6 +9,7 @@ import { CustomerAddressService } from 'src/app/features/client/services/custome
 import { CustomerAddress } from 'src/app/features/client/models/customer-address.model';
 import { catchError, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
+import { ApiErrorMessageService } from '../../../../core/services/api-error-message.service';
 
 interface UserProfile {
   name: string;
@@ -82,7 +83,8 @@ export class ProfileComponent implements OnInit {
     private readonly fb: FormBuilder,
     public languageService: LanguageService,
     public translate: TranslateService,
-    private readonly addressService: CustomerAddressService
+    private readonly addressService: CustomerAddressService,
+    private readonly apiErrorMessage: ApiErrorMessageService
   ) { }
 
   ngOnInit(): void {
@@ -474,10 +476,8 @@ export class ProfileComponent implements OnInit {
           errorMsg += 'File quá lớn.';
         } else if (error.status === 415) {
           errorMsg += 'Định dạng file không được hỗ trợ.';
-        } else if (error.error?.message) {
-          errorMsg += error.error.message;
         } else {
-          errorMsg += 'Vui lòng thử lại.';
+          errorMsg += this.apiErrorMessage.resolve(error, 'Vui lòng thử lại.');
         }
 
         this.errorMessage = errorMsg;

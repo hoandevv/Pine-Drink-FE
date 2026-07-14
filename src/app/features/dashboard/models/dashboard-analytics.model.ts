@@ -48,3 +48,11 @@ export interface DashboardAnalyticsData {
   topProducts: TopProductResponse[];
   branchPerformance: BranchPerformanceResponse[];
 }
+
+export interface DashboardDataResponse {
+  overview: DashboardOverviewResponse;
+  revenueTrend: RevenueTrendResponse[];
+  orderStatus: OrderStatusSummaryResponse[];
+  topProducts: TopProductResponse[];
+  branchPerformance: BranchPerformanceResponse[];
+}

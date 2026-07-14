@@ -17,6 +17,7 @@ import { DailyStock } from '../../../products/models/daily-stock.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 import { ToastNotificationService } from '../../../../core/services/toast.service';
+import { ApiErrorMessageService } from '../../../../core/services/api-error-message.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
 @Component({
@@ -60,6 +61,7 @@ export class CartComponent implements OnInit {
     private readonly branchAvailabilityService: BranchAvailabilityService,
     private readonly dailyStockService: DailyStockService,
     private readonly toast: ToastNotificationService,
+    private readonly apiErrorMessage: ApiErrorMessageService,
     private readonly confirmDialog: ConfirmDialogService
   ) { }
 
@@ -279,7 +281,7 @@ export class CartComponent implements OnInit {
         this.calculateTotal();
       },
       error: err => {
-        this.toast.error(err?.error?.message || 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.');
+        this.toast.error(this.apiErrorMessage.resolve(err, 'Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.'));
       }
     });
   }
@@ -426,7 +428,7 @@ export class CartComponent implements OnInit {
       },
       error: err => {
         this.checkingOut = false;
-        this.toast.error(err?.error?.message || 'Không thể tạo đơn hàng. Vui lòng thử lại.');
+        this.toast.error(this.apiErrorMessage.resolve(err, 'Không thể tạo đơn hàng. Vui lòng thử lại.'));
       }
     });
   }
@@ -455,7 +457,7 @@ export class CartComponent implements OnInit {
       },
       error: err => {
         this.checkingOut = false;
-        this.toast.error(err?.error?.message || 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.');
+        this.toast.error(this.apiErrorMessage.resolve(err, 'Không thể kết nối đến MoMo. Vui lòng thử lại sau.'));
         this.router.navigate(['/track-order', orderId]);
       }
     });

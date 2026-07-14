@@ -141,7 +141,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
         console.error('Load orders failed', error);
         this.orders = [];
         this.allOrders = [];
-        this.toastService.error('Failed to load orders');
+        this.toastService.error('Không tải được danh sách đơn hàng');
       },
       complete: () => {
         this.isLoading = false;
@@ -291,11 +291,11 @@ export class OrderListComponent implements OnInit, OnDestroy {
         }
         this.updateStats();
         this.updateTabCounts();
-        this.toastService.success(`Order status updated to ${status}`);
+        this.toastService.success(`Đã cập nhật trạng thái đơn sang ${status}`);
       },
       error: (error) => {
         console.error('Update order status failed', error);
-        this.toastService.error('Failed to update order status');
+        this.toastService.error('Không thể cập nhật trạng thái đơn hàng');
       }
     });
   }
@@ -558,9 +558,9 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   copyToClipboard(text: string): void {
     navigator.clipboard.writeText(text).then(() => {
-      this.toastService.success('Order code copied to clipboard');
+      this.toastService.success('Đã sao chép mã đơn hàng');
     }).catch(() => {
-      this.toastService.error('Failed to copy');
+      this.toastService.error('Không thể sao chép mã đơn hàng');
     });
   }
 
@@ -573,7 +573,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
       win.document.close();
       win.print();
     } else {
-      this.toastService.error('Failed to open print window');
+      this.toastService.error('Không thể mở cửa sổ in hóa đơn');
     }
   }
 

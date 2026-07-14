@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { ToastService } from 'src/app/core/services/toast.service';
+import { ApiErrorMessageService } from 'src/app/core/services/api-error-message.service';
 import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
@@ -52,6 +53,7 @@ export class VouchersPageComponent implements OnInit {
     private readonly voucherService: VoucherService,
     private readonly branchService: BranchService,
     private readonly toast: ToastService,
+    private readonly apiErrorMessage: ApiErrorMessageService,
     private readonly confirmDialog: ConfirmDialogService
   ) { }
 
@@ -139,7 +141,7 @@ export class VouchersPageComponent implements OnInit {
         this.showForm = false;
         this.loadVouchers();
       },
-      error: err => this.toast.error(err?.error?.message || 'Lưu voucher thất bại')
+      error: err => this.toast.error(this.apiErrorMessage.resolve(err, 'Lưu voucher thất bại'))
     });
   }
 

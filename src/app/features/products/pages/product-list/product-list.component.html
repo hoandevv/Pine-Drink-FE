@@ -37,12 +37,12 @@
   </div>
 
   <form [formGroup]="filterForm" (ngSubmit)="search()" class="filter-card toolbar-row">
-    <label class="branch-select compact" *ngIf="branches.length" for="admin-branch-availability-select">
+    <!-- <label class="branch-select compact" *ngIf="branches.length" for="admin-branch-availability-select">
       <span>Chi nhánh</span>
       <select id="admin-branch-availability-select" [ngModel]="selectedBranchId" [ngModelOptions]="{ standalone: true }" (ngModelChange)="onBranchChanged($event)">
         <option *ngFor="let branch of branches" [ngValue]="branch.id">{{ branch.name }}</option>
       </select>
-    </label>
+    </label> -->
 
     <label class="search-field" for="product-keyword-input">
       <span class="material-symbols-outlined">search</span>
@@ -98,7 +98,7 @@
           <th>Danh mục</th>
           <th>Giá</th>
           <th>Trạng thái</th>
-          <th>Chi nhánh</th>
+          <!-- <th>Chi nhánh</th> -->
           <th>Thao tác</th>
         </tr>
       </thead>
@@ -122,12 +122,12 @@
             <small class="origin-price" *ngIf="getAvailability(product.id)?.salePrice && getBranchSalePrice(product) !== product.price">Gốc {{ product.price | number }}</small>
           </td>
           <td><span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}</span></td>
-          <td>
+          <!-- <td>
             <span class="branch-chip" *ngIf="getAvailability(product.id) as availability" [class.sold-out]="!availability.available">
               {{ availability.available ? 'Còn hàng' : 'Hết hàng' }}
             </span>
-            <span class="branch-chip muted" *ngIf="!getAvailability(product.id)">Chưa set</span>
-          </td>
+            <span class="branch-chip muted" *ngIf="!getAvailability(product.id)">Chưa set</span> -->
+          <!-- </td> -->
           <td>
             <div class="row-actions">
               <button type="button" class="icon-btn edit" [attr.aria-label]="'Sửa ' + product.name" (click)="editProduct(product.id)"><span class="material-symbols-outlined">edit</span></button>
@@ -160,7 +160,7 @@
       </div>
       <div class="mobile-meta">
         <strong>{{ getBranchSalePrice(product) | number }} VND</strong>
-        <span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}</span>
+        <!-- <span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}</span> -->
       </div>
       <span class="branch-chip" *ngIf="getAvailability(product.id) as availability" [class.sold-out]="!availability.available">
         {{ availability.available ? 'Còn hàng tại chi nhánh' : 'Hết hàng tại chi nhánh' }}

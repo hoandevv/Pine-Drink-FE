@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, catchError, map, of, switchMap, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, finalize, map, of, shareReplay, switchMap, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
 import {
@@ -22,6 +22,12 @@ import { BaseResponse } from '../../shared/models/base-response.model';
 import { AuthUser } from '../../shared/models/user.model';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 import { TokenService } from './token.service';
+
+interface PermissionCacheEntry {
+  userId: string;
+  permissions: string[];
+  loadedAt: number;
+}
 
 export interface UpdateProfileRequest {
   fullName?: string | null;
@@ -61,8 +67,12 @@ export interface FileUploadResponseData {
 })
 export class AuthService {
   private readonly authBaseUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.auth.base}`;
-  private readonly permissionCacheTtlMs = 15 * 60 * 1000;
+  private readonly permissionCacheKey = 'pine_drink_permissions_cache';
+  private readonly permissionCacheTtlMs = 5 * 60 * 1000;
+  // Khởi tạo user sơ bộ từ JWT, permission sẽ được nạp vào RAM từ cache/backend.
   private readonly currentUserSubject = new BehaviorSubject<AuthUser | null>(this.tokenService.getCurrentUserFromToken());
+  private authorizationLoaded = false;
+  private authorizationLoadRequest$?: Observable<AuthUser | null>;
   public readonly currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(
@@ -173,6 +183,9 @@ export class AuthService {
     }
 
     this.tokenService.clearTokens();
+    sessionStorage.removeItem(this.permissionCacheKey);
+    this.authorizationLoaded = false;
+    this.authorizationLoadRequest$ = undefined;
     this.currentUserSubject.next(null);
   }
 
@@ -189,9 +202,7 @@ export class AuthService {
       .get<BaseResponse<AuthUser>>(`${environment.apiBaseUrl}${API_ENDPOINTS.profile.base}`)
       .pipe(
         tap((response) => this.setAuthenticatedUser(response.data)),
-        switchMap((response) => this.loadCurrentPermissions().pipe(
-          map(() => this.getCurrentUser() ?? response.data)
-        ))
+        map((response) => response.data)
       );
   }
 
@@ -204,28 +215,62 @@ export class AuthService {
    * @returns Observable chứa user hiện tại hoặc null nếu chưa đăng nhập.
    */
   bootstrapCurrentUser(): Observable<AuthUser | null> {
+    return this.ensureAuthorizationLoaded();
+  }
+
+  /**
+   * Đảm bảo role/permission hiện tại đã được backend xác thực.
+   *
+   * sessionStorage chỉ lưu bản cache tham khảo. Route/menu chỉ dùng dữ liệu trong RAM
+   * sau khi profile và permission được backend trả về.
+   */
+  ensureAuthorizationLoaded(): Observable<AuthUser | null> {
     if (!this.tokenService.getAccessToken()) {
+      this.authorizationLoaded = false;
+      this.authorizationLoadRequest$ = undefined;
       this.currentUserSubject.next(null);
       return of(null);
     }
 
-    const tokenUser = this.tokenService.getCurrentUserFromToken();
-    this.currentUserSubject.next(tokenUser);
+    const currentUser = this.currentUserSubject.value;
+    if (this.authorizationLoaded && currentUser) {
+      return of(currentUser);
+    }
 
-    return this.getProfile().pipe(
-      map((user) => user),
+    if (this.authorizationLoadRequest$) {
+      return this.authorizationLoadRequest$;
+    }
+
+    const tokenUser = this.tokenService.getCurrentUserFromToken();
+    if (!currentUser) {
+      this.currentUserSubject.next(tokenUser);
+    }
+
+    this.restorePermissionCacheToMemory();
+
+    this.authorizationLoadRequest$ = this.getProfile().pipe(
+      switchMap((user) => this.loadCurrentPermissions().pipe(
+        map(() => this.getCurrentUser() ?? user)
+      )),
+      tap(() => this.authorizationLoaded = true),
       catchError(() => {
-        this.currentUserSubject.next(tokenUser);
-        return of(tokenUser);
-      })
+        this.authorizationLoaded = false;
+        this.currentUserSubject.next(null);
+        return of(null);
+      }),
+      finalize(() => this.authorizationLoadRequest$ = undefined),
+      shareReplay(1)
     );
+
+    return this.authorizationLoadRequest$;
   }
 
   /**
    * Tải danh sách permission hiện tại từ backend.
    *
    * Backend là nguồn sự thật; permission thường được backend lấy từ Redis/cache.
-   * FE chỉ cache ngắn trong memory để giảm request lặp.
+   * FE ưu tiên permission trong RAM, sau đó sessionStorage cache còn hạn.
+   * Nếu không có cache hợp lệ thì gọi backend lấy permission mới.
    *
    * @param forceRefresh Bỏ qua cache FE và gọi backend ngay.
    * @returns Observable chứa danh sách permission code dạng string.
@@ -332,7 +377,7 @@ export class AuthService {
   }
 
   /**
-   * Upload ảnh đại diện của user hiện tại.
+   * Upload ảnh đại diện của user hiện tại.currentUser 
    *
    * @param file File ảnh cần upload.
    * @returns Observable chứa thông tin file đã lưu.
@@ -356,11 +401,10 @@ export class AuthService {
    * @param user User mới nhận từ backend.
    */
   private setAuthenticatedUser(user: AuthUser): void {
-    const tokenUser = this.tokenService.getCurrentUserFromToken();
     const currentUser = this.currentUserSubject.value;
     const nextUser: AuthUser = {
       ...user,
-      roles: user.roles?.length ? user.roles : currentUser?.roles ?? tokenUser?.roles ?? [],
+      roles: user.roles ?? currentUser?.roles ?? [],
       permissions: user.permissions?.length ? user.permissions : currentUser?.permissions ?? []
     };
 
@@ -385,21 +429,82 @@ export class AuthService {
     };
 
     this.currentUserSubject.next(nextUser);
+    this.storePermissionCache(nextUser);
   }
 
   /**
-   * Lấy permission cache trong memory nếu còn hạn.
+   * Lấy permission cache theo thứ tự:
+   * 1. RAM hiện tại.
+   * 2. sessionStorage nếu cache đúng user và còn hạn.
    *
-   * @returns Danh sách permission còn fresh, hoặc null nếu chưa có/hết hạn.
+   * @returns Danh sách permission cache, hoặc null nếu không có cache hợp lệ.
    */
   private getCachedPermissions(): string[] | null {
     const user = this.currentUserSubject.value;
-    if (!user?.permissions?.length || !user.permissionsLoadedAt) {
+    if (user?.permissions?.length) {
+      return user.permissions;
+    }
+
+    return this.getValidSessionPermissionCache(user)?.permissions ?? null;
+  }
+
+  /**
+   * Nạp permission cache từ sessionStorage vào RAM để route/menu có dữ liệu nhanh sau F5.
+   */
+  private restorePermissionCacheToMemory(): void {
+    const user = this.currentUserSubject.value;
+    const cacheEntry = this.getValidSessionPermissionCache(user);
+
+    if (!user || !cacheEntry) {
+      return;
+    }
+
+    this.currentUserSubject.next({
+      ...user,
+      permissions: cacheEntry.permissions,
+      permissionsLoadedAt: cacheEntry.loadedAt
+    });
+  }
+
+  private getValidSessionPermissionCache(user: AuthUser | null): PermissionCacheEntry | null {
+    if (!user?.id) {
       return null;
     }
 
-    const isFresh = Date.now() - user.permissionsLoadedAt < this.permissionCacheTtlMs;
-    return isFresh ? user.permissions : null;
+    const rawCache = sessionStorage.getItem(this.permissionCacheKey);
+    if (!rawCache) {
+      return null;
+    }
+
+    try {
+      const cacheEntry = JSON.parse(rawCache) as PermissionCacheEntry;
+      const isSameUser = cacheEntry.userId === user.id;
+      const hasPermissions = Array.isArray(cacheEntry.permissions) && cacheEntry.permissions.length > 0;
+      const isFresh = Date.now() - cacheEntry.loadedAt <= this.permissionCacheTtlMs;
+
+      if (isSameUser && hasPermissions && isFresh) {
+        return cacheEntry;
+      }
+    } catch {
+      // Cache lỗi format thì bỏ, tránh làm hỏng luồng đăng nhập.
+    }
+
+    sessionStorage.removeItem(this.permissionCacheKey);
+    return null;
+  }
+
+  private storePermissionCache(user: AuthUser): void {
+    if (!user.id || !user.permissions?.length || !user.permissionsLoadedAt) {
+      return;
+    }
+
+    const cacheEntry: PermissionCacheEntry = {
+      userId: user.id,
+      permissions: user.permissions,
+      loadedAt: user.permissionsLoadedAt
+    };
+
+    sessionStorage.setItem(this.permissionCacheKey, JSON.stringify(cacheEntry));
   }
 
   /**

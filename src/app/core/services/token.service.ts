@@ -51,8 +51,10 @@ export class TokenService {
       username: payload.username ?? payload.email ?? 'User',
       email: payload.email ?? '',
       scope: payload.scope ?? null,
+      // role lấy từ JWT
       roles: payload.roles ?? [],
-      permissions: payload.permissions ?? []
+      // permission lấy từ backend rồi lưu vào RAM
+      permissions: []
     };
   }
 
