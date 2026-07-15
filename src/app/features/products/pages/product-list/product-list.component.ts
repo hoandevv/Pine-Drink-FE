@@ -2,10 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize, of, switchMap } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { SelectOption } from '../../../../shared/models/select-option.model';
-import { Product } from '../../models/product.model';
+import { Product, ProductSummary } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../../categories/services/category.service';
 import { BranchAvailabilityService } from '../../../branches/services/branch-availability.service';
@@ -37,15 +38,18 @@ export class ProductListComponent implements OnInit {
     { label: 'Tạm ẩn', value: 'INACTIVE' }
   ];
 
-  products: Product[] = [];
+  products: ProductSummary[] = [];
   branches: Branch[] = [];
   selectedBranchId = '';
   productAvailabilityMap = new Map<string, BranchProductAvailability>();
   availabilityLoading = false;
   updatingAvailabilityIds = new Set<string>();
   loading = false;
+  detailLoading = false;
+  selectedProduct: Product | null = null;
+  detailErrorMessage = '';
   errorMessage = '';
-  pageData: PageResponse<Product> = this.createEmptyPage();
+  pageData: PageResponse<ProductSummary> = this.createEmptyPage();
 
   constructor(
     private readonly formBuilder: FormBuilder,
@@ -61,7 +65,6 @@ export class ProductListComponent implements OnInit {
   ngOnInit(): void {
     this.loadProducts();
     this.loadCategories();
-    this.loadBranches();
   }
 
   get activeProducts(): number {
@@ -110,7 +113,48 @@ export class ProductListComponent implements OnInit {
     this.router.navigate(['/admin/products', id]);
   }
 
-  toggleProductStatus(product: Product): void {
+  viewProductDetail(product: ProductSummary): void {
+    if (this.detailLoading || this.selectedProduct?.id === product.id) {
+      return;
+    }
+
+    this.detailLoading = true;
+    this.detailErrorMessage = '';
+    this.selectedProduct = null;
+
+    this.productService.getProductById(product.id)
+      .pipe(finalize(() => (this.detailLoading = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedProduct = detail;
+        },
+        error: (error: HttpErrorResponse) => {
+          this.detailErrorMessage = error.status === 404
+            ? 'Không tìm thấy sản phẩm này trên server.'
+            : 'Không tải được chi tiết sản phẩm. Vui lòng thử lại.';
+        }
+      });
+  }
+
+  closeProductDetail(): void {
+    this.selectedProduct = null;
+    this.detailErrorMessage = '';
+    this.detailLoading = false;
+  }
+
+  editSelectedProduct(): void {
+    if (!this.selectedProduct) {
+      return;
+    }
+
+    this.editProduct(this.selectedProduct.id);
+  }
+
+  stopRowAction(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
+  toggleProductStatus(product: ProductSummary): void {
     const nextStatus: Product['status'] = product.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const actionLabel = nextStatus === 'ACTIVE' ? 'bật lại' : 'ẩn';
     const productName = product.name || product.code || 'sản phẩm này';
@@ -139,7 +183,7 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  deleteProduct(product: Product): void {
+  deleteProduct(product: ProductSummary): void {
     this.toggleProductStatus(product);
   }
 
@@ -160,7 +204,7 @@ export class ProductListComponent implements OnInit {
     this.loadProducts(0);
   }
 
-  trackProduct(_: number, product: Product): string {
+  trackProduct(_: number, product: ProductSummary): string {
     return product.id;
   }
 
@@ -173,12 +217,12 @@ export class ProductListComponent implements OnInit {
     return this.productAvailabilityMap.get(productId);
   }
 
-  getBranchSalePrice(product: Product): number {
+  getBranchSalePrice(product: ProductSummary): number {
     const availability = this.getAvailability(product.id);
     return availability?.salePrice ?? product.price;
   }
 
-  isSoldOutAtBranch(product: Product): boolean {
+  isSoldOutAtBranch(product: ProductSummary): boolean {
     const availability = this.getAvailability(product.id);
     return Boolean(availability && !availability.available);
   }
@@ -187,11 +231,11 @@ export class ProductListComponent implements OnInit {
     return this.updatingAvailabilityIds.has(productId);
   }
 
-  markProductAvailable(product: Product): void {
+  markProductAvailable(product: ProductSummary): void {
     this.saveProductAvailability(product, true);
   }
 
-  markProductSoldOut(product: Product): void {
+  markProductSoldOut(product: ProductSummary): void {
     this.promptDialog.prompt({
       title: 'Nhập lý do hết hàng',
       message: `Cho biết lý do hết hàng của ${product.name}.`,
@@ -215,14 +259,13 @@ export class ProductListComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    this.productService.getProducts(page, this.pageSize, keyword, filters.categoryId, filters.status)
+    this.productService.getProductSummaries(page, this.pageSize, keyword, filters.categoryId, filters.status)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (pageResponse) => {
           const normalizedPage = this.normalizePage(pageResponse, page);
           this.products = normalizedPage.content;
           this.pageData = normalizedPage;
-          this.refreshAvailability();
         },
         error: () => {
           this.products = [];
@@ -233,7 +276,7 @@ export class ProductListComponent implements OnInit {
       });
   }
 
-  private normalizePage(pageResponse: PageResponse<Product> | null | undefined, page: number): PageResponse<Product> {
+  private normalizePage(pageResponse: PageResponse<ProductSummary> | null | undefined, page: number): PageResponse<ProductSummary> {
     if (!pageResponse) {
       return this.createEmptyPage(page);
     }
@@ -251,7 +294,7 @@ export class ProductListComponent implements OnInit {
     };
   }
 
-  private createEmptyPage(page = 0): PageResponse<Product> {
+  private createEmptyPage(page = 0): PageResponse<ProductSummary> {
     return {
       content: [],
       page,
@@ -304,7 +347,7 @@ export class ProductListComponent implements OnInit {
       });
   }
 
-  private saveProductAvailability(product: Product, available: boolean, soldOutReason: string | null = null): void {
+  private saveProductAvailability(product: ProductSummary, available: boolean, soldOutReason: string | null = null): void {
     if (!this.selectedBranchId || this.isUpdatingAvailability(product.id)) {
       return;
     }

@@ -5,7 +5,7 @@ import { finalize } from 'rxjs';
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Topping } from '../../../toppings/models/topping.model';
 import { ToppingService } from '../../../toppings/services/topping.service';
-import { Product } from '../../models/product.model';
+import { ProductSummary } from '../../models/product.model';
 import { ProductTopping } from '../../models/product-topping.model';
 import { ProductService } from '../../services/product.service';
 import { ProductToppingService } from '../../services/product-topping.service';
@@ -26,7 +26,7 @@ export class ProductToppingsPageComponent implements OnInit {
     maxQuantity: [1, [Validators.required, Validators.min(1), Validators.max(20)]]
   });
 
-  products: Product[] = [];
+  products: ProductSummary[] = [];
   toppings: Topping[] = [];
   selectedProductId = '';
   productToppings: ProductTopping[] = [];
@@ -54,11 +54,11 @@ export class ProductToppingsPageComponent implements OnInit {
     this.loadInitialData();
   }
 
-  get selectedProduct(): Product | undefined {
+  get selectedProduct(): ProductSummary | undefined {
     return this.products.find((product) => product.id === this.selectedProductId);
   }
 
-  get filteredProducts(): Product[] {
+  get filteredProducts(): ProductSummary[] {
     const keyword = this.productSearchTerm.trim().toLowerCase();
     if (!keyword) { return this.products; }
 
@@ -212,7 +212,7 @@ export class ProductToppingsPageComponent implements OnInit {
     this.loadProductToppings(0);
   }
 
-  trackProduct(_: number, product: Product): string { return product.id; }
+  trackProduct(_: number, product: ProductSummary): string { return product.id; }
   trackTopping(_: number, topping: Topping): string { return topping.id; }
   trackProductTopping(_: number, item: ProductTopping): string { return item.id; }
 

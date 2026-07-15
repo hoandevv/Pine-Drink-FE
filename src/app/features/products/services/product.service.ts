@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
-import { Product } from '../models/product.model';
+import { Product, ProductSummary } from '../models/product.model';
 import { ProductCreateRequest, ProductUpdateRequest } from '../models/product-request.model';
 
 @Injectable({
@@ -16,6 +16,20 @@ export class ProductService {
   private readonly apiUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.products}`;
 
   constructor(private readonly http: HttpClient) {}
+
+  getProductSummaries(page: number, size: number, keyword?: string, categoryId?: string, status?: string): Observable<PageResponse<ProductSummary>> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (keyword) { params = params.set('keyword', keyword); }
+    if (categoryId) { params = params.set('categoryId', categoryId); }
+    if (status) { params = params.set('status', status); }
+
+    return this.http
+      .get<BaseResponse<PageResponse<ProductSummary>>>(`${this.apiUrl}/summaries`, { params })
+      .pipe(map((response) => this.normalizeProductSummaryPage(response.data, page, size)));
+  }
 
   getProducts(page: number, size: number, keyword?: string, categoryId?: string, status?: string): Observable<PageResponse<Product>> {
     let params = new HttpParams()
@@ -97,6 +111,28 @@ export class ProductService {
       totalPages: data?.totalPages ?? (content.length > 0 ? 1 : 0),
       first: data?.first ?? true,
       last: data?.last ?? true
+    };
+  }
+
+  private normalizeProductSummaryPage(data: PageResponse<ProductSummary>, fallbackPage: number, fallbackSize: number): PageResponse<ProductSummary> {
+    const content = (data?.content || []).map((product) => this.normalizeProductSummary(product));
+    return {
+      ...data,
+      content,
+      page: data?.page ?? fallbackPage,
+      size: data?.size ?? fallbackSize,
+      totalElements: data?.totalElements ?? content.length,
+      totalPages: data?.totalPages ?? (content.length > 0 ? 1 : 0),
+      first: data?.first ?? true,
+      last: data?.last ?? true
+    };
+  }
+
+  private normalizeProductSummary(product: ProductSummary): ProductSummary {
+    const basePrice = (product as ProductSummary & { basePrice?: number }).basePrice;
+    return {
+      ...product,
+      price: product.price ?? Number(basePrice) ?? 0
     };
   }
 

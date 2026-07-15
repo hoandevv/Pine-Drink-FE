@@ -3,7 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
-import { Product } from '../../models/product.model';
+import { ProductSummary } from '../../models/product.model';
 import { ProductVariant } from '../../models/product-variant.model';
 import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
@@ -30,7 +30,7 @@ export class ProductVariantsPageComponent implements OnInit {
     displayOrder: [0, [Validators.min(0)]]
   });
 
-  products: Product[] = [];
+  products: ProductSummary[] = [];
   selectedProductId = '';
   variants: ProductVariant[] = [];
   pageData: PageResponse<ProductVariant> = this.createEmptyPage();
@@ -52,7 +52,7 @@ export class ProductVariantsPageComponent implements OnInit {
     this.loadProducts();
   }
 
-  get selectedProduct(): Product | undefined {
+  get selectedProduct(): ProductSummary | undefined {
     return this.products.find((product) => product.id === this.selectedProductId);
   }
 
@@ -233,7 +233,7 @@ export class ProductVariantsPageComponent implements OnInit {
     return variant.id;
   }
 
-  trackProduct(_: number, product: Product): string {
+  trackProduct(_: number, product: ProductSummary): string {
     return product.id;
   }
 
