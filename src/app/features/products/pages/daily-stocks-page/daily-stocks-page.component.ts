@@ -1,15 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { ProductVariant } from '../../models/product-variant.model';
+import { ProductSummary } from '../../models/product.model';
+import { ProductVariantSummary } from '../../models/product-variant.model';
 import { DailyStock, DailyStockLog } from '../../models/daily-stock.model';
 import { DailyStockService } from '../../services/daily-stock.service';
+import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
 
-interface VariantOption extends ProductVariant { productId: string; productName: string; }
+interface VariantOption extends ProductVariantSummary { productName: string; }
 
 @Component({
   selector: 'app-daily-stocks-page',
@@ -50,6 +52,7 @@ export class DailyStocksPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly branchService: BranchService,
+    private readonly productService: ProductService,
     private readonly variantService: ProductVariantService,
     private readonly dailyStockService: DailyStockService
   ) { }
@@ -186,14 +189,17 @@ export class DailyStocksPageComponent implements OnInit {
 
   private loadAllVariants(): void {
     this.variantsLoading = true;
-    this.variantService.getAllActiveVariants()
+    forkJoin({
+      variants: this.variantService.getAllActiveVariants(),
+      products: this.productService.getProductSummaries(0, 100)
+    })
       .pipe(finalize(() => (this.variantsLoading = false)))
       .subscribe({
-        next: (variants) => {
+        next: ({ variants, products }) => {
+          const productNameById = this.buildProductNameMap(products.content || []);
           this.variants = variants.map((variant) => ({
             ...variant,
-            productId: variant.productId,
-            productName: variant.productName || variant.productCode || 'Sản phẩm'
+            productName: productNameById.get(variant.productId) || 'Sản phẩm'
           }));
         },
         error: () => {
@@ -221,6 +227,10 @@ export class DailyStocksPageComponent implements OnInit {
     this.dailyStockService.getLogs(stock.id, 0, 20)
       .pipe(finalize(() => (this.logLoading = false)))
       .subscribe({ next: (page) => { this.logs = page.content || []; }, error: () => { this.logs = []; } });
+  }
+
+  private buildProductNameMap(products: ProductSummary[]): Map<string, string> {
+    return new Map(products.map((product) => [product.id, product.name || product.code || 'Sản phẩm']));
   }
 
   private clearMessages(clearSuccess = true): void { this.errorMessage = ''; if (clearSuccess) { this.successMessage = ''; } }

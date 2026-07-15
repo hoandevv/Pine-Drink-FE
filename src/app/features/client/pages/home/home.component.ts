@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { Product } from '../../../products/models/product.model';
+import { ProductSummary } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchHours } from '../../../branches/models/branch-hours.model';
@@ -14,7 +14,7 @@ import { VoucherResponse, VoucherService } from '../../../vouchers/services/vouc
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  bestSellerProducts: Product[] = [];
+  bestSellerProducts: ProductSummary[] = [];
   activeHeroIndex = 0;
   private heroRotationTimer?: ReturnType<typeof setInterval>;
   vouchers: VoucherResponse[] = [];
@@ -49,7 +49,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     this.loadingProducts = true;
     this.productError = '';
-    this.productService.getProducts(0, 24, undefined, undefined, 'ACTIVE').subscribe({
+    this.productService.getProductSummaries(0, 24, undefined, undefined, 'ACTIVE').subscribe({
       next: page => {
         const products = (page.content || []).filter(product => product.status === 'ACTIVE');
         this.bestSellerProducts = products
@@ -66,7 +66,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  get heroProduct(): Product | null {
+  get heroProduct(): ProductSummary | null {
     return this.bestSellerProducts[this.activeHeroIndex] || this.bestSellerProducts[0] || null;
   }
 
@@ -137,7 +137,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  addToCart(product: Product): void {
+  addToCart(product: ProductSummary): void {
     this.persistOrderContext();
     const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
     this.router.navigate(['/product', product.id], {
@@ -145,7 +145,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  getProductBadge(product: Product): string {
+  getProductBadge(product: ProductSummary): string {
     if (product.bestSeller) { return 'Best seller'; }
     if (product.featured) { return 'Nổi bật'; }
     return '';

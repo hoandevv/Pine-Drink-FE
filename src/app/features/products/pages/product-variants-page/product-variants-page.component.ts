@@ -4,7 +4,7 @@ import { finalize, forkJoin } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { ProductSummary } from '../../models/product.model';
-import { ProductVariant } from '../../models/product-variant.model';
+import { ProductVariantSummary } from '../../models/product-variant.model';
 import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -32,9 +32,9 @@ export class ProductVariantsPageComponent implements OnInit {
 
   products: ProductSummary[] = [];
   selectedProductId = '';
-  variants: ProductVariant[] = [];
-  pageData: PageResponse<ProductVariant> = this.createEmptyPage();
-  selectedVariant: ProductVariant | null = null;
+  variants: ProductVariantSummary[] = [];
+  pageData: PageResponse<ProductVariantSummary> = this.createEmptyPage();
+  selectedVariant: ProductVariantSummary | null = null;
   loading = false;
   saving = false;
   productLoading = false;
@@ -86,7 +86,7 @@ export class ProductVariantsPageComponent implements OnInit {
     this.drawerOpen = true;
   }
 
-  openEditDrawer(variant: ProductVariant): void {
+  openEditDrawer(variant: ProductVariantSummary): void {
     this.selectedVariant = variant;
     this.form.reset({
       variantName: variant.variantName,
@@ -163,7 +163,7 @@ export class ProductVariantsPageComponent implements OnInit {
       });
   }
 
-  toggleStatus(variant: ProductVariant): void {
+  toggleStatus(variant: ProductVariantSummary): void {
     if (!this.selectedProductId) { return; }
 
     const nextStatus = variant.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -180,7 +180,7 @@ export class ProductVariantsPageComponent implements OnInit {
       });
   }
 
-  deleteVariant(variant: ProductVariant): void {
+  deleteVariant(variant: ProductVariantSummary): void {
     if (!this.selectedProductId) { return; }
 
     this.confirmDialog.confirm({
@@ -229,7 +229,7 @@ export class ProductVariantsPageComponent implements OnInit {
     this.loadVariants(0);
   }
 
-  trackVariant(_: number, variant: ProductVariant): string {
+  trackVariant(_: number, variant: ProductVariantSummary): string {
     return variant.id;
   }
 
@@ -245,7 +245,7 @@ export class ProductVariantsPageComponent implements OnInit {
     this.productLoading = true;
     this.errorMessage = '';
 
-    this.productService.getProducts(0, 100)
+    this.productService.getProductSummaries(0, 100)
       .pipe(finalize(() => (this.productLoading = false)))
       .subscribe({
         next: (pageResponse) => {
@@ -287,7 +287,7 @@ export class ProductVariantsPageComponent implements OnInit {
       });
   }
 
-  private normalizePage(pageResponse: PageResponse<ProductVariant> | null | undefined, page: number): PageResponse<ProductVariant> {
+  private normalizePage(pageResponse: PageResponse<ProductVariantSummary> | null | undefined, page: number): PageResponse<ProductVariantSummary> {
     if (!pageResponse) { return this.createEmptyPage(page); }
 
     const content = Array.isArray(pageResponse.content) ? pageResponse.content : [];
@@ -302,7 +302,7 @@ export class ProductVariantsPageComponent implements OnInit {
     };
   }
 
-  private createEmptyPage(page = 0): PageResponse<ProductVariant> {
+  private createEmptyPage(page = 0): PageResponse<ProductVariantSummary> {
     return {
       content: [],
       page,

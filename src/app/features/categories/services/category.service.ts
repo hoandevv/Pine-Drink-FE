@@ -24,13 +24,13 @@ export class CategoryService {
       .set('sort', 'displayOrder,asc');
 
     return this.http
-      .get<BaseResponse<PageResponse<Category>>>(this.apiUrl, { params })
+      .get<BaseResponse<PageResponse<Category>>>(`${this.apiUrl}/summaries`, { params })
       .pipe(map((response) => this.normalizePage(response.data, page, size)));
   }
 
   getActiveCategories(): Observable<Category[]> {
     return this.http
-      .get<BaseResponse<Category[]>>(`${this.apiUrl}/active`)
+      .get<BaseResponse<Category[]>>(`${this.apiUrl}/active/options`)
       .pipe(map((response) => (response.data || []).map((category) => this.normalizeCategory(category))));
   }
 

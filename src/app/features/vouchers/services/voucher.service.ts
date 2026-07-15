@@ -68,7 +68,7 @@ export class VoucherService {
         httpParams = httpParams.set(key, value.toString());
       }
     });
-    return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(this.apiUrl, { params: httpParams });
+    return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(`${this.apiUrl}/summaries`, { params: httpParams });
   }
 
   getAvailableForCustomer(params: { branchId: string; page?: number; size?: number; sort?: string }): Observable<BaseResponse<PageResponse<VoucherResponse>>> {
@@ -78,7 +78,7 @@ export class VoucherService {
     if (params.sort) {
       httpParams = httpParams.set('sort', params.sort);
     }
-    return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(`${this.apiUrl}/customer/available`, { params: httpParams });
+    return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(`${this.apiUrl}/customer/available/summaries`, { params: httpParams });
   }
 
   create(payload: VoucherPayload): Observable<BaseResponse<VoucherResponse>> {

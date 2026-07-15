@@ -1,10 +1,8 @@
 export type ProductToppingStatus = 'ACTIVE' | 'INACTIVE';
 
-export interface ProductTopping {
+export interface ProductToppingSummary {
   id: string;
   productId: string;
-  productCode?: string;
-  productName?: string;
   toppingId: string;
   toppingCode?: string;
   toppingName: string;
@@ -14,6 +12,11 @@ export interface ProductTopping {
   isDefault: boolean;
   maxQuantity: number;
   status: ProductToppingStatus;
+}
+
+export interface ProductTopping extends ProductToppingSummary {
+  productCode?: string;
+  productName?: string;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -10,34 +10,34 @@ import {
   ProductVariant,
   ProductVariantCreateRequest,
   ProductVariantStatusRequest,
+  ProductVariantSummary,
   ProductVariantUpdateRequest
 } from '../models/product-variant.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductVariantService {
   private readonly productsUrl = `${environment.apiBaseUrl}${API_ENDPOINTS.products}`;
-  private readonly variantCache = new Map<string, Observable<ProductVariant[]>>();
+  private readonly variantCache = new Map<string, Observable<ProductVariantSummary[]>>();
 
   constructor(private readonly http: HttpClient) { }
 
-  getVariants(productId: string, page: number, size: number): Observable<PageResponse<ProductVariant>> {
+  getVariants(productId: string, page: number, size: number): Observable<PageResponse<ProductVariantSummary>> {
     const params = new HttpParams()
       .set('page', page)
       .set('size', size)
       .set('sort', 'displayOrder,asc');
 
     return this.http
-      .get<BaseResponse<PageResponse<ProductVariant>>>(this.variantsUrl(productId), { params })
-      .pipe(map((response) => this.normalizePage(response.data, page, size)));
+      .get<BaseResponse<PageResponse<ProductVariantSummary>>>(this.variantsUrl(productId), { params })
+      .pipe(map((response) => this.normalizeSummaryPage(response.data, page, size)));
   }
 
-  getActiveVariants(productId: string): Observable<ProductVariant[]> {
-    // Check if we already have a cached or in-flight request for this product
+  getActiveVariants(productId: string): Observable<ProductVariantSummary[]> {
     if (!this.variantCache.has(productId)) {
       const request$ = this.http
-        .get<BaseResponse<ProductVariant[]>>(`${this.variantsUrl(productId)}/active`)
+        .get<BaseResponse<ProductVariantSummary[]>>(`${this.variantsUrl(productId)}/active`)
         .pipe(
-          map((response) => (response.data || []).map((variant) => this.normalizeVariant(variant))),
+          map((response) => (response.data || []).map((variant) => this.normalizeVariantSummary(variant))),
           shareReplay({ bufferSize: 1, refCount: true })
         );
       this.variantCache.set(productId, request$);
@@ -45,10 +45,10 @@ export class ProductVariantService {
     return this.variantCache.get(productId)!;
   }
 
-  getAllActiveVariants(): Observable<ProductVariant[]> {
+  getAllActiveVariants(): Observable<ProductVariantSummary[]> {
     return this.http
-      .get<BaseResponse<ProductVariant[]>>(`${this.productsUrl}/variants/active`)
-      .pipe(map((response) => (response.data || []).map((variant) => this.normalizeVariant(variant))));
+      .get<BaseResponse<ProductVariantSummary[]>>(`${this.productsUrl}/variants/active`)
+      .pipe(map((response) => (response.data || []).map((variant) => this.normalizeVariantSummary(variant))));
   }
 
   createVariant(productId: string, request: ProductVariantCreateRequest): Observable<ProductVariant> {
@@ -116,12 +116,12 @@ export class ProductVariantService {
     };
   }
 
-  private normalizePage(
-    data: PageResponse<ProductVariant> | null | undefined,
+  private normalizeSummaryPage(
+    data: PageResponse<ProductVariantSummary> | null | undefined,
     fallbackPage: number,
     fallbackSize: number
-  ): PageResponse<ProductVariant> {
-    const content = (data?.content || []).map((variant) => this.normalizeVariant(variant));
+  ): PageResponse<ProductVariantSummary> {
+    const content = (data?.content || []).map((variant) => this.normalizeVariantSummary(variant));
     return {
       ...data,
       content,
@@ -131,6 +131,21 @@ export class ProductVariantService {
       totalPages: data?.totalPages ?? (content.length ? 1 : 0),
       first: data?.first ?? fallbackPage === 0,
       last: data?.last ?? true
+    };
+  }
+
+  private normalizeVariantSummary(variant: ProductVariantSummary): ProductVariantSummary {
+    return {
+      ...variant,
+      id: variant?.id || '',
+      productId: variant?.productId || '',
+      variantCode: variant?.variantCode || 'AUTO',
+      variantName: variant?.variantName || 'Biến thể chưa đặt tên',
+      sizeLabel: variant?.sizeLabel || '',
+      priceDelta: Number(variant?.priceDelta) || 0,
+      finalPrice: Number(variant?.finalPrice) || 0,
+      displayOrder: Number(variant?.displayOrder) || 0,
+      status: (variant?.status || 'ACTIVE') as ProductVariantSummary['status']
     };
   }
 

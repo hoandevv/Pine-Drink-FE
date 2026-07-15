@@ -6,7 +6,7 @@ import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Topping } from '../../../toppings/models/topping.model';
 import { ToppingService } from '../../../toppings/services/topping.service';
 import { ProductSummary } from '../../models/product.model';
-import { ProductTopping } from '../../models/product-topping.model';
+import { ProductToppingSummary } from '../../models/product-topping.model';
 import { ProductService } from '../../services/product.service';
 import { ProductToppingService } from '../../services/product-topping.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
@@ -29,9 +29,9 @@ export class ProductToppingsPageComponent implements OnInit {
   products: ProductSummary[] = [];
   toppings: Topping[] = [];
   selectedProductId = '';
-  productToppings: ProductTopping[] = [];
-  pageData: PageResponse<ProductTopping> = this.createEmptyPage();
-  selectedProductTopping: ProductTopping | null = null;
+  productToppings: ProductToppingSummary[] = [];
+  pageData: PageResponse<ProductToppingSummary> = this.createEmptyPage();
+  selectedProductTopping: ProductToppingSummary | null = null;
   loading = false;
   saving = false;
   productLoading = false;
@@ -75,7 +75,7 @@ export class ProductToppingsPageComponent implements OnInit {
     return this.toppings.filter((topping) => !assignedIds.has(topping.id) || topping.id === this.selectedProductTopping?.toppingId);
   }
 
-  get visibleProductToppings(): ProductTopping[] {
+  get visibleProductToppings(): ProductToppingSummary[] {
     const keyword = this.searchTerm.trim().toLowerCase();
     return this.productToppings.filter((item) => {
       const matchStatus = this.statusFilter === 'ALL' || item.status === this.statusFilter;
@@ -111,7 +111,7 @@ export class ProductToppingsPageComponent implements OnInit {
     this.drawerOpen = true;
   }
 
-  openEditDrawer(item: ProductTopping): void {
+  openEditDrawer(item: ProductToppingSummary): void {
     this.selectedProductTopping = item;
     this.form.reset({ toppingId: item.toppingId, isDefault: item.isDefault, maxQuantity: item.maxQuantity || 1 });
     this.form.controls.toppingId.disable();
@@ -155,7 +155,7 @@ export class ProductToppingsPageComponent implements OnInit {
       });
   }
 
-  toggleStatus(item: ProductTopping): void {
+  toggleStatus(item: ProductToppingSummary): void {
     if (!this.selectedProductId) { return; }
     const status = item.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     this.loading = true;
@@ -171,7 +171,7 @@ export class ProductToppingsPageComponent implements OnInit {
       });
   }
 
-  deleteProductTopping(item: ProductTopping): void {
+  deleteProductTopping(item: ProductToppingSummary): void {
     if (!this.selectedProductId) { return; }
 
     this.confirmDialog.confirm({
@@ -214,7 +214,7 @@ export class ProductToppingsPageComponent implements OnInit {
 
   trackProduct(_: number, product: ProductSummary): string { return product.id; }
   trackTopping(_: number, topping: Topping): string { return topping.id; }
-  trackProductTopping(_: number, item: ProductTopping): string { return item.id; }
+  trackProductTopping(_: number, item: ProductToppingSummary): string { return item.id; }
 
   formatCurrency(value?: number): string {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value || 0);
@@ -227,7 +227,7 @@ export class ProductToppingsPageComponent implements OnInit {
 
   private loadProducts(): void {
     this.productLoading = true;
-    this.productService.getProducts(0, 100)
+    this.productService.getProductSummaries(0, 100)
       .pipe(finalize(() => (this.productLoading = false)))
       .subscribe({
         next: (pageResponse) => {
@@ -280,7 +280,7 @@ export class ProductToppingsPageComponent implements OnInit {
       });
   }
 
-  private createEmptyPage(page = 0): PageResponse<ProductTopping> {
+  private createEmptyPage(page = 0): PageResponse<ProductToppingSummary> {
     return { content: [], page, size: this.pageSize, totalElements: 0, totalPages: 0, first: page === 0, last: true };
   }
 }

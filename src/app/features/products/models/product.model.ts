@@ -7,18 +7,19 @@ export interface ProductSummary {
   price: number;
   basePrice?: number;
   imageUrl?: string;
+  categoryId?: string;
   categoryName?: string;
+  preparationMinutes?: number;
+  featured?: boolean;
+  bestSeller?: boolean;
+  description?: string;
+  createdAt?: string;
   status: ProductStatus;
 }
 
 export interface Product extends ProductSummary {
   categoryId: string;
-  description?: string;
-  preparationMinutes?: number;
-  featured?: boolean;
-  bestSeller?: boolean;
   availableIceLevels?: string;
   availableSugarLevels?: string;
-  createdAt?: string;
   updatedAt?: string;
 }
