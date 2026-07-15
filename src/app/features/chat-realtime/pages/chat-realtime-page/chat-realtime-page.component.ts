@@ -2,10 +2,12 @@ import { Component, OnDestroy, OnInit, AfterViewChecked, ElementRef, ViewChild }
 import { Subscription } from 'rxjs';
 import { ChatMessageResponse, ChatRealtimeService, ChatRoomResponse } from 'src/app/features/chat-realtime/pages/services/chat-realtime.service';
 import { TokenService } from 'src/app/core/services/token.service';
+import { AuthService } from 'src/app/core/services/auth.service';
 import { Branch } from 'src/app/features/branches/models/branch.model';
 import { BranchService } from 'src/app/features/branches/services/branch.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AccessControlService } from 'src/app/core/services/access-control.service';
+import { PageResponse } from 'src/app/shared/models/page-response.model';
 
 @Component({
   selector: 'app-chat-realtime-page',
@@ -50,9 +52,11 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
   private shouldScrollToBottom = false;
   private readonly subscriptions = new Subscription();
+  private readonly hydratingRoomIds = new Set<string>();
 
   constructor(
     private readonly chatRealtime: ChatRealtimeService,
+    private readonly authService: AuthService,
     private readonly tokenService: TokenService,
     private readonly branchService: BranchService,
     private readonly router: Router,
@@ -61,7 +65,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
   ) { }
 
   ngOnInit(): void {
-    const currentUser = this.tokenService.getCurrentUserFromToken();
+    const currentUser = this.authService.getCurrentUser() || this.tokenService.getCurrentUserFromToken();
     const requestedBranchId = this.route.snapshot.queryParamMap.get('branchId') || sessionStorage.getItem('selectedBranchId') || '';
 
     this.currentUserId = currentUser?.id;
@@ -123,7 +127,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     if (this.loadingRooms) return;
 
     const branchFilter = this.branchId.trim() || undefined;
-    if (!this.isClientChat && !branchFilter) {
+    if (!this.isClientChat && !this.isSystemScope && !branchFilter) {
       this.rooms = [];
       this.loadingRooms = false;
       return;
@@ -138,7 +142,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
     roomsRequest.subscribe({
       next: (response) => {
-        this.rooms = response.data?.content || [];
+        this.rooms = this.extractPageContent<ChatRoomResponse>(response);
         this.loadingRooms = false;
 
         // Auto select room if branchId is present (e.g. from FAB)
@@ -163,7 +167,9 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
       sessionStorage.setItem('selectedBranchName', this.getBranchLabel(branchFilter));
     }
     if (branchFilter) {
-      this.chatRealtime.subscribeBranch(branchFilter);
+      this.chatRealtime.setBranchSubscriptions([branchFilter]);
+    } else if (this.isSystemScope && !this.isClientChat) {
+      this.chatRealtime.setBranchSubscriptions(this.branches.map((branch) => branch.id));
     }
     this.activeRoom = undefined;
     this.messages = [];
@@ -204,7 +210,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     this.errorMessage = '';
     this.chatRealtime.createRoom({ branchId, orderId, title }).subscribe({
       next: (response) => {
-        const room = response.data;
+        const room = this.unwrapData<ChatRoomResponse>(response);
         this.creatingRoom = false;
         if (room) {
           this.upsertRoom(room);
@@ -229,7 +235,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
     this.chatRealtime.getRoom(room.id).subscribe({
       next: (response) => {
-        const freshRoom = response.data || room;
+        const freshRoom = this.unwrapData<ChatRoomResponse>(response) || room;
         this.activeRoom = freshRoom;
 
         // Ensure fresh data also has reset unread count
@@ -282,6 +288,10 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   isMine(message: ChatMessageResponse): boolean {
+    if (this.isStaffChat) {
+      return this.getSenderType(message) !== 'CUSTOMER';
+    }
+
     return !!this.currentUserId && message.senderAccountId === this.currentUserId;
   }
 
@@ -310,6 +320,7 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     this.subscriptions.add(
       this.chatRealtime.messages$.subscribe((message) => {
         if (message.roomId !== this.activeRoom?.id) {
+          this.hydrateMissingRoom(message);
           this.bumpRoomPreview(message);
           return;
         }
@@ -329,7 +340,8 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     this.errorMessage = '';
     this.chatRealtime.getMessages(roomId).subscribe({
       next: (response) => {
-        this.messages = (response.data?.content || []).sort((a, b) => this.toTime(a.createdAt) - this.toTime(b.createdAt));
+        this.messages = this.extractPageContent<ChatMessageResponse>(response)
+          .sort((a, b) => this.toTime(a.createdAt) - this.toTime(b.createdAt));
         this.loadingMessages = false;
         this.shouldScrollToBottom = true;
       },
@@ -374,6 +386,30 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
     this.rooms.sort((a, b) => this.toTime(b.lastMessageAt || b.createdAt) - this.toTime(a.lastMessageAt || a.createdAt));
   }
 
+  private hydrateMissingRoom(message: ChatMessageResponse): void {
+    if (this.rooms.some((room) => room.id === message.roomId) || this.hydratingRoomIds.has(message.roomId)) {
+      return;
+    }
+
+    this.hydratingRoomIds.add(message.roomId);
+    this.chatRealtime.getRoom(message.roomId).subscribe({
+      next: (response) => {
+        const room = this.unwrapData<ChatRoomResponse>(response);
+        if (room) {
+          this.upsertRoom({
+            ...room,
+            lastMessagePreview: message.content || room.lastMessagePreview,
+            lastMessageAt: message.createdAt || room.lastMessageAt
+          });
+        }
+        this.hydratingRoomIds.delete(message.roomId);
+      },
+      error: () => {
+        this.hydratingRoomIds.delete(message.roomId);
+      }
+    });
+  }
+
   private createOptimisticMessage(roomId: string, content: string): ChatMessageResponse {
     return {
       id: `local-${roomId}-${Date.now()}`,
@@ -406,8 +442,16 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
           : response.content.filter((branch) => allowed.has(branch.id));
 
         if (!this.branchId && this.branches.length) {
-          this.branchId = this.branches[0].id;
-          this.chatRealtime.subscribeBranch(this.branchId);
+          if (this.isSystemScope && !this.isClientChat) {
+            this.chatRealtime.setBranchSubscriptions(this.branches.map((branch) => branch.id));
+          } else {
+            this.branchId = this.branches[0].id;
+            this.chatRealtime.setBranchSubscriptions([this.branchId]);
+          }
+        } else if (this.branchId) {
+          this.chatRealtime.setBranchSubscriptions([this.branchId]);
+        } else if (this.isSystemScope && !this.isClientChat) {
+          this.chatRealtime.setBranchSubscriptions(this.branches.map((branch) => branch.id));
         }
 
         if (this.isClientChat && this.branchId) {
@@ -426,6 +470,23 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
 
   private toTime(value?: string | null): number {
     return value ? new Date(value).getTime() : 0;
+  }
+
+  private unwrapData<T>(response: unknown): T | undefined {
+    const first = this.hasKey(response, 'data') ? response['data'] : response;
+    return (this.hasKey(first, 'data') ? first['data'] : first) as T | undefined;
+  }
+
+  private extractPageContent<T>(response: unknown): T[] {
+    const data = this.unwrapData<PageResponse<T> | T[]>(response);
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return data?.content || [];
+  }
+
+  private hasKey(value: unknown, key: string): value is Record<string, any> {
+    return !!value && typeof value === 'object' && key in value;
   }
 
   private buildRoomTitle(orderId?: string): string {
@@ -480,7 +541,9 @@ export class ChatRealtimePageComponent implements OnInit, OnDestroy, AfterViewCh
   }
 
   getSenderType(message: ChatMessageResponse): string {
-    return message.senderType || (this.isMine(message) ? 'STAFF' : 'CUSTOMER');
+    return (message.senderType || (message.senderAccountId === this.currentUserId ? 'STAFF' : 'CUSTOMER'))
+      .toUpperCase()
+      .replace(/^ROLE_/, '');
   }
 
   getSenderLabel(message: ChatMessageResponse): string {

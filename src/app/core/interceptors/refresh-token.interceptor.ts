@@ -14,6 +14,7 @@ import { TokenService } from '../services/token.service';
 export class RefreshTokenInterceptor implements HttpInterceptor {
   private isRefreshing = false;
   private readonly refreshedToken$ = new BehaviorSubject<string | null>(null);
+  private readonly refreshableErrorCodes = new Set(['AUTH_002', 'AUTH_003', 'AUTH_004', 'AUTH_012']);
   private readonly authEndpointsToSkip = new Set<string>([
     API_ENDPOINTS.auth.login,
     API_ENDPOINTS.auth.google,
@@ -47,7 +48,22 @@ export class RefreshTokenInterceptor implements HttpInterceptor {
   }
 
   private shouldRefresh(request: HttpRequest<unknown>, error: HttpErrorResponse): boolean {
-    return error.status === 401 && !!this.tokenService.getRefreshToken() && !this.isAuthEndpointToSkip(request.url);
+    return (
+      error.status === 401 &&
+      !!this.tokenService.getRefreshToken() &&
+      !this.isAuthEndpointToSkip(request.url) &&
+      this.isRefreshableAuthError(error)
+    );
+  }
+
+  private isRefreshableAuthError(error: HttpErrorResponse): boolean {
+    const errorCode = this.getErrorCode(error);
+    return !errorCode || this.refreshableErrorCodes.has(errorCode);
+  }
+
+  private getErrorCode(error: HttpErrorResponse): string | undefined {
+    const payload = error.error as { errorCode?: string } | undefined;
+    return payload?.errorCode ?? (error as unknown as { errorCode?: string }).errorCode;
   }
 
   private handleUnauthorized(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {

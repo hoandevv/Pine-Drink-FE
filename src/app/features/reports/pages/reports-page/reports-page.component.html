@@ -33,25 +33,26 @@
             <option value="INACTIVE">Ngừng bán</option>
           </select>
         </div>
-      </div>
-          <div class="form-group">
-        <label for="fromDate">Từ ngày</label>
-        <input
-          id="fromDate"
-          type="date"
-          formControlName="fromDate"
-          class="form-control"
-          [max]="filterForm.get('toDate')?.value || null">
-      </div>
 
-      <div class="form-group">
-        <label for="toDate">Đến ngày</label>
-        <input
-          id="toDate"
-          type="date"
-          formControlName="toDate"
-          class="form-control"
-          [min]="filterForm.get('fromDate')?.value || null">
+        <div class="form-group">
+          <label for="fromDate">Từ ngày</label>
+          <input
+            id="fromDate"
+            type="date"
+            formControlName="fromDate"
+            class="form-control"
+            [max]="filterForm.get('toDate')?.value || null">
+        </div>
+
+        <div class="form-group">
+          <label for="toDate">Đến ngày</label>
+          <input
+            id="toDate"
+            type="date"
+            formControlName="toDate"
+            class="form-control"
+            [min]="filterForm.get('fromDate')?.value || null">
+        </div>
       </div>
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="resetFilter()">
@@ -172,14 +173,7 @@
                 <span class="action-spinner" *ngIf="isDownloading(job.id)" aria-hidden="true"></span>
                 <span *ngIf="!isDownloading(job.id)" aria-hidden="true">↓</span>
               </button>
-              <button 
-                type="button" 
-                class="action-btn btn-retry"
-                *ngIf="job.status === 'FAILED'"
-                (click)="retryReport(job)"
-                title="Tạo lại">
-                🔄
-              </button>
+
             </td>
           </tr>
         </tbody>

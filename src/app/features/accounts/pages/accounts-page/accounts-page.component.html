@@ -195,15 +195,15 @@
     </button>
   </div>
 
-  <form class="create-form" (ngSubmit)="createAccount()">
+  <form class="create-form" (ngSubmit)="createAccount()" autocomplete="off">
     <label>
       <span>Họ tên</span>
-      <input name="fullName" type="text" [(ngModel)]="createForm.fullName" placeholder="Nguyễn Văn A" required>
+      <input name="fullName" type="text" [(ngModel)]="createForm.fullName" placeholder="Nguyễn Văn A" autocomplete="off" required>
     </label>
 
     <label>
       <span>Username</span>
-      <input name="username" type="text" [(ngModel)]="createForm.username" placeholder="staff_01" required>
+      <input name="username" type="text" [(ngModel)]="createForm.username" placeholder="staff_01" autocomplete="off" required>
     </label>
 
     <label>
@@ -214,6 +214,7 @@
           [type]="showCreatePassword ? 'text' : 'password'"
           [(ngModel)]="createForm.password"
           placeholder="Aa@123456"
+          autocomplete="new-password"
           required>
         <button type="button" (click)="toggleCreatePassword()" [attr.aria-label]="showCreatePassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'">
           <span class="material-symbols-outlined">{{ showCreatePassword ? 'visibility_off' : 'visibility' }}</span>

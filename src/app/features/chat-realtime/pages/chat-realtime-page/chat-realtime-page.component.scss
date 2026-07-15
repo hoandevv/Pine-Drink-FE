@@ -1,4 +1,5 @@
 :host {
+  display: block;
   --chat-primary: #0f4a2a;
   --chat-primary-light: rgba(15, 74, 42, 0.1);
   --chat-accent: #ffe66d;
@@ -7,6 +8,10 @@
   --chat-shadow: 0 12px 40px rgba(15, 47, 28, 0.08);
   --chat-sidebar-width: 320px;
   --chat-info-width: 300px;
+}
+
+:host-context(.admin-content) {
+  height: 100%;
 }
 
 .support-chat-shell {
@@ -21,6 +26,11 @@
   position: relative;
 }
 
+:host-context(.admin-content) .support-chat-shell {
+  height: 100%;
+  margin: 0;
+}
+
 /* Modern Header */
 .chat-topbar {
   display: flex;
@@ -29,7 +39,7 @@
   padding: 16px 24px;
   background: white;
   border-bottom: 1px solid var(--chat-border);
-  z-index: 100;
+  z-index: 10;
 
   .brand-section {
     display: flex;
@@ -149,11 +159,14 @@
   flex: 1;
   overflow: hidden;
   position: relative;
+  min-width: 0;
 }
 
 /* Sidebar Inbox */
 .inbox-column {
+  flex: 0 0 var(--chat-sidebar-width);
   width: var(--chat-sidebar-width);
+  min-width: 0;
   background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   border-right: 1px solid var(--chat-border);
@@ -492,6 +505,7 @@
 /* Chat Main Area */
 .chat-main {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   background: white;
@@ -511,13 +525,17 @@
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
     .room-avatar.sm { width: 40px; height: 40px; border-radius: 12px; background: var(--chat-accent); display: grid; place-items: center; font-weight: 1000; overflow: hidden; img { width: 100%; height: 100%; object-fit: cover; } }
     .user-titles {
-      h3 { margin: 0; font-size: 16px; font-weight: 1000; color: #102018; }
+      min-width: 0;
+      h3 { margin: 0; font-size: 16px; font-weight: 1000; color: #102018; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       p {
+        min-width: 0;
         margin: 0; font-size: 12px; color: #64748b; font-weight: 700; display: flex; align-items: center; gap: 6px;
         .status-text.online { color: #22c55e; }
         .dot { opacity: 0.3; }
+        span:last-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       }
     }
   }
@@ -536,6 +554,7 @@
 .messages-container {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fdfdfd;
   display: flex;
   flex-direction: column;
@@ -561,7 +580,7 @@
 }
 
 .message-bubble {
-  max-width: 70%;
+  max-width: min(70%, 680px);
   padding: 12px 16px;
   border-radius: 18px;
   position: relative;
@@ -786,7 +805,9 @@
 
 /* Info Panel Right */
 .info-panel {
+  flex: 0 0 var(--chat-info-width);
   width: var(--chat-info-width);
+  min-width: 0;
   background: white;
   border-left: 1px solid var(--chat-border);
   display: flex;
@@ -855,7 +876,7 @@
 }
 
 /* Responsive Overrides */
-@media (max-width: 1024px) {
+@media (max-width: 1360px) {
   :host { --chat-sidebar-width: 280px; --chat-info-width: 0px; }
   .info-panel {
     position: absolute; right: 0; top: 0; bottom: 0; z-index: 200; width: 300px; transform: translateX(100%);

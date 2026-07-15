@@ -64,7 +64,9 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
   ) {
     this.filterForm = this.fb.group({
       categoryId: [''],
-      status: ['']
+      status: [''],
+      fromDate: [''],
+      toDate: ['']
     });
   }
 
@@ -97,11 +99,12 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
   }
 
   applyFilter(): void {
+    if (!this.isValidDateRange()) return;
     this.loadReportHistory(0);
   }
 
   resetFilter(): void {
-    this.filterForm.reset({ categoryId: '', status: '' });
+    this.filterForm.reset({ categoryId: '', status: '', fromDate: '', toDate: '' });
     this.loadReportHistory(0);
   }
 
@@ -128,7 +131,9 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
       branchId: null,
       filters: JSON.stringify({
         status: filters.status || null,
-        categoryId: filters.categoryId || null
+        categoryId: filters.categoryId || null,
+        fromDate: filters.fromDate || null,
+        toDate: filters.toDate || null
       })
     };
 
@@ -261,7 +266,8 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
 
   private loadReportHistory(page = this.historyPage): void {
     this.isLoadingHistory = true;
-    this.reportService.getJobHistory(page, this.historySize).subscribe({
+    const filters = this.filterForm.value;
+    this.reportService.getJobHistory(page, this.historySize, filters.fromDate || null, filters.toDate || null).subscribe({
       next: (pageData) => {
         const normalizedPage = this.normalizeHistoryPage(pageData, page);
 
@@ -314,6 +320,15 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     this.quickStats[1].value = this.reportHistory.filter(j => j.status === 'DONE').length;
     this.quickStats[2].value = this.reportHistory.filter(j => this.isJobInProgress(j.status)).length;
     this.quickStats[3].value = this.reportHistory.filter(j => j.status === 'FAILED').length;
+  }
+
+  private isValidDateRange(): boolean {
+    const { fromDate, toDate } = this.filterForm.value;
+    if (fromDate && toDate && fromDate > toDate) {
+      this.toastService.warning('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày');
+      return false;
+    }
+    return true;
   }
 
   private loadReportStats(): void {

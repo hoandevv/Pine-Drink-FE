@@ -32,11 +32,18 @@ export class ReportService {
     return this.http.get(`${this.apiUrl}/${id}/download`, { responseType: 'blob' });
   }
 
-  getJobHistory(page = 0, size = 20): Observable<PageResponse<ReportJobResponse>> {
+  getJobHistory(
+    page = 0,
+    size = 20,
+    fromDate?: string | null,
+    toDate?: string | null
+  ): Observable<PageResponse<ReportJobResponse>> {
+    const params: Record<string, string | number> = { page, size, sort: 'createdAt,desc' };
+    if (fromDate) params['fromDate'] = fromDate;
+    if (toDate) params['toDate'] = toDate;
+
     return this.http
-      .get<BaseResponse<PageResponse<ReportJobResponse>>>(this.apiUrl, {
-        params: { page, size, sort: 'createdAt,desc' }
-      })
+      .get<BaseResponse<PageResponse<ReportJobResponse>>>(this.apiUrl, { params })
       .pipe(map((response) => response.data));
   }
 

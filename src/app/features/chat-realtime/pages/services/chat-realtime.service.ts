@@ -98,13 +98,12 @@ export class ChatRealtimeService implements OnDestroy {
   private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}${API_ENDPOINTS.websocket.base}`;
   private client?: Client;
   private roomSubscription?: StompSubscription;
-  private branchSubscription?: StompSubscription;
+  private readonly branchSubscriptions = new Map<string, StompSubscription>();
   private userSubscription?: StompSubscription;
   private isActivating = false;
   private pendingRoomId?: string;
-  private pendingBranchId?: string;
+  private readonly pendingBranchIds = new Set<string>();
   private subscribedRoomId?: string;
-  private subscribedBranchId?: string;
   private readonly connectedSubject = new BehaviorSubject<boolean>(false);
   private readonly messagesSubject = new Subject<ChatMessageResponse>();
   private readonly roomsSubject = new Subject<ChatRoomResponse>();
@@ -160,7 +159,9 @@ export class ChatRealtimeService implements OnDestroy {
     }
 
     this.pendingRoomId = roomId || this.pendingRoomId;
-    this.pendingBranchId = branchId || this.pendingBranchId;
+    if (branchId) {
+      this.pendingBranchIds.add(branchId);
+    }
 
     if (this.client?.connected) {
       this.flushPendingSubscriptions();
@@ -214,32 +215,62 @@ export class ChatRealtimeService implements OnDestroy {
   }
 
   subscribeBranch(branchId: string): void {
-    this.pendingBranchId = branchId;
+    this.pendingBranchIds.add(branchId);
     if (!this.client?.connected) {
       this.connect(undefined, branchId);
       return;
     }
 
-    if (this.subscribedBranchId === branchId && this.branchSubscription) {
+    if (this.branchSubscriptions.has(branchId)) {
       return;
     }
 
-    this.branchSubscription?.unsubscribe();
-    this.subscribedBranchId = branchId;
-    this.branchSubscription = this.client.subscribe(`/topic/branches.${branchId}.chat.rooms`, (message) => this.handleRealtime(message));
+    const subscription = this.client.subscribe(`/topic/branches.${branchId}.chat.rooms`, (message) => this.handleRealtime(message));
+    this.branchSubscriptions.set(branchId, subscription);
+  }
+
+  subscribeBranches(branchIds: string[]): void {
+    const uniqueBranchIds = [...new Set(branchIds.filter(Boolean))];
+    uniqueBranchIds.forEach((branchId) => this.pendingBranchIds.add(branchId));
+
+    if (!this.client?.connected) {
+      this.connect();
+      return;
+    }
+
+    uniqueBranchIds.forEach((branchId) => this.subscribeBranch(branchId));
+  }
+
+  setBranchSubscriptions(branchIds: string[]): void {
+    const nextBranchIds = new Set(branchIds.filter(Boolean));
+
+    this.pendingBranchIds.clear();
+    nextBranchIds.forEach((branchId) => this.pendingBranchIds.add(branchId));
+
+    for (const [branchId, subscription] of this.branchSubscriptions.entries()) {
+      if (!nextBranchIds.has(branchId)) {
+        subscription.unsubscribe();
+        this.branchSubscriptions.delete(branchId);
+      }
+    }
+
+    if (!this.client?.connected) {
+      this.connect();
+      return;
+    }
+
+    nextBranchIds.forEach((branchId) => this.subscribeBranch(branchId));
   }
 
   private flushPendingSubscriptions(): void {
     const roomId = this.pendingRoomId;
-    const branchId = this.pendingBranchId;
+    const branchIds = [...this.pendingBranchIds];
 
     if (roomId) {
       this.subscribeRoom(roomId);
     }
 
-    if (branchId) {
-      this.subscribeBranch(branchId);
-    }
+    branchIds.forEach((branchId) => this.subscribeBranch(branchId));
   }
 
   sendMessage(request: SendChatMessageRequest): void {
@@ -256,15 +287,14 @@ export class ChatRealtimeService implements OnDestroy {
 
   disconnect(): void {
     this.roomSubscription?.unsubscribe();
-    this.branchSubscription?.unsubscribe();
+    this.branchSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.userSubscription?.unsubscribe();
     this.roomSubscription = undefined;
-    this.branchSubscription = undefined;
+    this.branchSubscriptions.clear();
     this.userSubscription = undefined;
     this.subscribedRoomId = undefined;
-    this.subscribedBranchId = undefined;
     this.pendingRoomId = undefined;
-    this.pendingBranchId = undefined;
+    this.pendingBranchIds.clear();
     this.isActivating = false;
     this.client?.deactivate();
     this.client = undefined;
