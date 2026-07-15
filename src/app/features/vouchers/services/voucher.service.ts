@@ -81,6 +81,10 @@ export class VoucherService {
     return this.http.get<BaseResponse<PageResponse<VoucherResponse>>>(`${this.apiUrl}/customer/available/summaries`, { params: httpParams });
   }
 
+  getById(id: string): Observable<BaseResponse<VoucherResponse>> {
+    return this.http.get<BaseResponse<VoucherResponse>>(`${this.apiUrl}/${id}`);
+  }
+
   create(payload: VoucherPayload): Observable<BaseResponse<VoucherResponse>> {
     return this.http.post<BaseResponse<VoucherResponse>>(this.apiUrl, payload);
   }

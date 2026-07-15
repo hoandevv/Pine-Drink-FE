@@ -94,7 +94,16 @@
     <span>Thao tác</span>
   </div>
 
-  <article class="voucher-row" *ngFor="let voucher of vouchers" [class.is-muted]="voucher.status !== 'ACTIVE'">
+  <article
+    class="voucher-row"
+    *ngFor="let voucher of vouchers"
+    [class.is-muted]="voucher.status !== 'ACTIVE'"
+    tabindex="0"
+    role="button"
+    [attr.aria-label]="'Xem chi tiết voucher ' + voucher.name"
+    (click)="openEdit(voucher)"
+    (keydown.enter)="openEdit(voucher)"
+    (keydown.space)="openEdit(voucher); $event.preventDefault()">
     <div class="voucher-main-info">
       <span class="ticket-code">{{ voucher.code }}</span>
       <div>
@@ -128,9 +137,9 @@
     </div>
 
     <div class="ticket-actions">
-      <button type="button" class="ticket-btn edit" (click)="openEdit(voucher)"><span>✎</span> Sửa</button>
-      <button type="button" class="ticket-btn toggle" (click)="updateStatus(voucher, voucher.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')"><span>{{ voucher.status === 'ACTIVE' ? '⏸' : '▶' }}</span> {{ voucher.status === 'ACTIVE' ? 'Tắt' : 'Bật' }}</button>
-      <button type="button" class="ticket-btn danger" (click)="remove(voucher)"><span>🗑</span></button>
+      <button type="button" class="ticket-btn edit" (click)="$event.stopPropagation(); openEdit(voucher)"><span>✎</span> Sửa</button>
+      <button type="button" class="ticket-btn toggle" (click)="$event.stopPropagation(); updateStatus(voucher, voucher.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')"><span>{{ voucher.status === 'ACTIVE' ? '⏸' : '▶' }}</span> {{ voucher.status === 'ACTIVE' ? 'Tắt' : 'Bật' }}</button>
+      <button type="button" class="ticket-btn danger" (click)="$event.stopPropagation(); remove(voucher)"><span>🗑</span></button>
     </div>
   </article>
 </section>

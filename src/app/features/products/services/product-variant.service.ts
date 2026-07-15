@@ -51,6 +51,12 @@ export class ProductVariantService {
       .pipe(map((response) => (response.data || []).map((variant) => this.normalizeVariantSummary(variant))));
   }
 
+  getVariant(productId: string, variantId: string): Observable<ProductVariant> {
+    return this.http
+      .get<BaseResponse<ProductVariant>>(`${this.variantsUrl(productId)}/${variantId}`)
+      .pipe(map((response) => this.normalizeVariant(response.data)));
+  }
+
   createVariant(productId: string, request: ProductVariantCreateRequest): Observable<ProductVariant> {
     return this.http
       .post<BaseResponse<ProductVariant>>(this.variantsUrl(productId), this.toBackendRequest(request))

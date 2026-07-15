@@ -33,6 +33,7 @@ export class ProductToppingsPageComponent implements OnInit {
   pageData: PageResponse<ProductToppingSummary> = this.createEmptyPage();
   selectedProductTopping: ProductToppingSummary | null = null;
   loading = false;
+  loadingDetail = false;
   saving = false;
   productLoading = false;
   toppingLoading = false;
@@ -112,10 +113,23 @@ export class ProductToppingsPageComponent implements OnInit {
   }
 
   openEditDrawer(item: ProductToppingSummary): void {
-    this.selectedProductTopping = item;
-    this.form.reset({ toppingId: item.toppingId, isDefault: item.isDefault, maxQuantity: item.maxQuantity || 1 });
-    this.form.controls.toppingId.disable();
-    this.drawerOpen = true;
+    if (!this.selectedProductId) { return; }
+
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.productToppingService.getProductTopping(this.selectedProductId, item.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedProductTopping = detail;
+          this.form.reset({ toppingId: detail.toppingId, isDefault: detail.isDefault, maxQuantity: detail.maxQuantity || 1 });
+          this.form.controls.toppingId.disable();
+          this.drawerOpen = true;
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết topping của sản phẩm.';
+        }
+      });
   }
 
   closeDrawer(): void {

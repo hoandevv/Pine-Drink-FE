@@ -27,6 +27,7 @@ export class ToppingsPageComponent implements OnInit {
   pageData: PageResponse<Topping> = this.createEmptyPage();
   selectedTopping: Topping | null = null;
   loading = false;
+  loadingDetail = false;
   saving = false;
   drawerOpen = false;
   errorMessage = '';
@@ -75,14 +76,25 @@ export class ToppingsPageComponent implements OnInit {
   }
 
   openEditDrawer(topping: Topping): void {
-    this.selectedTopping = topping;
-    this.form.reset({
-      name: topping.name,
-      price: topping.price || 0,
-      imageUrl: topping.imageUrl || '',
-      groupName: topping.groupName || ''
-    });
-    this.drawerOpen = true;
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.toppingService.getTopping(topping.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedTopping = detail;
+          this.form.reset({
+            name: detail.name,
+            price: detail.price || 0,
+            imageUrl: detail.imageUrl || '',
+            groupName: detail.groupName || ''
+          });
+          this.drawerOpen = true;
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết topping. Vui lòng thử lại.';
+        }
+      });
   }
 
   closeDrawer(): void {

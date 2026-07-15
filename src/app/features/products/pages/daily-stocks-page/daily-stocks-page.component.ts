@@ -40,6 +40,7 @@ export class DailyStocksPageComponent implements OnInit {
   selectedStock: DailyStock | null = null;
   variantSearchTerm = '';
   loading = false;
+  loadingDetail = false;
   saving = false;
   bootLoading = false;
   logLoading = false;
@@ -89,14 +90,25 @@ export class DailyStocksPageComponent implements OnInit {
   }
 
   openEditDrawer(stock: DailyStock): void {
-    this.selectedStock = stock;
-    this.quotaForm.reset({
-      variantId: stock.variantId,
-      dailyQuantity: stock.dailyQuantity || 0,
-      reason: 'Điều chỉnh quota trong ngày'
-    });
-    this.drawerOpen = true;
-    this.loadLogs(stock);
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.dailyStockService.getById(stock.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedStock = detail;
+          this.quotaForm.reset({
+            variantId: detail.variantId,
+            dailyQuantity: detail.dailyQuantity || 0,
+            reason: 'Điều chỉnh quota trong ngày'
+          });
+          this.drawerOpen = true;
+          this.loadLogs(detail);
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết daily stock.';
+        }
+      });
   }
 
   closeDrawer(): void { if (!this.saving) { this.drawerOpen = false; this.selectedStock = null; } }

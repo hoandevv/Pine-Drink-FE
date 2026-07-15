@@ -28,6 +28,7 @@ export class CategoriesPageComponent implements OnInit {
   pageData: PageResponse<Category> = this.createEmptyPage();
   selectedCategory: Category | null = null;
   loading = false;
+  loadingDetail = false;
   saving = false;
   errorMessage = '';
   drawerOpen = false;
@@ -90,16 +91,27 @@ export class CategoriesPageComponent implements OnInit {
   }
 
   openEditDrawer(category: Category): void {
-    this.selectedCategory = category;
-    this.selectedImageFile = null;
-    this.previewImageUrl = '';
-    this.form.reset({
-      name: category.name,
-      description: category.description || '',
-      imageUrl: category.imageUrl || '',
-      displayOrder: category.displayOrder || 0
-    });
-    this.drawerOpen = true;
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.categoryService.getCategoryById(category.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedCategory = detail;
+          this.selectedImageFile = null;
+          this.previewImageUrl = '';
+          this.form.reset({
+            name: detail.name,
+            description: detail.description || '',
+            imageUrl: detail.imageUrl || '',
+            displayOrder: detail.displayOrder || 0
+          });
+          this.drawerOpen = true;
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết danh mục. Vui lòng thử lại.';
+        }
+      });
   }
 
   closeDrawer(): void {

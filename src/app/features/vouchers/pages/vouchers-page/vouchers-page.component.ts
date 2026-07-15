@@ -17,6 +17,7 @@ export class VouchersPageComponent implements OnInit {
   vouchers: VoucherResponse[] = [];
   branches: Branch[] = [];
   loading = false;
+  loadingDetail = false;
   loadingBranches = false;
   branchScopeOpen = false;
   branchKeyword = '';
@@ -103,24 +104,33 @@ export class VouchersPageComponent implements OnInit {
   }
 
   openEdit(voucher: VoucherResponse): void {
-    this.editing = voucher;
-    this.showForm = true;
-    this.form.reset({
-      code: voucher.code,
-      name: voucher.name,
-      description: voucher.description || '',
-      discountType: voucher.discountType,
-      discountValue: voucher.discountValue,
-      maxDiscountAmount: voucher.maxDiscountAmount ?? null,
-      minOrderAmount: voucher.minOrderAmount ?? 0,
-      usageLimit: voucher.usageLimit ?? null,
-      usageLimitPerCustomer: voucher.usageLimitPerCustomer ?? 1,
-      startAt: this.toDateTimeLocal(voucher.startAt),
-      endAt: this.toDateTimeLocal(voucher.endAt),
-      branchIdsText: (voucher.branchIds || []).join(', ')
-    });
-    this.branchKeyword = '';
-    this.branchScopeOpen = false;
+    this.loadingDetail = true;
+    this.voucherService.getById(voucher.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (res) => {
+          const detail = res.data;
+          this.editing = detail;
+          this.showForm = true;
+          this.form.reset({
+            code: detail.code,
+            name: detail.name,
+            description: detail.description || '',
+            discountType: detail.discountType,
+            discountValue: detail.discountValue,
+            maxDiscountAmount: detail.maxDiscountAmount ?? null,
+            minOrderAmount: detail.minOrderAmount ?? 0,
+            usageLimit: detail.usageLimit ?? null,
+            usageLimitPerCustomer: detail.usageLimitPerCustomer ?? 1,
+            startAt: this.toDateTimeLocal(detail.startAt),
+            endAt: this.toDateTimeLocal(detail.endAt),
+            branchIdsText: (detail.branchIds || []).join(', ')
+          });
+          this.branchKeyword = '';
+          this.branchScopeOpen = false;
+        },
+        error: () => this.toast.error('Không tải được chi tiết voucher')
+      });
   }
 
   submit(): void {

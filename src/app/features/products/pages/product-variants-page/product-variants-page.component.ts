@@ -36,6 +36,7 @@ export class ProductVariantsPageComponent implements OnInit {
   pageData: PageResponse<ProductVariantSummary> = this.createEmptyPage();
   selectedVariant: ProductVariantSummary | null = null;
   loading = false;
+  loadingDetail = false;
   saving = false;
   productLoading = false;
   drawerOpen = false;
@@ -87,14 +88,27 @@ export class ProductVariantsPageComponent implements OnInit {
   }
 
   openEditDrawer(variant: ProductVariantSummary): void {
-    this.selectedVariant = variant;
-    this.form.reset({
-      variantName: variant.variantName,
-      sizeLabel: variant.sizeLabel || '',
-      priceDelta: variant.priceDelta || 0,
-      displayOrder: variant.displayOrder || 0
-    });
-    this.drawerOpen = true;
+    if (!this.selectedProductId) { return; }
+
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.variantService.getVariant(this.selectedProductId, variant.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedVariant = detail;
+          this.form.reset({
+            variantName: detail.variantName,
+            sizeLabel: detail.sizeLabel || '',
+            priceDelta: detail.priceDelta || 0,
+            displayOrder: detail.displayOrder || 0
+          });
+          this.drawerOpen = true;
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết biến thể.';
+        }
+      });
   }
 
   closeDrawer(): void {
