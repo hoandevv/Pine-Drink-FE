@@ -51,6 +51,7 @@ export class ApiErrorMessageService {
     AUTH_025: 'Tài khoản đã có mật khẩu đăng nhập.',
     AUTH_026: 'Tài khoản chưa thiết lập mật khẩu đăng nhập.',
     AUTH_027: 'Mật khẩu xác nhận không khớp.',
+    AUTH_028: 'Thao tác cần đăng nhập',
     AUTH_GOOGLE_001: 'Thiếu mã xác thực Google.',
     AUTH_GOOGLE_002: 'Mã xác thực Google không hợp lệ.',
     AUTH_GOOGLE_003: 'Email Google chưa được xác minh.',

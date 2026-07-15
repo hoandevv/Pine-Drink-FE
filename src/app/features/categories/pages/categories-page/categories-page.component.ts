@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastNotificationService } from '../../../../core/services/toast.service';
 import { Category } from '../../models/category.model';
 import { CategoryService } from '../../services/category.service';
 
@@ -40,7 +41,8 @@ export class CategoriesPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly categoryService: CategoryService,
-    private readonly confirmDialog: ConfirmDialogService
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly toast: ToastNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -137,17 +139,37 @@ export class CategoriesPageComponent implements OnInit {
 
   toggleStatus(category: Category): void {
     const nextStatus = category.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    this.loading = true;
-    this.errorMessage = '';
+    const isHiding = nextStatus === 'INACTIVE';
 
-    this.categoryService.updateCategoryStatus(category.id, { status: nextStatus })
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadCategories(this.pageData.page),
-        error: () => {
-          this.errorMessage = 'Không đổi được trạng thái danh mục. Vui lòng thử lại.';
-        }
-      });
+    this.confirmDialog.confirm({
+      title: isHiding ? 'Xác nhận ẩn danh mục?' : 'Xác nhận hiện danh mục?',
+      message: `${isHiding ? 'Ẩn' : 'Hiện'} danh mục ${category.name}?`,
+      description: isHiding
+        ? 'Danh mục bị ẩn sẽ không hiển thị ở khu vực khách hàng.'
+        : 'Danh mục sẽ được hiển thị lại ở khu vực khách hàng.',
+      confirmText: isHiding ? 'Ẩn danh mục' : 'Hiện danh mục',
+      cancelText: 'Hủy',
+      type: isHiding ? 'warning' : 'info'
+    }).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.loading = true;
+      this.errorMessage = '';
+
+      this.categoryService.updateCategoryStatus(category.id, { status: nextStatus })
+        .pipe(finalize(() => (this.loading = false)))
+        .subscribe({
+          next: () => {
+            const actionText = nextStatus === 'ACTIVE' ? 'hiện' : 'ẩn';
+            this.toast.success(`Đã ${actionText} danh mục ${category.name}.`);
+            this.loadCategories(this.pageData.page);
+          },
+          error: () => {
+            this.errorMessage = 'Không đổi được trạng thái danh mục. Vui lòng thử lại.';
+            this.toast.error('Không đổi được trạng thái danh mục. Vui lòng thử lại.');
+          }
+        });
+    });
   }
 
   deleteCategory(category: Category): void {

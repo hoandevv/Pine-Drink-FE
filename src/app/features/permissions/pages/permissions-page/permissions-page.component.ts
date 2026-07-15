@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
 import { AccessControlService } from '../../../../core/services/access-control.service';
-import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 import { PermissionDefinition, PermissionService, RolePermissionMatrix } from '../../services/permission.service';
 
 interface PermissionGroup {
@@ -19,22 +18,16 @@ export class PermissionsPageComponent implements OnInit {
   permissions: PermissionDefinition[] = [];
   roles: RolePermissionMatrix[] = [];
   groups: PermissionGroup[] = [];
+  filteredGroups: PermissionGroup[] = [];
   selectedRole = 'MANAGER';
   selectedModule = 'ALL';
   savingRole: string | null = null;
   successMessage = '';
 
-  readonly dangerousPermissions = new Set([
-    'ACCOUNT_CHANGE_STATUS',
-    'ACCOUNT_RESET_PASSWORD',
-    'ROLE_PERMISSION_UPDATE',
-    'BRANCH_DELETE'
-  ]);
 
   constructor(
     private readonly permissionService: PermissionService,
-    public readonly accessControl: AccessControlService,
-    private readonly confirmDialog: ConfirmDialogService
+    public readonly accessControl: AccessControlService
   ) {}
 
   ngOnInit(): void {
@@ -45,6 +38,12 @@ export class PermissionsPageComponent implements OnInit {
       this.permissions = permissions;
       this.roles = roles;
       this.groups = this.buildGroups(permissions);
+      this.selectedModule = 'ALL';
+      this.applyModuleFilter();
+
+      if (!this.selectedRoleData && roles.length) {
+        this.selectedRole = roles[0].role;
+      }
     });
   }
 
@@ -56,12 +55,18 @@ export class PermissionsPageComponent implements OnInit {
     return ['ALL', ...this.groups.map((group) => group.module)];
   }
 
-  get visibleGroups(): PermissionGroup[] {
+  onModuleChange(module: string): void {
+    this.selectedModule = module;
+    this.applyModuleFilter();
+  }
+
+  private applyModuleFilter(): void {
     if (this.selectedModule === 'ALL') {
-      return this.groups;
+      this.filteredGroups = this.groups;
+      return;
     }
 
-    return this.groups.filter((group) => group.module === this.selectedModule);
+    this.filteredGroups = this.groups.filter((group) => group.module === this.selectedModule);
   }
 
   get totalAssigned(): number {
@@ -112,43 +117,6 @@ export class PermissionsPageComponent implements OnInit {
         this.savingRole = null;
       }
     });
-  }
-
-  resetManagerSafePreset(): void {
-    this.confirmDialog.confirm({
-      title: 'Áp dụng preset an toàn cho Quản lý?',
-      message: 'Thao tác này sẽ gỡ các quyền rủi ro cao khỏi vai trò MANAGER.',
-      description: 'Sau khi áp dụng, bạn vẫn cần bấm "Lưu quyền" để ghi nhận thay đổi xuống hệ thống.',
-      confirmText: 'Áp dụng preset',
-      cancelText: 'Hủy',
-      type: 'warning',
-      risks: [
-        'Đổi trạng thái tài khoản',
-        'Reset mật khẩu',
-        'Cập nhật phân quyền',
-        'Xóa chi nhánh'
-      ]
-    }).subscribe((confirmed) => {
-      if (!confirmed) {
-        return;
-      }
-
-      this.applyManagerSafePreset();
-    });
-  }
-
-  private applyManagerSafePreset(): void {
-    const manager = this.roles.find((role) => role.role === 'MANAGER');
-    if (!manager || !this.canEditRole(manager)) {
-      return;
-    }
-
-    manager.permissions = manager.permissions.filter((permission) => !this.dangerousPermissions.has(permission));
-    if (!manager.permissions.includes('BRANCH_UPDATE')) {
-      manager.permissions.push('BRANCH_UPDATE');
-    }
-    this.selectedRole = 'MANAGER';
-    this.successMessage = 'Đã áp preset an toàn cho Quản lý. Bấm Lưu để ghi nhận.';
   }
 
   riskLabel(risk: PermissionDefinition['risk']): string {

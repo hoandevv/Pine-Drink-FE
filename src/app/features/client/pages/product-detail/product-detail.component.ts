@@ -58,6 +58,7 @@ export class ProductDetailComponent implements OnInit {
   selectedSugarLevel = 100;
   selectedToppings: Topping[] = [];
   quantity = 1;
+  readonly quantityInputLimit = 99;
   note = '';
 
   cartItems: any[] = [];
@@ -200,6 +201,28 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 
+  clearQuantityInput(event: FocusEvent): void {
+    const input = event.target as HTMLInputElement;
+    input.value = '';
+  }
+
+  setQuantityFromInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const nextQuantity = Number(input.value);
+    const max = this.maxOrderQuantity > 0
+      ? Math.min(this.maxOrderQuantity, this.quantityInputLimit)
+      : this.quantityInputLimit;
+
+    if (!Number.isFinite(nextQuantity)) {
+      this.quantity = 1;
+      input.value = String(this.quantity);
+      return;
+    }
+
+    this.quantity = Math.min(Math.max(Math.trunc(nextQuantity), 1), max);
+    input.value = String(this.quantity);
+  }
+
   get basePrice(): number {
     if (!this.product) { return 0; }
     if (this.selectedVariant?.finalPrice !== undefined) {
@@ -240,11 +263,16 @@ export class ProductDetailComponent implements OnInit {
     return this.dailyStocks.find(stock => stock.variantId === this.selectedVariant?.id) || null;
   }
 
-  get availableQuota(): number | null {
+  get totalAvailableQuota(): number | null {
     const stock = this.selectedDailyStock;
     if (!stock) return null;
-    const baseQuota = Math.max(0, Number(stock.availableQuantity) || 0);
-    return Math.max(0, baseQuota - this.existingCartQuantity);
+    return Math.max(0, Number(stock.availableQuantity) || 0);
+  }
+
+  get availableQuota(): number | null {
+    const totalQuota = this.totalAvailableQuota;
+    if (totalQuota === null) return null;
+    return Math.max(0, totalQuota - this.existingCartQuantity);
   }
 
   get existingCartQuantity(): number {
@@ -256,7 +284,7 @@ export class ProductDetailComponent implements OnInit {
 
   get maxOrderQuantity(): number {
     const quota = this.availableQuota;
-    return quota === null ? 0 : Math.max(0, Math.min(99, quota));
+    return quota === null ? 0 : Math.max(0, Math.min(this.quantityInputLimit, quota));
   }
 
   get quotaStatusLabel(): string {
@@ -267,15 +295,17 @@ export class ProductDetailComponent implements OnInit {
     if (!this.selectedVariant) { return 'Hết hàng'; }
     if (!this.selectedBranchId) { return 'Chọn chi nhánh để xem tồn hàng'; }
     if (!this.selectedDailyStock) { return 'Hết hàng'; }
-    if ((this.availableQuota || 0) <= 0) { return 'Hết hàng'; }
+    if ((this.totalAvailableQuota || 0) <= 0) { return 'Hết hàng'; }
+    if ((this.availableQuota || 0) <= 0) { return `Còn ${this.totalAvailableQuota} phần hôm nay · đã có ${this.existingCartQuantity} trong giỏ`; }
     if ((this.availableQuota || 0) <= 5) { return `Sắp hết · còn ${this.availableQuota} phần`; }
-    return `Còn ${this.availableQuota} phần hôm nay`;
+    return `Còn ${this.totalAvailableQuota} phần hôm nay`;
   }
 
   get quotaTone(): 'ok' | 'low' | 'out' | 'unset' {
     if (this.branchProductAvailability && this.isProductUnavailable) { return 'out'; }
     if (!this.selectedVariant || !this.selectedDailyStock) { return 'out'; }
-    if ((this.availableQuota || 0) <= 0) { return 'out'; }
+    if ((this.totalAvailableQuota || 0) <= 0) { return 'out'; }
+    if ((this.availableQuota || 0) <= 0) { return 'low'; }
     if ((this.availableQuota || 0) <= 5) { return 'low'; }
     return 'ok';
   }
@@ -290,6 +320,10 @@ export class ProductDetailComponent implements OnInit {
   }
   addToCart(): void {
     if (!this.product || this.isProductUnavailable || !this.selectedBranchId) { return; }
+    if (this.maxOrderQuantity <= 0) {
+      this.toast.error('Số lượng trong giỏ đã đạt giới hạn cho phép.');
+      return;
+    }
 
     this.cartService.addItem({
       branchId: this.selectedBranchId,
@@ -305,8 +339,15 @@ export class ProductDetailComponent implements OnInit {
         this.toast.success(`Đã thêm ${this.quantity} ${this.product?.name} vào giỏ hàng!`);
         this.router.navigate(['/cart']);
       },
-      error: () => {
-        this.toast.error('Không thêm được vào giỏ hàng. Vui lòng đăng nhập hoặc thử lại.');
+      error: (error) => {
+        if (error?.status === 401 || error?.errorCode === 'AUTH_028') {
+          this.router.navigate(['/auth/login'], {
+            queryParams: { returnUrl: this.router.url }
+          });
+          return;
+        }
+
+        this.toast.error('Không thêm được vào giỏ hàng. Vui lòng thử lại.');
       }
     });
   }
@@ -330,7 +371,7 @@ export class ProductDetailComponent implements OnInit {
   get isProductUnavailable(): boolean {
     const availability = this.branchProductAvailability;
     if (availability && (availability.status !== 'ACTIVE' || !availability.available || !this.isWithinAvailabilityWindow(availability))) { return true; }
-    return !this.selectedVariant || !this.selectedDailyStock || (this.availableQuota !== null && this.availableQuota <= 0);
+    return !this.selectedVariant || !this.selectedDailyStock || (this.totalAvailableQuota !== null && this.totalAvailableQuota <= 0);
   }
 
   get availabilityText(): string {
@@ -338,7 +379,7 @@ export class ProductDetailComponent implements OnInit {
     if (this.branchProductAvailability && this.isProductUnavailable) {
       return this.branchProductAvailability.soldOutReason || 'Tạm hết món tại chi nhánh này.';
     }
-    if (!this.selectedVariant || !this.selectedDailyStock || (this.availableQuota || 0) <= 0) { return 'Hết hàng tại chi nhánh này.'; }
+    if (!this.selectedVariant || !this.selectedDailyStock || (this.totalAvailableQuota || 0) <= 0) { return 'Hết hàng tại chi nhánh này.'; }
     return 'Sẵn sàng phục vụ tại chi nhánh đã chọn.';
   }
 
@@ -480,7 +521,7 @@ export class ProductDetailComponent implements OnInit {
     });
   }
 
-  private normalizeQuantityToStock(): void {
+  normalizeQuantityToStock(): void {
     if (this.visibleSizeOptions.length && !this.visibleSizeOptions.some(size => size.id === this.selectedSize)) {
       this.selectSize(this.visibleSizeOptions[0].id);
       return;
