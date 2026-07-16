@@ -1,6 +1,7 @@
 :host {
   display: block;
   width: 100%;
+  container-type: inline-size;
 }
 
 .admin-pagination {
@@ -200,5 +201,73 @@
 
   .admin-pagination__actions button {
     width: 100%;
+  }
+}
+
+@container (max-width: 430px) {
+  .admin-pagination {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "status"
+      "size"
+      "actions";
+    min-height: auto;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .admin-pagination__status {
+    grid-area: status;
+    white-space: normal;
+  }
+
+  .desktop-status {
+    display: none;
+  }
+
+  .mobile-status {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .mobile-status strong {
+    color: #163d28;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .mobile-status small {
+    color: #64705d;
+    font-size: 12px;
+    font-weight: 850;
+    text-align: right;
+  }
+
+  .admin-pagination__size {
+    grid-area: size;
+    justify-content: flex-start;
+    font-size: 12px;
+  }
+
+  .admin-pagination__actions {
+    grid-area: actions;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .admin-pagination__actions button {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .admin-pagination__actions .admin-pagination__page {
+    min-width: 34px;
+    padding: 0 8px;
   }
 }

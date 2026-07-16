@@ -184,32 +184,6 @@ export class CategoriesPageComponent implements OnInit {
     });
   }
 
-  deleteCategory(category: Category): void {
-    this.confirmDialog.confirm({
-      title: 'Xác nhận xóa danh mục?',
-      message: `Danh mục ${category.name} sẽ bị xóa khỏi hệ thống.`,
-      description: 'Thao tác này không thể hoàn tác.',
-      confirmText: 'Xóa danh mục',
-      cancelText: 'Hủy',
-      type: 'danger',
-      risks: ['Sản phẩm thuộc danh mục có thể bị ảnh hưởng', 'Không thể khôi phục sau khi xóa']
-    }).subscribe((confirmed) => {
-      if (!confirmed) return;
-
-      this.loading = true;
-      this.errorMessage = '';
-
-      this.categoryService.deleteCategory(category.id)
-        .pipe(finalize(() => (this.loading = false)))
-        .subscribe({
-          next: () => this.loadCategories(this.pageData.page),
-          error: () => {
-            this.errorMessage = 'Không xóa được danh mục. Có thể danh mục đang được sản phẩm sử dụng.';
-          }
-        });
-    });
-  }
-
   refresh(): void {
     this.loadCategories(this.pageData.page);
   }

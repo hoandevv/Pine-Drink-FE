@@ -1,4 +1,4 @@
-﻿import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { ApiError } from '../../shared/models/api-error.model';
@@ -158,8 +158,9 @@ export class ApiErrorMessageService {
   }
 
   private resolveFieldErrors(errors?: FieldError[] | null): string {
-    if (!errors?.length) return '';
-    return errors.map((fieldError) => `${this.resolveFieldName(fieldError.field)}: ${this.normalizeFieldMessage(fieldError.message)}`).join(' | ');
+    const firstError = errors?.[0];
+    if (!firstError) return '';
+    return `${this.resolveFieldName(firstError.field)}: ${this.normalizeFieldMessage(firstError.message)}`;
   }
 
   private normalizeFieldMessage(message: string): string {

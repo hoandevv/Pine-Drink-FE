@@ -406,6 +406,7 @@ export class CartComponent implements OnInit {
       affectedItems: [
         `${this.cartItems.length} sản phẩm`,
         `Thanh toán: ${this.paymentMethod === 'MOMO' ? 'Ví MoMo' : (this.orderType === 'DELIVERY' ? 'COD' : 'Tại quầy')}`,
+        ...(this.orderType === 'DELIVERY' ? [`Phí giao hàng: ${this.formatPrice(this.shippingFee)}`] : []),
         `Tổng tiền: ${this.formatPrice(this.total)}`
       ]
     }).subscribe((confirmed) => {

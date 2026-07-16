@@ -25,7 +25,7 @@ export class ToastNotificationService {
       title
     };
 
-    this.toastsSubject.next([...this.toastsSubject.value, toast]);
+    this.toastsSubject.next([toast]);
     window.setTimeout(() => this.dismiss(toast.id), duration);
   }
 

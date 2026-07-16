@@ -23,14 +23,14 @@ export class BranchService {
     if (status) { params = params.set('status', status); }
 
     return this.http
-      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(`${this.apiUrl}/summaries`, { params })
+      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(this.apiUrl, { params })
       .pipe(map((response) => this.normalizePageResponse(response.data, page, size)));
   }
 
   getActiveBranches(page = 0, size = 100): Observable<PageResponse<Branch>> {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http
-      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(`${this.apiUrl}/active/options`, { params })
+      .get<BaseResponse<PageResponse<Branch> | Branch[]>>(`${this.apiUrl}/active`, { params })
       .pipe(
         map((response) => {
           const pageResponse = this.normalizePageResponse(response.data, page, size);

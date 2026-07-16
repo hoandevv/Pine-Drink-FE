@@ -53,7 +53,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       next: page => {
         const products = (page.content || []).filter(product => product.status === 'ACTIVE');
         this.bestSellerProducts = products
-          .sort((a, b) => Number(b.bestSeller) - Number(a.bestSeller) || Number(b.featured) - Number(a.featured))
+          .filter(product => this.isHighlightedProduct(product))
+          .sort((a, b) => this.highlightPriority(b) - this.highlightPriority(a))
           .slice(0, 4);
         this.startHeroRotation();
         this.loadingProducts = false;
@@ -146,9 +147,21 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   getProductBadge(product: ProductSummary): string {
-    if (product.bestSeller) { return 'Best seller'; }
-    if (product.featured) { return 'Nổi bật'; }
+    if (this.isFlagEnabled(product.bestSeller)) { return 'Best seller'; }
+    if (this.isFlagEnabled(product.featured)) { return 'Nổi bật'; }
     return '';
+  }
+
+  private isHighlightedProduct(product: ProductSummary): boolean {
+    return this.isFlagEnabled(product.bestSeller) || this.isFlagEnabled(product.featured);
+  }
+
+  private highlightPriority(product: ProductSummary): number {
+    return (this.isFlagEnabled(product.bestSeller) ? 2 : 0) + (this.isFlagEnabled(product.featured) ? 1 : 0);
+  }
+
+  private isFlagEnabled(value: unknown): boolean {
+    return value === true || value === 1 || value === 'true' || value === '1';
   }
 
   private loadBranches(): void {

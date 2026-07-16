@@ -120,12 +120,8 @@ export class MenuComponent implements OnInit {
   filterProducts(): void {
     let filtered = [...this.allProducts];
 
-    if (this.selectedBranch) {
-      filtered = filtered.filter(product => !this.isProductSoldOut(product));
-    }
-
     if (this.selectedCategoryId !== 'all') {
-      filtered = filtered.filter(product => product.categoryId === this.selectedCategoryId);
+      filtered = filtered.filter(product => this.productBelongsToCategory(product, this.selectedCategoryId));
     }
 
     if (this.searchQuery.trim()) {
@@ -280,9 +276,25 @@ export class MenuComponent implements OnInit {
         name: category.name,
         icon: this.categoryIcon(category.name),
         imageUrl: category.imageUrl,
-        count: this.allProducts.filter(product => product.categoryId === category.id).length
+        count: this.allProducts.filter(product =>
+          product.categoryId === category.id ||
+          this.normalizeCategoryName(product.categoryName) === this.normalizeCategoryName(category.name)
+        ).length
       }))
     ];
+  }
+
+  private productBelongsToCategory(product: ProductSummary, categoryId: string): boolean {
+    if (product.categoryId === categoryId) {
+      return true;
+    }
+
+    const category = this.categories.find(item => item.id === categoryId);
+    return !!category && this.normalizeCategoryName(product.categoryName) === this.normalizeCategoryName(category.name);
+  }
+
+  private normalizeCategoryName(value: string | null | undefined): string {
+    return (value || '').trim().toLowerCase();
   }
 
   private categoryIcon(name: string): string {
