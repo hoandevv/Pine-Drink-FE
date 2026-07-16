@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, forkJoin, finalize, of } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import * as L from 'leaflet';
 import { BranchHours } from '../../../branches/models/branch-hours.model';
@@ -21,7 +21,7 @@ export class StoreLocatorComponent implements OnInit {
   expandedHoursBranchId: string | null = null;
 
   loading = false;
-  
+
   map!: L.Map;
   markers: L.Marker[] = [];
   userLocationMarker: L.Marker | null = null;
@@ -39,7 +39,7 @@ export class StoreLocatorComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private readonly branchService: BranchService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initMap();
@@ -84,9 +84,9 @@ export class StoreLocatorComponent implements OnInit {
       .subscribe({
         next: (pageData) => {
           this.allBranches = pageData.content;
+          this.hydrateBranchHours(this.allBranches);
           this.applyFilters();
           this.selectedBranch = this.filteredBranches[0] || null;
-          this.loadBranchHours(this.allBranches);
         },
         error: () => {
           this.allBranches = [];
@@ -198,6 +198,10 @@ export class StoreLocatorComponent implements OnInit {
   }
 
   confirmBranch(branch: Branch): void {
+    if (!this.isBranchOrderable(branch)) {
+      return;
+    }
+
     sessionStorage.setItem('selectedBranchId', branch.id);
     sessionStorage.setItem('selectedBranchName', branch.name);
     this.router.navigate(['/menu']);
@@ -216,6 +220,10 @@ export class StoreLocatorComponent implements OnInit {
 
   getStatusText(branch: Branch): string {
     return this.getOperatingState(branch).label;
+  }
+
+  isBranchOrderable(branch: Branch): boolean {
+    return this.isActiveBranch(branch);
   }
 
   getTodayHoursLabel(branch: Branch): string {
@@ -376,12 +384,25 @@ export class StoreLocatorComponent implements OnInit {
     });
   }
 
+  private hydrateBranchHours(branches: Branch[]): void {
+    const hasEmbeddedHours = branches.some((branch) => Array.isArray(branch.hours));
+
+    if (hasEmbeddedHours) {
+      this.branchHoursByBranchId = branches.reduce<Record<string, BranchHours[]>>((acc, branch) => {
+        acc[branch.id] = branch.hours ?? [];
+        return acc;
+      }, {});
+      return;
+    }
+
+    this.loadBranchHours(branches);
+  }
+
   private loadBranchHours(branches: Branch[]): void {
     if (!branches.length) {
       this.branchHoursByBranchId = {};
       return;
     }
-
     const requests = branches.map((branch) =>
       this.branchService.getBranchHours(branch.id).pipe(
         catchError(() => of([] as BranchHours[]))
@@ -408,7 +429,7 @@ export class StoreLocatorComponent implements OnInit {
   }
 
   private getOperatingState(branch: Branch): { status: 'open' | 'closing-soon' | 'closed' | 'unknown'; label: string } {
-    if (branch.status !== 'ACTIVE') {
+    if (!this.isActiveBranch(branch)) {
       return { status: 'closed', label: 'Tạm ngưng' };
     }
 
@@ -466,6 +487,10 @@ export class StoreLocatorComponent implements OnInit {
 
   private formatTime(time: string): string {
     return time?.slice(0, 5) || '--:--';
+  }
+
+  private isActiveBranch(branch: Branch): boolean {
+    return (branch.status ?? 'ACTIVE') === 'ACTIVE';
   }
 
   private branchPopup(branch: Branch): string {

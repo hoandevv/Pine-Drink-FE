@@ -31,7 +31,18 @@ export class BranchService {
     const params = new HttpParams().set('page', page).set('size', size);
     return this.http
       .get<BaseResponse<PageResponse<Branch> | Branch[]>>(`${this.apiUrl}/active/options`, { params })
-      .pipe(map((response) => this.normalizePageResponse(response.data, page, size)));
+      .pipe(
+        map((response) => {
+          const pageResponse = this.normalizePageResponse(response.data, page, size);
+          return {
+            ...pageResponse,
+            content: pageResponse.content.map((branch) => ({
+              ...branch,
+              status: branch.status ?? 'ACTIVE'
+            }))
+          };
+        })
+      );
   }
 
   private normalizePageResponse(data: PageResponse<Branch> | Branch[], page: number, size: number): PageResponse<Branch> {

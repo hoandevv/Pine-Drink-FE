@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
-import { CreateReportJobRequest, ReportJobResponse, ReportJobStatsResponse } from '../models/report.model';
+import { CreateReportJobRequest, ReportJobResponse, ReportJobStatsResponse, ReportOptionsResponse } from '../models/report.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReportService {
@@ -50,6 +50,12 @@ export class ReportService {
   getJobStats(): Observable<ReportJobStatsResponse> {
     return this.http
       .get<BaseResponse<ReportJobStatsResponse>>(`${this.apiUrl}/stats`)
+      .pipe(map((response) => response.data));
+  }
+
+  getOptions(): Observable<ReportOptionsResponse> {
+    return this.http
+      .get<BaseResponse<ReportOptionsResponse>>(`${this.apiUrl}/options`)
       .pipe(map((response) => response.data));
   }
 }
