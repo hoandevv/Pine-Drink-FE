@@ -36,6 +36,12 @@ export class DailyStockService {
       .pipe(map((response) => response.data || []));
   }
 
+  getById(id: string): Observable<DailyStock> {
+    return this.http
+      .get<BaseResponse<DailyStock>>(`${this.apiUrl}/${id}`)
+      .pipe(map((response) => response.data));
+  }
+
   setQuota(request: SetDailyStockQuotaRequest): Observable<DailyStock> {
     return this.http
       .post<BaseResponse<DailyStock>>(this.apiUrl, request)

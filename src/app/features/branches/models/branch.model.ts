@@ -1,3 +1,5 @@
+import { BranchHours } from './branch-hours.model';
+
 export interface Branch {
   id: string;
   code?: string;
@@ -11,6 +13,7 @@ export interface Branch {
   supportsPickup?: boolean;
   supportsDelivery?: boolean;
   averagePreparationMinutes?: number;
+  hours?: BranchHours[];
   status: BranchStatus;
   createdAt?: string;
   updatedAt?: string;

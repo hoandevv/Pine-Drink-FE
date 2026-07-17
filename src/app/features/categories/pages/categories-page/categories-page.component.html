@@ -82,7 +82,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let category of filteredCategories; trackBy: trackCategory">
+          <tr
+            *ngFor="let category of filteredCategories; trackBy: trackCategory"
+            class="category-row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Xem chi tiết ' + category.name"
+            (click)="openEditDrawer(category)"
+            (keydown.enter)="openEditDrawer(category)"
+            (keydown.space)="openEditDrawer(category); $event.preventDefault()">
             <td data-label="Danh mục">
               <div class="category-cell">
                 <div class="thumb">
@@ -109,19 +117,14 @@
             <td data-label="Thao tác">
               <div class="row-actions">
                 <button id="edit-category-{{ category.id }}" type="button" class="action-btn edit"
-                  (click)="openEditDrawer(category)" title="Sửa">
+                  (click)="$event.stopPropagation(); openEditDrawer(category)" title="Sửa">
                   <span class="material-symbols-outlined">edit</span>
                   <b>Sửa</b>
                 </button>
                 <button id="toggle-category-{{ category.id }}" type="button" class="action-btn toggle"
-                  (click)="toggleStatus(category)" title="Ẩn/Bật">
+                  (click)="$event.stopPropagation(); toggleStatus(category)" title="Ẩn/Bật">
                   <span class="material-symbols-outlined">{{ category.status === 'ACTIVE' ? 'visibility_off' : 'visibility' }}</span>
                   <b>{{ category.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}</b>
-                </button>
-                <button id="delete-category-{{ category.id }}" type="button" class="action-btn danger"
-                  (click)="deleteCategory(category)" title="Xóa">
-                  <span class="material-symbols-outlined">delete</span>
-                  <b>Xóa</b>
                 </button>
               </div>
             </td>

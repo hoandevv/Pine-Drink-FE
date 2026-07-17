@@ -59,7 +59,8 @@ export class PermissionService {
     'ROLE_PERMISSION_UPDATE',
     'BRANCH_DELETE'
   ]);
-  private readonly mediumRiskKeywords = ['CREATE', 'UPDATE', 'DELETE', 'UPLOAD', 'ASSIGN', 'REVOKE'];
+  private readonly mediumRiskKeywords =
+  ['CREATE', 'UPDATE', 'DELETE', 'UPLOAD', 'ASSIGN', 'REVOKE'];
 
   constructor(private readonly http: HttpClient) {}
 

@@ -8,7 +8,7 @@ import { BranchAvailabilityService } from '../../../branches/services/branch-ava
 import { BranchService } from '../../../branches/services/branch.service';
 import { Category } from '../../../categories/models/category.model';
 import { CategoryService } from '../../../categories/services/category.service';
-import { Product } from '../../../products/models/product.model';
+import { ProductSummary } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
 import { CartItem, CartService } from '../../services/cart.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -27,8 +27,8 @@ interface ClientCategoryTab {
   styleUrls: ['./menu.component.scss']
 })
 export class MenuComponent implements OnInit {
-  allProducts: Product[] = [];
-  filteredProducts: Product[] = [];
+  allProducts: ProductSummary[] = [];
+  filteredProducts: ProductSummary[] = [];
   categories: ClientCategoryTab[] = [];
   selectedBranch: Branch | null = null;
   productAvailabilityMap = new Map<string, BranchProductAvailability>();
@@ -79,7 +79,7 @@ export class MenuComponent implements OnInit {
     this.errorMessage = '';
 
     forkJoin({
-      productsPage: this.productService.getProducts(0, 100, '', '', 'ACTIVE'),
+      productsPage: this.productService.getProductSummaries(0, 100, '', '', 'ACTIVE'),
       categories: this.categoryService.getActiveCategories()
     }).subscribe({
       next: ({ productsPage, categories }) => {
@@ -120,12 +120,8 @@ export class MenuComponent implements OnInit {
   filterProducts(): void {
     let filtered = [...this.allProducts];
 
-    if (this.selectedBranch) {
-      filtered = filtered.filter(product => !this.isProductSoldOut(product));
-    }
-
     if (this.selectedCategoryId !== 'all') {
-      filtered = filtered.filter(product => product.categoryId === this.selectedCategoryId);
+      filtered = filtered.filter(product => this.productBelongsToCategory(product, this.selectedCategoryId));
     }
 
     if (this.searchQuery.trim()) {
@@ -158,7 +154,7 @@ export class MenuComponent implements OnInit {
     this.normalizeCurrentPage();
   }
 
-  get pagedProducts(): Product[] {
+  get pagedProducts(): ProductSummary[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filteredProducts.slice(start, start + this.pageSize);
   }
@@ -213,7 +209,7 @@ export class MenuComponent implements OnInit {
     this.filterProducts();
   }
 
-  addToCart(product: Product): void {
+  addToCart(product: ProductSummary): void {
     if (this.isProductSoldOut(product)) { return; }
     const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
     if (branchId && this.selectedBranch?.name) {
@@ -238,23 +234,23 @@ export class MenuComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
   }
 
-  productImage(product: Product): string {
+  productImage(product: ProductSummary): string {
     return product.imageUrl || 'assets/images/product-placeholder.svg';
   }
 
-  productBadge(product: Product): string {
+  productBadge(product: ProductSummary): string {
     if (this.isProductSoldOut(product)) { return 'Hết hàng'; }
     if (product.bestSeller) { return 'Best seller'; }
     if (product.featured) { return 'Nổi bật'; }
     return '';
   }
 
-  isProductSoldOut(product: Product): boolean {
+  isProductSoldOut(product: ProductSummary): boolean {
     const availability = this.productAvailabilityMap.get(product.id);
     return !!availability && (availability.status !== 'ACTIVE' || !availability.available);
   }
 
-  productDisplayPrice(product: Product): number {
+  productDisplayPrice(product: ProductSummary): number {
     const availability = this.productAvailabilityMap.get(product.id);
     return availability?.salePrice ?? product.price;
   }
@@ -280,9 +276,25 @@ export class MenuComponent implements OnInit {
         name: category.name,
         icon: this.categoryIcon(category.name),
         imageUrl: category.imageUrl,
-        count: this.allProducts.filter(product => product.categoryId === category.id).length
+        count: this.allProducts.filter(product =>
+          product.categoryId === category.id ||
+          this.normalizeCategoryName(product.categoryName) === this.normalizeCategoryName(category.name)
+        ).length
       }))
     ];
+  }
+
+  private productBelongsToCategory(product: ProductSummary, categoryId: string): boolean {
+    if (product.categoryId === categoryId) {
+      return true;
+    }
+
+    const category = this.categories.find(item => item.id === categoryId);
+    return !!category && this.normalizeCategoryName(product.categoryName) === this.normalizeCategoryName(category.name);
+  }
+
+  private normalizeCategoryName(value: string | null | undefined): string {
+    return (value || '').trim().toLowerCase();
   }
 
   private categoryIcon(name: string): string {

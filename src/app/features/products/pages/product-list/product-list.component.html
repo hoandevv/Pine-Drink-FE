@@ -103,7 +103,18 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let product of products; trackBy: trackProduct" [class.is-inactive]="product.status === 'INACTIVE'" [class.is-sold-out]="isSoldOutAtBranch(product)">
+        <tr
+          *ngFor="let product of products; trackBy: trackProduct"
+          class="product-row"
+          [class.is-inactive]="product.status === 'INACTIVE'"
+          [class.is-sold-out]="isSoldOutAtBranch(product)"
+          [class.is-selected]="selectedProduct?.id === product.id"
+          tabindex="0"
+          role="button"
+          [attr.aria-label]="'Xem chi tiết ' + product.name"
+          (click)="viewProductDetail(product)"
+          (keydown.enter)="viewProductDetail(product)"
+          (keydown.space)="viewProductDetail(product)">
           <td>
             <div class="product-cell">
               <div class="thumb">
@@ -116,7 +127,7 @@
               </div>
             </div>
           </td>
-          <td><span class="category-pill">{{ product.categoryName || product.categoryId || 'Chưa phân loại' }}</span></td>
+          <td><span class="category-pill">{{ product.categoryName || 'Chưa phân loại' }}</span></td>
           <td>
             <strong class="price">{{ getBranchSalePrice(product) | number }} VND</strong>
             <small class="origin-price" *ngIf="getAvailability(product.id)?.salePrice && getBranchSalePrice(product) !== product.price">Gốc {{ product.price | number }}</small>
@@ -130,13 +141,13 @@
           <!-- </td> -->
           <td>
             <div class="row-actions">
-              <button type="button" class="icon-btn edit" [attr.aria-label]="'Sửa ' + product.name" (click)="editProduct(product.id)"><span class="material-symbols-outlined">edit</span></button>
+              <button type="button" class="icon-btn edit" [attr.aria-label]="'Sửa ' + product.name" (click)="stopRowAction($event); editProduct(product.id)"><span class="material-symbols-outlined">edit</span></button>
               <button
                 type="button"
                 class="icon-btn status-toggle"
                 [class.restore]="product.status === 'INACTIVE'"
                 [attr.aria-label]="(product.status === 'ACTIVE' ? 'Ẩn ' : 'Bật lại ') + product.name"
-                (click)="toggleProductStatus(product)">
+                (click)="stopRowAction($event); toggleProductStatus(product)">
                 <span class="material-symbols-outlined">{{ product.status === 'ACTIVE' ? 'visibility_off' : 'visibility' }}</span>
               </button>
             </div>
@@ -147,7 +158,18 @@
   </div>
 
   <div class="mobile-list">
-    <article class="mobile-card" *ngFor="let product of products; trackBy: trackProduct" [class.is-inactive]="product.status === 'INACTIVE'" [class.is-sold-out]="isSoldOutAtBranch(product)">
+    <article
+      class="mobile-card"
+      *ngFor="let product of products; trackBy: trackProduct"
+      [class.is-inactive]="product.status === 'INACTIVE'"
+      [class.is-sold-out]="isSoldOutAtBranch(product)"
+      [class.is-selected]="selectedProduct?.id === product.id"
+      tabindex="0"
+      role="button"
+      [attr.aria-label]="'Xem chi tiết ' + product.name"
+      (click)="viewProductDetail(product)"
+      (keydown.enter)="viewProductDetail(product)"
+      (keydown.space)="viewProductDetail(product)">
       <div class="mobile-main">
         <div class="thumb">
           <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" loading="lazy" />
@@ -155,7 +177,7 @@
         </div>
         <div>
           <h3>{{ product.name }}</h3>
-          <p>{{ product.code }} · {{ product.categoryName || product.categoryId || 'Chưa phân loại' }}</p>
+          <p>{{ product.code }} · {{ product.categoryName || 'Chưa phân loại' }}</p>
         </div>
       </div>
       <div class="mobile-meta">
@@ -165,7 +187,7 @@
       <span class="branch-chip" *ngIf="getAvailability(product.id) as availability" [class.sold-out]="!availability.available">
         {{ availability.available ? 'Còn hàng tại chi nhánh' : 'Hết hàng tại chi nhánh' }}
       </span>
-      <div class="row-actions compact">
+      <div class="row-actions compact" (click)="stopRowAction($event)">
         <button type="button" class="mini-btn" (click)="editProduct(product.id)">Sửa</button>
         <button type="button" class="mini-btn status-toggle" [class.restore]="product.status === 'INACTIVE'" (click)="toggleProductStatus(product)">
           {{ product.status === 'ACTIVE' ? 'Ẩn' : 'Bật lại' }}
@@ -191,3 +213,83 @@
   (pageChange)="changePage($event)"
   (pageSizeChange)="changePageSize($event)">
 </app-admin-pagination>
+
+<div class="detail-backdrop" *ngIf="detailLoading || detailErrorMessage || selectedProduct" (click)="closeProductDetail()"></div>
+<aside class="product-detail-drawer" *ngIf="detailLoading || detailErrorMessage || selectedProduct" aria-label="Chi tiết sản phẩm">
+  <div class="drawer-loading" *ngIf="detailLoading">
+    <span class="material-symbols-outlined spin">progress_activity</span>
+    <strong>Đang gọi API chi tiết...</strong>
+    <p>GET /api/v1/products/{{ selectedProduct?.id || '...' }}</p>
+  </div>
+
+  <div class="drawer-error" *ngIf="!detailLoading && detailErrorMessage">
+    <span class="material-symbols-outlined">error</span>
+    <strong>{{ detailErrorMessage }}</strong>
+    <button type="button" class="mini-btn" (click)="closeProductDetail()">Đóng</button>
+  </div>
+
+  <ng-container *ngIf="!detailLoading && selectedProduct as product">
+    <header class="drawer-hero">
+      <button type="button" class="drawer-close" aria-label="Đóng chi tiết" (click)="closeProductDetail()">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div class="hero-image">
+        <img *ngIf="product.imageUrl" [src]="product.imageUrl" [alt]="product.name" />
+        <span *ngIf="!product.imageUrl" class="material-symbols-outlined">local_cafe</span>
+      </div>
+      <span class="eyebrow">Product detail</span>
+      <h2>{{ product.name }}</h2>
+      <p>{{ product.description || 'Chưa có mô tả cho sản phẩm này.' }}</p>
+      <div class="drawer-badges">
+        <span class="status-chip" [class.inactive]="product.status === 'INACTIVE'">{{ product.status === 'ACTIVE' ? 'Đang bán' : 'Tạm ẩn' }}</span>
+        <span class="category-pill">{{ product.categoryName || 'Chưa phân loại' }}</span>
+      </div>
+    </header>
+
+    <section class="detail-metrics">
+      <article>
+        <span>Giá bán</span>
+        <strong>{{ product.price | number }} VND</strong>
+      </article>
+      <article>
+        <span>Thời gian pha</span>
+        <strong>{{ product.preparationMinutes || 0 }} phút</strong>
+      </article>
+    </section>
+
+    <section class="detail-grid">
+      <div>
+        <span>Mã SKU</span>
+        <strong>{{ product.code }}</strong>
+      </div>
+      <div>
+        <span>ID</span>
+        <strong>{{ product.id }}</strong>
+      </div>
+      <div>
+        <span>Đá</span>
+        <strong>{{ product.availableIceLevels || 'Chưa set' }}</strong>
+      </div>
+      <div>
+        <span>Đường</span>
+        <strong>{{ product.availableSugarLevels || 'Chưa set' }}</strong>
+      </div>
+      <div>
+        <span>Nổi bật</span>
+        <strong>{{ product.featured ? 'Có' : 'Không' }}</strong>
+      </div>
+      <div>
+        <span>Bán chạy</span>
+        <strong>{{ product.bestSeller ? 'Có' : 'Không' }}</strong>
+      </div>
+    </section>
+
+    <footer class="drawer-actions">
+      <button type="button" class="btn primary" (click)="editSelectedProduct()">
+        <span class="material-symbols-outlined">edit</span>
+        Sửa sản phẩm
+      </button>
+      <button type="button" class="btn ghost" (click)="closeProductDetail()">Đóng</button>
+    </footer>
+  </ng-container>
+</aside>

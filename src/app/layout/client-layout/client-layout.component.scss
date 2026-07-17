@@ -118,10 +118,12 @@
 .cart-button strong {
   position: absolute;
   top: -7px;
-  right: -7px;
-  min-width: 21px;
+  right: -10px;
+  min-width: 24px;
+  width: max-content;
+  max-width: none;
   height: 21px;
-  padding: 0 0.3rem;
+  padding: 0 0.42rem;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -130,6 +132,9 @@
   color: var(--ink);
   font-size: 0.72rem;
   font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
   box-shadow: 0 4px 10px rgba(217, 154, 22, 0.32);
   animation: cartBadgePop 0.38s ease;
 }

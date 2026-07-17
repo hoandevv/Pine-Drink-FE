@@ -27,3 +27,13 @@ export interface ReportJobStatsResponse {
   running: number;
   failed: number;
 }
+
+export interface ReportOptionsResponse {
+  categories: Array<{
+    id: string;
+    code?: string;
+    name: string;
+    imageUrl?: string;
+  }>;
+  stats: ReportJobStatsResponse;
+}

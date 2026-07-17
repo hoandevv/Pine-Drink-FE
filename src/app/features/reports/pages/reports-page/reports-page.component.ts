@@ -6,8 +6,7 @@ import { AccessControlService } from '../../../../core/services/access-control.s
 import { ToastService } from '../../../../core/services/toast.service';
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Category } from '../../../categories/models/category.model';
-import { CategoryService } from '../../../categories/services/category.service';
-import { ReportJobResponse } from '../../models/report.model';
+import { ReportJobResponse, ReportJobStatsResponse } from '../../models/report.model';
 import { ReportService } from '../../services/report.service';
 
 interface QuickStat {
@@ -58,19 +57,19 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
   constructor(
     private readonly fb: FormBuilder,
     private readonly reportService: ReportService,
-    private readonly categoryService: CategoryService,
     private readonly toastService: ToastService,
     private readonly accessControl: AccessControlService
   ) {
     this.filterForm = this.fb.group({
       categoryId: [''],
-      status: ['']
+      status: [''],
+      fromDate: [''],
+      toDate: ['']
     });
   }
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadReportStats();
+    this.loadReportOptions();
     this.loadReportHistory();
   }
 
@@ -84,7 +83,7 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     this.loadReportHistory(page);
   }
 
-  changeHistorySize(size: string): void {
+  changeHistorySize(size: number | string): void {
     this.historySize = Number(size);
     this.loadReportHistory(0);
   }
@@ -97,11 +96,12 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
   }
 
   applyFilter(): void {
+    if (!this.isValidDateRange()) return;
     this.loadReportHistory(0);
   }
 
   resetFilter(): void {
-    this.filterForm.reset({ categoryId: '', status: '' });
+    this.filterForm.reset({ categoryId: '', status: '', fromDate: '', toDate: '' });
     this.loadReportHistory(0);
   }
 
@@ -128,7 +128,9 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
       branchId: null,
       filters: JSON.stringify({
         status: filters.status || null,
-        categoryId: filters.categoryId || null
+        categoryId: filters.categoryId || null,
+        fromDate: filters.fromDate || null,
+        toDate: filters.toDate || null
       })
     };
 
@@ -250,18 +252,23 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadCategories(): void {
-    this.categoryService.getActiveCategories().subscribe({
-      next: (categories: Category[]) => {
-        this.categories = categories;
+  private loadReportOptions(): void {
+    this.reportService.getOptions().subscribe({
+      next: (options) => {
+        this.categories = options.categories.map((category) => this.normalizeCategoryOption(category));
+        this.applyQuickStats(options.stats);
       },
-      error: () => this.toastService.warning('Không tải được danh sách danh mục')
+      error: () => {
+        this.toastService.warning('Không tải được dữ liệu khởi tạo báo cáo');
+        this.loadReportStats();
+      }
     });
   }
 
   private loadReportHistory(page = this.historyPage): void {
     this.isLoadingHistory = true;
-    this.reportService.getJobHistory(page, this.historySize).subscribe({
+    const filters = this.filterForm.value;
+    this.reportService.getJobHistory(page, this.historySize, filters.fromDate || null, filters.toDate || null).subscribe({
       next: (pageData) => {
         const normalizedPage = this.normalizeHistoryPage(pageData, page);
 
@@ -272,8 +279,6 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
         this.historyFirst = normalizedPage.first;
         this.historyLast = normalizedPage.last;
         this.reportHistory = normalizedPage.content;
-
-        this.loadReportStats();
         this.isLoadingHistory = false;
 
         this.reportHistory
@@ -316,16 +321,39 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     this.quickStats[3].value = this.reportHistory.filter(j => j.status === 'FAILED').length;
   }
 
+  private isValidDateRange(): boolean {
+    const { fromDate, toDate } = this.filterForm.value;
+    if (fromDate && toDate && fromDate > toDate) {
+      this.toastService.warning('Từ ngày phải nhỏ hơn hoặc bằng Đến ngày');
+      return false;
+    }
+    return true;
+  }
+
   private loadReportStats(): void {
     this.reportService.getJobStats().subscribe({
-      next: (stats) => {
-        this.quickStats[0].value = stats.total;
-        this.quickStats[1].value = stats.completed;
-        this.quickStats[2].value = stats.running;
-        this.quickStats[3].value = stats.failed;
-      },
+      next: (stats) => this.applyQuickStats(stats),
       error: () => this.updateQuickStatsFromHistoryFallback()
     });
+  }
+
+  private applyQuickStats(stats: ReportJobStatsResponse): void {
+    this.quickStats[0].value = stats.total;
+    this.quickStats[1].value = stats.completed;
+    this.quickStats[2].value = stats.running;
+    this.quickStats[3].value = stats.failed;
+  }
+
+  private normalizeCategoryOption(category: Partial<Category>): Category {
+    return {
+      id: category.id || '',
+      code: category.code || 'AUTO',
+      name: category.name || 'Danh mục chưa đặt tên',
+      description: category.description || '',
+      imageUrl: category.imageUrl || '',
+      displayOrder: Number(category.displayOrder) || 0,
+      status: (category.status || 'ACTIVE') as Category['status']
+    };
   }
 
   private startPolling(jobId: string): void {
@@ -389,7 +417,6 @@ export class ReportsPageComponent implements OnInit, OnDestroy {
     } else {
       this.reportHistory.unshift(job);
     }
-    this.loadReportStats();
   }
 
   private stopPolling(jobId: string): void {

@@ -54,7 +54,7 @@ export const API_ENDPOINTS = {
     jobs: '/reports/jobs',
     jobDetail: (id: string) => `/reports/jobs/${id}`,
     jobDownload: (id: string) => `/reports/jobs/${id}/download`,
-    jobStats: '/reports/jobs/stats'
+    options: '/reports/jobs/options'
   },
   dashboard: {
     admin: '/admin/dashboard',

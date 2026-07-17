@@ -401,15 +401,49 @@ export class AuthService {
    * @param user User mới nhận từ backend.
    */
   private setAuthenticatedUser(user: AuthUser): void {
-    const currentUser = this.currentUserSubject.value;
-    const nextUser: AuthUser = {
-      ...user,
-      roles: user.roles ?? currentUser?.roles ?? [],
-      permissions: user.permissions?.length ? user.permissions : currentUser?.permissions ?? []
-    };
+  const currentUser = this.currentUserSubject.value;
+  const tokenUser = this.tokenService.getCurrentUserFromToken();
 
-    this.currentUserSubject.next(nextUser);
+  let roles: string[] = [];
+
+  if (user.roles != null) {
+    roles = user.roles;
+  } else if (currentUser != null && currentUser.roles != null) {
+    roles = currentUser.roles;
+  } else if (tokenUser != null && tokenUser.roles != null) {
+    roles = tokenUser.roles;
   }
+
+  let scope = null;
+
+  if (user.scope != null) {
+    scope = user.scope;
+  } else if (currentUser != null && currentUser.scope != null) {
+    scope = currentUser.scope;
+  } else if (tokenUser != null && tokenUser.scope != null) {
+    scope = tokenUser.scope;
+  }
+
+  let permissions: string[] = [];
+
+  if (user.permissions != null && user.permissions.length > 0) {
+    permissions = user.permissions;
+  } else if (
+    currentUser != null &&
+    currentUser.permissions != null
+  ) {
+    permissions = currentUser.permissions;
+  }
+
+  const authenticatedUser: AuthUser = {
+    ...user,
+    roles: roles,
+    scope: scope,
+    permissions: permissions
+  };
+
+  this.currentUserSubject.next(authenticatedUser);
+}
 
   /**
    * Gắn danh sách permission mới vào currentUser.

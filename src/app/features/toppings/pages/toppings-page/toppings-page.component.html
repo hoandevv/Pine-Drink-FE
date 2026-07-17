@@ -86,7 +86,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let topping of visibleToppings; trackBy: trackTopping">
+          <tr
+            *ngFor="let topping of visibleToppings; trackBy: trackTopping"
+            class="topping-row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Xem chi tiết ' + topping.name"
+            (click)="openEditDrawer(topping)"
+            (keydown.enter)="openEditDrawer(topping)"
+            (keydown.space)="openEditDrawer(topping); $event.preventDefault()">
             <td>
               <div class="topping-cell">
                 <div class="avatar">
@@ -108,11 +116,11 @@
             </td>
             <td>
               <div class="row-actions">
-                <button id="edit-topping-master-{{ topping.id }}" type="button" class="mini-btn" (click)="openEditDrawer(topping)">Sửa</button>
-                <button id="toggle-topping-master-{{ topping.id }}" type="button" class="mini-btn" (click)="toggleStatus(topping)" [disabled]="loading">
+                <button id="edit-topping-master-{{ topping.id }}" type="button" class="mini-btn" (click)="$event.stopPropagation(); openEditDrawer(topping)">Sửa</button>
+                <button id="toggle-topping-master-{{ topping.id }}" type="button" class="mini-btn" (click)="$event.stopPropagation(); toggleStatus(topping)" [disabled]="loading">
                   {{ topping.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}
                 </button>
-                <button id="delete-topping-master-{{ topping.id }}" type="button" class="mini-btn danger" (click)="deleteTopping(topping)" [disabled]="loading">Xóa</button>
+                <button id="delete-topping-master-{{ topping.id }}" type="button" class="mini-btn danger" (click)="$event.stopPropagation(); deleteTopping(topping)" [disabled]="loading">Xóa</button>
               </div>
             </td>
           </tr>
@@ -121,7 +129,15 @@
     </div>
 
     <div class="mobile-list" *ngIf="visibleToppings.length">
-      <article class="mobile-card" *ngFor="let topping of visibleToppings; trackBy: trackTopping">
+      <article
+        class="mobile-card"
+        *ngFor="let topping of visibleToppings; trackBy: trackTopping"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'Xem chi tiết ' + topping.name"
+        (click)="openEditDrawer(topping)"
+        (keydown.enter)="openEditDrawer(topping)"
+        (keydown.space)="openEditDrawer(topping); $event.preventDefault()">
         <div class="mobile-main">
           <div class="avatar">
             <img *ngIf="topping.imageUrl" [src]="topping.imageUrl" [alt]="topping.name">
@@ -139,9 +155,9 @@
           </span>
         </div>
         <div class="row-actions compact">
-          <button type="button" class="mini-btn" (click)="openEditDrawer(topping)">Sửa</button>
-          <button type="button" class="mini-btn" (click)="toggleStatus(topping)" [disabled]="loading">{{ topping.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}</button>
-          <button type="button" class="mini-btn danger" (click)="deleteTopping(topping)" [disabled]="loading">Xóa</button>
+          <button type="button" class="mini-btn" (click)="$event.stopPropagation(); openEditDrawer(topping)">Sửa</button>
+          <button type="button" class="mini-btn" (click)="$event.stopPropagation(); toggleStatus(topping)" [disabled]="loading">{{ topping.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}</button>
+          <button type="button" class="mini-btn danger" (click)="$event.stopPropagation(); deleteTopping(topping)" [disabled]="loading">Xóa</button>
         </div>
       </article>
     </div>
@@ -159,28 +175,18 @@
     </ng-template>
   </section>
 
-  <section class="pagination-bar" *ngIf="pageData.totalElements > 0">
-    <div class="page-size-control">
-      <span>Hiển thị</span>
-      <select id="topping-master-page-size-select" [ngModel]="pageData.size" (ngModelChange)="changePageSize($event)">
-        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-      </select>
-      <span>/ trang</span>
-    </div>
-
-    <div class="page-status">
-      Trang {{ pageData.page + 1 }} / {{ pageData.totalPages || 1 }} · {{ pageData.totalElements }} topping
-    </div>
-
-    <div class="page-actions">
-      <button id="topping-master-prev-page-btn" type="button" (click)="changePage(pageData.page - 1)" [disabled]="pageData.page === 0 || loading">
-        <span class="material-symbols-outlined">chevron_left</span>
-      </button>
-      <button id="topping-master-next-page-btn" type="button" (click)="changePage(pageData.page + 1)" [disabled]="pageData.page + 1 >= pageData.totalPages || loading">
-        <span class="material-symbols-outlined">chevron_right</span>
-      </button>
-    </div>
-  </section>
+  <app-admin-pagination
+    *ngIf="pageData.totalElements > 0"
+    [page]="pageData.page"
+    [totalPages]="pageData.totalPages"
+    [totalItems]="pageData.totalElements"
+    [pageSize]="pageData.size"
+    [pageSizeOptions]="pageSizeOptions"
+    itemLabel="topping"
+    [disabled]="loading"
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="changePageSize($event)">
+  </app-admin-pagination>
 </section>
 
 <div class="drawer-backdrop" *ngIf="drawerOpen" (click)="closeDrawer()"></div>

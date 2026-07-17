@@ -101,7 +101,7 @@ export class CustomersPageComponent implements OnInit {
     this.loadCustomers();
   }
 
-  changePageSize(size: string): void {
+  changePageSize(size: number | string): void {
     this.pageSize = Number(size);
     this.currentPage = 0;
     this.loadCustomers();

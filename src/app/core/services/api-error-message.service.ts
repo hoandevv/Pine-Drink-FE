@@ -1,4 +1,4 @@
-﻿import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { ApiError } from '../../shared/models/api-error.model';
@@ -51,6 +51,7 @@ export class ApiErrorMessageService {
     AUTH_025: 'Tài khoản đã có mật khẩu đăng nhập.',
     AUTH_026: 'Tài khoản chưa thiết lập mật khẩu đăng nhập.',
     AUTH_027: 'Mật khẩu xác nhận không khớp.',
+    AUTH_028: 'Thao tác cần đăng nhập',
     AUTH_GOOGLE_001: 'Thiếu mã xác thực Google.',
     AUTH_GOOGLE_002: 'Mã xác thực Google không hợp lệ.',
     AUTH_GOOGLE_003: 'Email Google chưa được xác minh.',
@@ -157,8 +158,9 @@ export class ApiErrorMessageService {
   }
 
   private resolveFieldErrors(errors?: FieldError[] | null): string {
-    if (!errors?.length) return '';
-    return errors.map((fieldError) => `${this.resolveFieldName(fieldError.field)}: ${this.normalizeFieldMessage(fieldError.message)}`).join(' | ');
+    const firstError = errors?.[0];
+    if (!firstError) return '';
+    return `${this.resolveFieldName(firstError.field)}: ${this.normalizeFieldMessage(firstError.message)}`;
   }
 
   private normalizeFieldMessage(message: string): string {

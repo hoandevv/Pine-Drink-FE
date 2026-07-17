@@ -1,11 +1,4 @@
-<app-page-header title="Phân quyền" description="Quản lý role, permission và rủi ro thao tác trong dashboard.">
-  <div class="permission-actions">
-    <button id="manager-safe-preset-btn" type="button" class="safe-preset-btn" (click)="resetManagerSafePreset()">
-      <span class="material-symbols-outlined">shield_lock</span>
-      Preset an toàn cho Quản lý
-    </button>
-  </div>
-</app-page-header>
+<app-page-header title="Phân quyền" description="Quản lý role, permission và rủi ro thao tác trong dashboard."></app-page-header>
 
 <section class="permission-hero">
   <article class="hero-card featured">
@@ -75,7 +68,11 @@
       </div>
 
       <div class="toolbar-controls">
-        <select id="permission-module-filter" [(ngModel)]="selectedModule">
+        <select
+          id="permission-module-filter"
+          [ngModel]="selectedModule"
+          (ngModelChange)="onModuleChange($event)"
+        >
           <option *ngFor="let module of moduleOptions" [ngValue]="module">
             {{ module === 'ALL' ? 'Tất cả module' : module }}
           </option>
@@ -104,7 +101,7 @@
     </div>
 
     <div class="permission-groups">
-      <article class="permission-group" *ngFor="let group of visibleGroups">
+      <article class="permission-group" *ngFor="let group of filteredGroups">
         <div class="group-head">
           <div>
             <small>Module</small>

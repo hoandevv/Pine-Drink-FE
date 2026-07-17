@@ -326,9 +326,16 @@
   }
 
   tbody tr {
-    transition: background 160ms ease;
+    cursor: pointer;
+    transition: background 160ms ease, box-shadow 160ms ease;
 
-    &:hover { background: rgba(239, 250, 229, 0.68); }
+    &:hover,
+    &:focus-visible {
+      background: rgba(239, 250, 229, 0.68);
+      box-shadow: inset 4px 0 0 var(--pine-2);
+      outline: none;
+    }
+
     &:last-child td { border-bottom: 0; }
   }
 

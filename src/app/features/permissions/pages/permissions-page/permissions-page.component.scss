@@ -2,12 +2,6 @@
   display: block;
 }
 
-.permission-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.safe-preset-btn,
 .save-btn {
   min-height: 46px;
   display: inline-flex;
@@ -523,8 +517,7 @@
   }
 
   .toolbar-controls select,
-  .save-btn,
-  .safe-preset-btn {
+  .save-btn {
     width: 100%;
   }
 

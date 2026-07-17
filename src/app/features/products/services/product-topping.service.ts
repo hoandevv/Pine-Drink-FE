@@ -10,6 +10,7 @@ import {
   ProductTopping,
   ProductToppingAssignRequest,
   ProductToppingStatusRequest,
+  ProductToppingSummary,
   ProductToppingUpdateRequest
 } from '../models/product-topping.model';
 
@@ -19,21 +20,21 @@ export class ProductToppingService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getProductToppings(productId: string, page: number, size: number): Observable<PageResponse<ProductTopping>> {
+  getProductToppings(productId: string, page: number, size: number): Observable<PageResponse<ProductToppingSummary>> {
     const params = new HttpParams()
       .set('page', page)
       .set('size', size)
       .set('sort', 'createdAt,desc');
 
     return this.http
-      .get<BaseResponse<PageResponse<ProductTopping> | ProductTopping[]>>(this.productToppingsUrl(productId), { params })
-      .pipe(map((response) => this.normalizePage(response.data, page, size)));
+      .get<BaseResponse<PageResponse<ProductToppingSummary> | ProductToppingSummary[]>>(this.productToppingsUrl(productId), { params })
+      .pipe(map((response) => this.normalizeSummaryPage(response.data, page, size)));
   }
 
-  getActiveProductToppings(productId: string): Observable<ProductTopping[]> {
+  getActiveProductToppings(productId: string): Observable<ProductToppingSummary[]> {
     return this.http
-      .get<BaseResponse<ProductTopping[]>>(`${this.productToppingsUrl(productId)}/active`)
-      .pipe(map((response) => (response.data || []).map((item) => this.normalizeProductTopping(item))));
+      .get<BaseResponse<ProductToppingSummary[]>>(`${this.productToppingsUrl(productId)}/active`)
+      .pipe(map((response) => (response.data || []).map((item) => this.normalizeProductToppingSummary(item))));
   }
 
   getProductTopping(productId: string, productToppingId: string): Observable<ProductTopping> {
@@ -75,13 +76,13 @@ export class ProductToppingService {
     };
   }
 
-  private normalizePage(
-    data: PageResponse<ProductTopping> | ProductTopping[] | null | undefined,
+  private normalizeSummaryPage(
+    data: PageResponse<ProductToppingSummary> | ProductToppingSummary[] | null | undefined,
     fallbackPage: number,
     fallbackSize: number
-  ): PageResponse<ProductTopping> {
+  ): PageResponse<ProductToppingSummary> {
     if (Array.isArray(data)) {
-      const content = data.map((item) => this.normalizeProductTopping(item));
+      const content = data.map((item) => this.normalizeProductToppingSummary(item));
       return {
         content,
         page: fallbackPage,
@@ -93,7 +94,7 @@ export class ProductToppingService {
       };
     }
 
-    const content = (data?.content || []).map((item) => this.normalizeProductTopping(item));
+    const content = (data?.content || []).map((item) => this.normalizeProductToppingSummary(item));
     return {
       ...data,
       content,
@@ -103,6 +104,23 @@ export class ProductToppingService {
       totalPages: data?.totalPages ?? (content.length ? 1 : 0),
       first: data?.first ?? fallbackPage === 0,
       last: data?.last ?? true
+    };
+  }
+
+  private normalizeProductToppingSummary(item: ProductToppingSummary): ProductToppingSummary {
+    return {
+      ...item,
+      id: item?.id || '',
+      productId: item?.productId || '',
+      toppingId: item?.toppingId || '',
+      toppingCode: item?.toppingCode || 'AUTO',
+      toppingName: item?.toppingName || 'Topping chưa đặt tên',
+      toppingPrice: Number(item?.toppingPrice) || 0,
+      toppingImageUrl: item?.toppingImageUrl || '',
+      toppingGroupName: item?.toppingGroupName || 'Khác',
+      isDefault: Boolean(item?.isDefault),
+      maxQuantity: Number(item?.maxQuantity) || 1,
+      status: (item?.status || 'ACTIVE') as ProductToppingSummary['status']
     };
   }
 
