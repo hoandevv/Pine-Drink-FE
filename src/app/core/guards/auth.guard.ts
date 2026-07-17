@@ -32,15 +32,20 @@ export class AuthGuard implements CanActivate, CanActivateChild {
     private readonly authService: AuthService
   ) {}
 
+  /**
+   * Method chính Angular gọi khi user truy cập 1 route.
+   */
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): AsyncGuardResult {
-    if (this.isGuestOnlyRoute(route)) {
-      return this.checkGuestOnlyRoute(route);
-    }
+    const isGuestOnlyRoute = this.isGuestOnlyRoute(route);
 
-    return this.checkProtectedRoute(route, state.url);
+    if (isGuestOnlyRoute) {
+      return this.checkGuestOnlyRoute(route);
+    } else {
+      return this.checkProtectedRoute(route, state.url);
+    }
   }
 
   canActivateChild(
@@ -57,7 +62,9 @@ export class AuthGuard implements CanActivate, CanActivateChild {
     route: ActivatedRouteSnapshot,
     redirectUrl: string
   ): AsyncGuardResult {
-    if (!this.tokenService.isLoggedIn()) {
+    const isLoggedIn = this.tokenService.isLoggedIn();
+
+    if (!isLoggedIn) {
       return this.redirectToLogin(redirectUrl);
     }
 
@@ -67,11 +74,15 @@ export class AuthGuard implements CanActivate, CanActivateChild {
           return this.redirectToLogin(redirectUrl);
         }
 
-        if (!this.hasRouteAccess(route)) {
+        const canAccessRoute = this.hasRouteAccess(route);
+
+        if (!canAccessRoute) {
           return this.redirectToHome();
         }
 
-        if (!this.canAccessAdminRoute(route, redirectUrl)) {
+        const canAccessAdminRoute = this.canAccessAdminRoute(route, redirectUrl);
+
+        if (!canAccessAdminRoute) {
           return this.redirectToHome();
         }
 
@@ -81,52 +92,76 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   }
 
   /**
-   * Kiểm tra user có quyền truy cập route hay không.
+   * Xử lý route chỉ dành cho khách chưa đăng nhập,
+   * ví dụ trang login hoặc register.
    */
+  private checkGuestOnlyRoute(
+    route: ActivatedRouteSnapshot
+  ): AsyncGuardResult {
+    const isLoggedIn = this.tokenService.isLoggedIn();
+
+    if (!isLoggedIn) {
+      return true;
+    }
+
+    const redirectUrl = route.queryParamMap.get('redirectUrl');
+    const hasValidRedirectUrl = this.isValidRedirectUrl(redirectUrl);
+
+    if (hasValidRedirectUrl) {
+      return this.router.parseUrl(redirectUrl);
+    }
+
+    return this.authService.ensureAuthorizationLoaded().pipe(
+      map(() => {
+        return this.redirectAfterLogin();
+      })
+    );
+  }
   private hasRouteAccess(route: ActivatedRouteSnapshot): boolean {
     const requiredPermission = this.getRequiredPermission(route);
     const requiredPermissions = this.getRequiredPermissions(route);
     const requiredRoles = this.getRequiredRoles(route);
 
-    if (
-      requiredPermission &&
-      !this.accessControlService.can(requiredPermission)
-    ) {
-      return false;
+    if (requiredPermission) {
+      const hasPermission = this.accessControlService.can(requiredPermission);
+
+      if (!hasPermission) {
+        return false;
+      }
     }
 
-    if (
-      requiredPermissions.length > 0 &&
-      !this.accessControlService.canAny(requiredPermissions)
-    ) {
-      return false;
+    if (requiredPermissions.length > 0) {
+      const hasOnePermission = this.accessControlService.canAny(requiredPermissions);
+
+      if (!hasOnePermission) {
+        return false;
+      }
     }
 
-    if (
-      requiredRoles.length > 0 &&
-      !this.accessControlService.hasAnyRole(requiredRoles)
-    ) {
-      return false;
+    if (requiredRoles.length > 0) {
+      const hasOneRole = this.accessControlService.hasAnyRole(requiredRoles);
+
+      if (!hasOneRole) {
+        return false;
+      }
     }
 
     return true;
   }
 
-  /**
-   * Kiểm tra quyền truy cập khu vực admin.
-   *
-   * Nếu route admin không khai báo role hoặc permission cụ thể,
-   * user vẫn phải là người được phép sử dụng admin console.
-   */
   private canAccessAdminRoute(
     route: ActivatedRouteSnapshot,
     url: string
   ): boolean {
-    if (!url.startsWith('/admin')) {
+    const isAdminUrl = url.startsWith('/admin');
+
+    if (!isAdminUrl) {
       return true;
     }
 
-    if (this.routeHasAuthorizationConfig(route)) {
+    const hasAuthorizationConfig = this.routeHasAuthorizationConfig(route);
+
+    if (hasAuthorizationConfig) {
       return true;
     }
 
@@ -134,42 +169,34 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   }
 
   /**
-   * Xử lý route chỉ dành cho khách chưa đăng nhập,
-   * ví dụ trang login hoặc register.
-   */
-  private checkGuestOnlyRoute(
-    route: ActivatedRouteSnapshot
-  ): AsyncGuardResult {
-    if (!this.tokenService.isLoggedIn()) {
-      return true;
-    }
-
-    const redirectUrl = route.queryParamMap.get('redirectUrl');
-
-    if (this.isValidRedirectUrl(redirectUrl)) {
-      return this.router.parseUrl(redirectUrl);
-    }
-
-    return this.authService.ensureAuthorizationLoaded().pipe(
-      map(() => this.redirectAfterLogin())
-    );
-  }
-
-  /**
    * Chuyển hướng sau khi user đã đăng nhập.
    */
   private redirectAfterLogin(): UrlTree {
-    if (this.accessControlService.isAdminConsoleUser()) {
+    const isAdminConsoleUser = this.accessControlService.isAdminConsoleUser();
+
+    if (isAdminConsoleUser) {
       return this.router.createUrlTree(['/admin/dashboard']);
+    } else {
+      return this.redirectToHome();
     }
-
-    return this.redirectToHome();
   }
 
+  /**
+   * Kiểm tra route có được đánh dấu chỉ dành cho customer hay không.
+   */
   private isGuestOnlyRoute(route: ActivatedRouteSnapshot): boolean {
-    return route.data['guestOnly'] === true;
+    const guestOnly = route.data['guestOnly'];
+
+    if (guestOnly === true) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
+  /**
+   * Kiểm tra route có khai báo role hoặc permission hay không.
+   */
   private routeHasAuthorizationConfig(
     route: ActivatedRouteSnapshot
   ): boolean {
@@ -177,46 +204,95 @@ export class AuthGuard implements CanActivate, CanActivateChild {
     const permissions = this.getRequiredPermissions(route);
     const roles = this.getRequiredRoles(route);
 
-    return Boolean(
-      permission ||
-      permissions.length > 0 ||
-      roles.length > 0
-    );
+    if (permission) {
+      return true;
+    }
+
+    if (permissions.length > 0) {
+      return true;
+    }
+
+    if (roles.length > 0) {
+      return true;
+    }
+
+    return false;
   }
 
+  /**
+   * Lấy 1 permission mà route yêu cầu.
+   */
   private getRequiredPermission(
     route: ActivatedRouteSnapshot
   ): string | undefined {
-    return route.data['permission'] as string | undefined;
+    const permission = route.data['permission'] as string | undefined;
+
+    if (permission) {
+      return permission;
+    } else {
+      return undefined;
+    }
   }
 
+  /**
+   * Lấy danh sách permission mà route yêu cầu.
+   */
   private getRequiredPermissions(
     route: ActivatedRouteSnapshot
   ): string[] {
-    return (route.data['permissions'] as string[] | undefined) ?? [];
+    const permissions = route.data['permissions'] as string[] | undefined;
+
+    if (permissions) {
+      return permissions;
+    } else {
+      return [];
+    }
   }
 
+  /**
+   * Lấy danh sách role mà route yêu cầu.
+   */
   private getRequiredRoles(
     route: ActivatedRouteSnapshot
   ): string[] {
-    return (route.data['roles'] as string[] | undefined) ?? [];
+    const roles = route.data['roles'] as string[] | undefined;
+
+    if (roles) {
+      return roles;
+    } else {
+      return [];
+    }
   }
 
+  /**
+   * Kiểm tra redirect URL có hợp lệ không.
+   */
   private isValidRedirectUrl(
     redirectUrl: string | null
   ): redirectUrl is string {
-    return Boolean(
-      redirectUrl &&
-      !redirectUrl.startsWith('/auth')
-    );
+    if (!redirectUrl) {
+      return false;
+    }
+
+    if (redirectUrl.startsWith('/auth')) {
+      return false;
+    }
+
+    return true;
   }
 
+  /**
+   * Chuyển hướng về trang login.
+   */
   private redirectToLogin(redirectUrl: string): UrlTree {
     return this.router.createUrlTree(['/auth/login'], {
       queryParams: { redirectUrl }
     });
   }
 
+  /**
+   * Chuyển hướng về trang chủ.
+   */
   private redirectToHome(): UrlTree {
     return this.router.createUrlTree(['/']);
   }
