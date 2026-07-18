@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { finalize } from 'rxjs';
 import { ToastService } from 'src/app/core/services/toast.service';
-import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
-
-type VoucherFilter = 'all' | 'shipping' | 'percentage' | 'expiring' | 'saved';
+import { VoucherResponse } from '../../../vouchers/models/voucher.model';
+import { VoucherService } from '../../../vouchers/services/voucher.service';
+import { VoucherFilter } from '../../models/promotion.model';
 
 @Component({
   selector: 'app-promotions',

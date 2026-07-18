@@ -5,25 +5,10 @@ import { catchError } from 'rxjs/operators';
 
 import { Order, OrderItem } from '../../../orders/models/order.model';
 import { OrderService } from '../../../orders/services/order.service';
-import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../../orders/services/order-realtime.service';
+import { OrderRealtimeEnvelope } from '../../../orders/models/order-realtime.model';
+import { OrderRealtimeService } from '../../../orders/services/order-realtime.service';
 import { AuthService } from '../../../../core/services/auth.service';
-
-interface OrderStatusStep {
-  key: string;
-  label: string;
-  icon: string;
-  completed: boolean;
-}
-
-type TrackingOrder = Order & {
-  orderNumber: string;
-  subtotal: number;
-  discount: number;
-  shippingFee: number;
-  total: number;
-  estimatedTime?: string;
-  voucherCode?: string;
-};
+import { OrderStatusStep, TrackingOrder } from '../../models/order-tracking.model';
 
 @Component({
   selector: 'app-order-tracking',

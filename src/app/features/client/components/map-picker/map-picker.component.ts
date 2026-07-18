@@ -4,16 +4,7 @@ import { Subject, debounceTime, distinctUntilChanged, switchMap, catchError, of 
 
 import { GeocodingService } from 'src/app/features/client/services/geocoding.service';
 import { GeocodingResult } from 'src/app/features/client/models/geocoding.model';
-
-export interface MapPickerResult {
-  latitude: number;
-  longitude: number;
-  displayName?: string;
-  addressLine?: string;
-  ward?: string | null;
-  district?: string | null;
-  city?: string | null;
-}
+import { MapPickerResult } from '../../models/map-picker.model';
 
 @Component({
   selector: 'app-map-picker',

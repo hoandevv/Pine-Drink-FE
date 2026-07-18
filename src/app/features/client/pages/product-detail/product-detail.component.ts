@@ -17,19 +17,7 @@ import { ProductService } from '../../../products/services/product.service';
 import { ProductToppingService } from '../../../products/services/product-topping.service';
 import { ProductVariantService } from '../../../products/services/product-variant.service';
 import { ToastNotificationService } from '../../../../core/services/toast.service';
-
-interface SizeOption {
-  id: string;
-  label: string;
-  priceModifier: number;
-  finalPrice?: number;
-  variant?: ProductVariant;
-}
-
-interface LevelOption {
-  value: number;
-  label: string;
-}
+import { LevelOption, SizeOption } from '../../models/product-detail.model';
 
 @Component({
   selector: 'app-product-detail',

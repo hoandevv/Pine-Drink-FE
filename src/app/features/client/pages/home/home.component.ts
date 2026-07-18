@@ -6,7 +6,8 @@ import { ProductService } from '../../../products/services/product.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchHours } from '../../../branches/models/branch-hours.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
+import { VoucherResponse } from '../../../vouchers/models/voucher.model';
+import { VoucherService } from '../../../vouchers/services/voucher.service';
 
 @Component({
   selector: 'app-home',
