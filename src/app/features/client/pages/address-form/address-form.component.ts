@@ -7,7 +7,7 @@ import { CustomerAddressService } from 'src/app/features/client/services/custome
 import { LoadingService } from '../../../../core/services/loading.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { CreateAddressRequest, CustomerAddress, UpdateAddressRequest } from 'src/app/features/client/models/customer-address.model';
-import { MapPickerResult } from '../../components/map-picker/map-picker.component';
+import { MapPickerResult } from '../../models/map-picker.model';
 
 @Component({
   selector: 'app-address-form',

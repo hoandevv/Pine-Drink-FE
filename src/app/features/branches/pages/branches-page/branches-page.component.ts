@@ -7,7 +7,7 @@ import { BranchCreateRequest } from '../../models/branch-request.model';
 import { BranchHours } from '../../models/branch-hours.model';
 import { Branch } from '../../models/branch.model';
 import { BranchService } from '../../services/branch.service';
-import { MapPickerResult } from '../../../../features/client/components/map-picker/map-picker.component';
+import { MapPickerResult } from '../../../client/models/map-picker.model';
 import { AccessControlService } from '../../../../core/services/access-control.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 

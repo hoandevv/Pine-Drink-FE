@@ -10,16 +10,10 @@ import { Category } from '../../../categories/models/category.model';
 import { CategoryService } from '../../../categories/services/category.service';
 import { ProductSummary } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
-import { CartItem, CartService } from '../../services/cart.service';
+import { CartService } from '../../services/cart.service';
+import { CartItem } from '../../models/cart.model';
+import { ClientCategoryTab } from '../../models/menu.model';
 import { AuthService } from '../../../../core/services/auth.service';
-
-interface ClientCategoryTab {
-  id: string;
-  name: string;
-  icon: string;
-  count: number;
-  imageUrl?: string;
-}
 
 @Component({
   selector: 'app-menu',

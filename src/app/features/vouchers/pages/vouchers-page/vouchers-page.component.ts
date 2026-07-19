@@ -6,7 +6,8 @@ import { ApiErrorMessageService } from 'src/app/core/services/api-error-message.
 import { ConfirmDialogService } from 'src/app/shared/components/confirm-dialog/confirm-dialog.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { VoucherPayload, VoucherResponse, VoucherService } from '../../services/voucher.service';
+import { VoucherPayload, VoucherResponse } from '../../models/voucher.model';
+import { VoucherService } from '../../services/voucher.service';
 
 @Component({
   selector: 'app-vouchers-page',

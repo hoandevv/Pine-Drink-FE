@@ -2,12 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
 import { AccessControlService } from '../../../../core/services/access-control.service';
-import { PermissionDefinition, PermissionService, RolePermissionMatrix } from '../../services/permission.service';
+import { PermissionDefinition, RolePermissionMatrix } from '../../models/permission.model';
+import { PermissionService } from '../../services/permission.service';
 
 interface PermissionGroup {
   module: string;
   permissions: PermissionDefinition[];
-}
+} 
 
 @Component({
   selector: 'app-permissions-page',

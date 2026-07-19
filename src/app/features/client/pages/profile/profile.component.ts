@@ -10,27 +10,7 @@ import { CustomerAddress } from 'src/app/features/client/models/customer-address
 import { catchError, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ApiErrorMessageService } from '../../../../core/services/api-error-message.service';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  gender: string;
-  avatar: string;
-  loyaltyPoints: number;
-  memberSince: string;
-  authProvider: string;
-  hasLocalPassword: boolean;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  items: number;
-  total: number;
-  status: 'completed' | 'processing' | 'cancelled';
-}
+import { Order, UserProfile } from '../../models/profile.model';
 
 @Component({
   selector: 'app-profile',

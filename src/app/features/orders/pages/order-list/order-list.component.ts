@@ -4,7 +4,8 @@ import { catchError } from 'rxjs/operators';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus, PaymentMethod, TimelineStatus } from '../../models/order.model';
-import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
+import { OrderRealtimeEnvelope } from '../../models/order-realtime.model';
+import { OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
