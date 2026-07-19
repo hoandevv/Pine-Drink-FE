@@ -18,7 +18,7 @@ import { AddressFormComponent } from './pages/address-form/address-form.componen
 import { PaymentResultComponent } from './pages/payment-result/payment-result.component';
 
 // Components
-import { CartComponent } from './components/cart/cart.component';
+import { CartComponent } from './pages/cart/cart.component';
 import { BranchService } from '../branches/services/branch.service';
 
 @NgModule({
