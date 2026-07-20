@@ -9,88 +9,15 @@ import { BaseResponse } from 'src/app/shared/models/base-response.model';
 import { PageResponse } from 'src/app/shared/models/page-response.model';
 import { TokenService } from 'src/app/core/services/token.service';
 
-export interface ChatRoomResponse {
-  id: string;
-  roomCode: string;
-  roomType: string;
-  customerAccountId?: string | null;
-  customerName?: string | null;
-  customerPhone?: string | null;
-  customerAvatarUrl?: string | null;
-  avatarUrl?: string | null;
-  customerId?: string | null;
-  customerAddress?: string | null;
-  assignedStaffAccountId?: string | null;
-  assignedStaffName?: string | null;
-  branchId?: string | null;
-  orderId?: string | null;
-  title?: string | null;
-  lastMessagePreview?: string | null;
-  lastMessageAt?: string | null;
-  unreadCount?: number;
-  isCustomerOnline?: boolean;
-  status: string;
-  createdAt?: string | null;
-}
-
-export interface ChatMessageResponse {
-  id: string;
-  roomId: string;
-  senderAccountId: string;
-  senderType?: 'CUSTOMER' | 'STAFF' | 'ADMIN' | 'BOT' | 'SYSTEM' | string | null;
-  senderName?: string | null;
-  messageType: string;
-  content?: string | null;
-  metadata?: string | null;
-  status: string;
-  createdAt: string;
-}
-
-export interface CreateChatRoomRequest {
-  branchId?: string | null;
-  orderId?: string | null;
-  title?: string | null;
-}
-
-export interface SendChatMessageRequest {
-  roomId: string;
-  messageType: string;
-  content: string;
-  metadata?: string | null;
-}
-
-export interface ChatRoomRealtimeEvent {
-  eventType?: string;
-  type?: string;
-  room?: ChatRoomResponse;
-  message?: ChatMessageResponse;
-  data?: ChatRoomResponse | ChatMessageResponse | ChatMessagePayload;
-  payload?: ChatRoomResponse | ChatMessageResponse | ChatMessagePayload;
-}
-
-interface ChatMessagePayload {
-  roomId: string;
-  messageId?: string;
-  id?: string;
-  senderId?: string;
-  senderAccountId?: string;
-  senderType?: string | null;
-  senderName?: string | null;
-  messageType?: string;
-  content?: string | null;
-  metadata?: string | null;
-  sentAt?: string;
-  createdAt?: string;
-}
-
-interface RealtimeEnvelope<T> {
-  eventId?: string;
-  type?: string;
-  eventType?: string;
-  data?: T;
-  payload?: T;
-  occurredAt?: string;
-}
+import {
+  ChatRoomResponse,
+  ChatMessageResponse,
+  CreateChatRoomRequest,
+  SendChatMessageRequest,
+  ChatRoomRealtimeEvent,
+  ChatMessagePayload,
+  RealtimeEnvelope
+} from '../../models/chat-realtime.model';
 
 @Injectable({ providedIn: 'root' })
 export class ChatRealtimeService implements OnDestroy {
@@ -279,9 +206,14 @@ export class ChatRealtimeService implements OnDestroy {
       return;
     }
 
+    let metadataValue = null;
+    if (request.metadata !== undefined && request.metadata !== null) {
+      metadataValue = request.metadata;
+    }
+
     this.client.publish({
       destination: '/app/chat.send',
-      body: JSON.stringify({ ...request, metadata: request.metadata ?? null })
+      body: JSON.stringify({ ...request, metadata: metadataValue })
     });
   }
 
@@ -356,17 +288,73 @@ export class ChatRealtimeService implements OnDestroy {
   }
 
   private toMessageResponse(payload: ChatMessagePayload): ChatMessageResponse {
+    let messageId = '';
+    if (payload.id) {
+      messageId = payload.id;
+    } else if (payload.messageId) {
+      messageId = payload.messageId;
+    } else {
+      let time = '';
+      if (payload.sentAt) {
+        time = payload.sentAt;
+      } else {
+        time = Date.now().toString();
+      }
+      messageId = `${payload.roomId}-${time}`;
+    }
+
+    let senderAccountId = '';
+    if (payload.senderAccountId) {
+      senderAccountId = payload.senderAccountId;
+    } else if (payload.senderId) {
+      senderAccountId = payload.senderId;
+    }
+
+    let senderType = null;
+    if (payload.senderType !== undefined && payload.senderType !== null) {
+      senderType = payload.senderType;
+    }
+
+    let senderName = null;
+    if (payload.senderName !== undefined && payload.senderName !== null) {
+      senderName = payload.senderName;
+    }
+
+    let messageType = 'TEXT';
+    if (payload.messageType) {
+      messageType = payload.messageType;
+    }
+
+    let content = null;
+    if (payload.content !== undefined && payload.content !== null) {
+      content = payload.content;
+    }
+
+    let metadata = null;
+    if (payload.metadata !== undefined && payload.metadata !== null) {
+      metadata = payload.metadata;
+    }
+
+    let createdAt = '';
+    if (payload.createdAt) {
+      createdAt = payload.createdAt;
+    } else if (payload.sentAt) {
+      createdAt = payload.sentAt;
+    } else {
+      createdAt = new Date().toISOString();
+    }
+
     return {
-      id: payload.id || payload.messageId || `${payload.roomId}-${payload.sentAt || Date.now()}`,
+      id: messageId,
       roomId: payload.roomId,
-      senderAccountId: payload.senderAccountId || payload.senderId || '',
-      senderType: payload.senderType ?? null,
-      senderName: payload.senderName ?? null,
-      messageType: payload.messageType || 'TEXT',
-      content: payload.content ?? null,
-      metadata: payload.metadata ?? null,
+      senderAccountId: senderAccountId,
+      senderType: senderType,
+      senderName: senderName,
+      messageType: messageType,
+      content: content,
+      metadata: metadata,
       status: 'ACTIVE',
-      createdAt: payload.createdAt || payload.sentAt || new Date().toISOString()
+      createdAt: createdAt
     };
   }
 }
