@@ -40,7 +40,7 @@ export class OrderService {
     const url = `${this.apiUrl}/code/${orderCode}`;
 
     return this.http
-      .get<BaseResponse<Order>>(url)
+      .get<BaseResponse<Order>>(url, { headers: { 'X-Skip-Error-Toast': 'true' } })
       .pipe(map((response) => response.data));
   }
 
@@ -59,7 +59,7 @@ export class OrderService {
     size = 10,
     status?: OrderStatus | 'ALL'
   ): Observable<PageResponse<Order>> {
-    const url = `${this.apiUrl}/branch/${branchId}`;
+    const url = `${this.apiUrl}/branch/${branchId}/summaries`;
     const params = this.createOrderListParams(page, size, status);
 
     return this.http
@@ -77,10 +77,11 @@ export class OrderService {
       return this.getBranchOrders(branchId, page, size, status);
     }
 
+    const url = `${this.apiUrl}/summaries`;
     const params = this.createOrderListParams(page, size, status);
 
     return this.http
-      .get<BaseResponse<PageResponse<Order>>>(this.apiUrl, { params })
+      .get<BaseResponse<PageResponse<Order>>>(url, { params })
       .pipe(map((response) => response.data));
   }
 

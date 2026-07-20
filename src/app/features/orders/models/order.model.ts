@@ -98,6 +98,8 @@ export interface Order {
   discount?: number;
   deliveryFee?: number;
   totalAmount: number;
+  totalItems?: number;
+  itemsPreview?: string;
   pickupTime?: string;
   deliveryAddress?: string;
   priority?: OrderPriority;

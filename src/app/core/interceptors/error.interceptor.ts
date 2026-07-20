@@ -1,4 +1,4 @@
-﻿import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, throwError } from 'rxjs';
@@ -37,9 +37,12 @@ export class ErrorInterceptor implements HttpInterceptor {
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const skipLoading = request.headers.has('X-Skip-Loading');
-    const handledRequest = skipLoading
-      ? request.clone({ headers: request.headers.delete('X-Skip-Loading') })
-      : request;
+    const skipErrorToast = request.headers.has('X-Skip-Error-Toast');
+    const handledRequest = request.clone({
+      headers: request.headers
+        .delete('X-Skip-Loading')
+        .delete('X-Skip-Error-Toast')
+    });
 
     if (!skipLoading) {
       this.loadingService.show();
@@ -48,7 +51,9 @@ export class ErrorInterceptor implements HttpInterceptor {
     return next.handle(handledRequest).pipe(
       catchError((error: HttpErrorResponse) => {
         const apiError = this.apiErrorMessage.toApiError(error);
-        this.handleError(apiError, handledRequest);
+        if (!skipErrorToast) {
+          this.handleError(apiError, handledRequest);
+        }
         return throwError(() => apiError);
       }),
       finalize(() => {

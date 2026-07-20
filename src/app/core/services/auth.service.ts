@@ -31,10 +31,10 @@ import {
 import { TokenService } from './token.service';
 
 /**
- * Qu?n l? lu?ng x?c th?c ph?a FE.
+ * Quản lý luồng xác thực phía FE.
  *
- * Service n?y ch? x? l? auth/profile/permission hi?n t?i.
- * Token ???c qu?n l? ri?ng b?i TokenService.
+ * Service này chỉ xử lý auth/profile/permission hiện tại.
+ * Token được quản lý riêng bởi TokenService.
  */
 @Injectable({
   providedIn: 'root'
@@ -385,7 +385,7 @@ export class AuthService {
         return cacheEntry;
       }
     } catch {
-      // Cache l?i format th? b?, tr?nh l?m h?ng lu?ng ??ng nh?p.
+      // Cache lỗi format thì bỏ, tránh làm hỏng luồng đăng nhập.
     }
 
     sessionStorage.removeItem(this.permissionCacheKey);

@@ -536,10 +536,18 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   getItemsBrief(order: Order): string {
-    if (!order.items || order.items.length === 0) return 'No items';
+    if (order.itemsPreview) {
+      return order.itemsPreview;
+    }
+
+    if (!order.items || order.items.length === 0) {
+      return 'No items';
+    }
+
     const firstItem = order.items[0];
+    const itemName = firstItem.name || firstItem.productName || 'Item';
     const restCount = order.items.length - 1;
-    let brief = `${firstItem.name} x${firstItem.quantity}`;
+    let brief = `${itemName} x${firstItem.quantity}`;
     if (restCount > 0) {
       brief += ` and ${restCount} other item${restCount > 1 ? 's' : ''}`;
     }
