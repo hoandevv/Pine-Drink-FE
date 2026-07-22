@@ -137,6 +137,7 @@ export class VouchersPageComponent implements OnInit {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 

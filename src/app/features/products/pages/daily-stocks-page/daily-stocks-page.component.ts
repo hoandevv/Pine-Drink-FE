@@ -10,6 +10,7 @@ import { DailyStock, DailyStockLog } from '../../models/daily-stock.model';
 import { DailyStockService } from '../../services/daily-stock.service';
 import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 interface VariantOption extends ProductVariantSummary { productName: string; }
 
@@ -55,7 +56,8 @@ export class DailyStocksPageComponent implements OnInit {
     private readonly branchService: BranchService,
     private readonly productService: ProductService,
     private readonly variantService: ProductVariantService,
-    private readonly dailyStockService: DailyStockService
+    private readonly dailyStockService: DailyStockService,
+    private readonly toast: ToastService
   ) { }
 
   ngOnInit(): void { this.loadInitialData(); }
@@ -116,7 +118,11 @@ export class DailyStocksPageComponent implements OnInit {
   closeCopyPanel(): void { if (!this.saving) { this.copyOpen = false; } }
 
   saveQuota(): void {
-    if (!this.selectedBranchId || this.quotaForm.invalid) { this.quotaForm.markAllAsTouched(); return; }
+    if (!this.selectedBranchId || this.quotaForm.invalid) {
+      this.quotaForm.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
     const value = this.quotaForm.getRawValue();
     this.saving = true;
     this.clearMessages();
@@ -143,7 +149,11 @@ export class DailyStocksPageComponent implements OnInit {
   }
 
   copyQuota(): void {
-    if (!this.selectedBranchId || this.copyForm.invalid) { this.copyForm.markAllAsTouched(); return; }
+    if (!this.selectedBranchId || this.copyForm.invalid) {
+      this.copyForm.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
     const value = this.copyForm.getRawValue();
     this.saving = true;
     this.clearMessages();

@@ -8,6 +8,7 @@ import { ProductVariantSummary } from '../../models/product-variant.model';
 import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-product-variants-page',
@@ -46,7 +47,8 @@ export class ProductVariantsPageComponent implements OnInit {
     private readonly formBuilder: FormBuilder,
     private readonly productService: ProductService,
     private readonly variantService: ProductVariantService,
-    private readonly confirmDialog: ConfirmDialogService
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -120,6 +122,7 @@ export class ProductVariantsPageComponent implements OnInit {
   saveVariant(): void {
     if (!this.selectedProductId || this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 

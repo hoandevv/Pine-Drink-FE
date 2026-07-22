@@ -98,7 +98,7 @@
             <th>Giá cộng thêm</th>
             <th>Thứ tự hiển thị</th>
             <th>Trạng thái</th>
-            <th>Thao tác</th>
+            <th style="text-align: center;">Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -128,7 +128,7 @@
               </span>
             </td>
             <td data-label="Thao tác">
-              <div class="row-actions">
+              <div class="row-actions" style="justify-content: center;">
                 <button id="edit-variant-{{ variant.id }}" type="button" class="action-btn" (click)="$event.stopPropagation(); openEditDrawer(variant)">Sửa</button>
                 <button id="toggle-variant-{{ variant.id }}" type="button" class="action-btn" (click)="$event.stopPropagation(); toggleStatus(variant)">{{ variant.status === 'ACTIVE' ? 'Ẩn' : 'Bật' }}</button>
                 <button id="delete-variant-{{ variant.id }}" type="button" class="action-btn danger" (click)="$event.stopPropagation(); deleteVariant(variant)">Xóa</button>
