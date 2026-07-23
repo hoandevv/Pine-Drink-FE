@@ -75,7 +75,6 @@
           <tr>
             <th>Danh mục</th>
             <th>Mã</th>
-            <th>Mô tả</th>
             <th>Thứ tự</th>
             <th>Trạng thái</th>
             <th class="actions-col">Thao tác</th>
@@ -107,7 +106,6 @@
               </div>
             </td>
             <td data-label="Mã"><code>{{ category.code }}</code></td>
-            <td data-label="Mô tả" class="desc">{{ category.description || '—' }}</td>
             <td data-label="Thứ tự"><span class="order-pill">#{{ category.displayOrder }}</span></td>
             <td data-label="Trạng thái">
               <span class="status-pill" [class.inactive]="category.status === 'INACTIVE'">

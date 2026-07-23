@@ -10,6 +10,7 @@ import { ProductToppingSummary } from '../../models/product-topping.model';
 import { ProductService } from '../../services/product.service';
 import { ProductToppingService } from '../../services/product-topping.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-product-toppings-page',
@@ -48,7 +49,8 @@ export class ProductToppingsPageComponent implements OnInit {
     private readonly productService: ProductService,
     private readonly toppingService: ToppingService,
     private readonly productToppingService: ProductToppingService,
-    private readonly confirmDialog: ConfirmDialogService
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly toast: ToastService
   ) {}
 
   ngOnInit(): void {
@@ -142,6 +144,7 @@ export class ProductToppingsPageComponent implements OnInit {
   saveProductTopping(): void {
     if (!this.selectedProductId || this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 

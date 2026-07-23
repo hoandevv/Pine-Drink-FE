@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { Topping } from '../../models/topping.model';
 import { ToppingService } from '../../services/topping.service';
 
@@ -38,7 +39,8 @@ export class ToppingsPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly toppingService: ToppingService,
-    private readonly confirmDialog: ConfirmDialogService
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly toast: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -106,6 +108,7 @@ export class ToppingsPageComponent implements OnInit {
   saveTopping(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 
