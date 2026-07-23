@@ -5,48 +5,12 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
-
-export interface PermissionDefinition {
-  code: string;
-  name: string;
-  description: string;
-  module: string;
-  status?: string;
-  risk: 'LOW' | 'MEDIUM' | 'HIGH';
-}
-
-export interface RolePermissionMatrix {
-  role: string;
-  label: string;
-  description: string;
-  roleType?: string;
-  status?: string;
-  locked?: boolean;
-  permissions: string[];
-}
-
-interface PermissionApiResponse {
-  code: string;
-  name: string;
-  module: string;
-  description: string;
-  status: string;
-}
-
-interface RoleApiResponse {
-  code: string;
-  name: string;
-  description: string;
-  roleType: string;
-  status: string;
-  editable: boolean;
-}
-
-interface RolePermissionsMatrixApiResponse {
-  roles: RoleApiResponse[];
-  permissions: PermissionApiResponse[];
-  matrix: Record<string, string[]>;
-}
+import {
+  PermissionApiResponse,
+  PermissionDefinition,
+  RolePermissionMatrix,
+  RolePermissionsMatrixApiResponse
+} from '../models/permission.model';
 
 @Injectable()
 export class PermissionService {
@@ -59,31 +23,46 @@ export class PermissionService {
     'ROLE_PERMISSION_UPDATE',
     'BRANCH_DELETE'
   ]);
-  private readonly mediumRiskKeywords = ['CREATE', 'UPDATE', 'DELETE', 'UPLOAD', 'ASSIGN', 'REVOKE'];
+  private readonly mediumRiskKeywords = [
+    'CREATE',
+    'UPDATE',
+    'DELETE',
+    'UPLOAD',
+    'ASSIGN',
+    'REVOKE'
+  ];
 
   constructor(private readonly http: HttpClient) {}
 
   getPermissions(): Observable<PermissionDefinition[]> {
+    const url = `${this.apiUrl}/permissions`;
+
     return this.http
-      .get<BaseResponse<PermissionApiResponse[]>>(`${this.apiUrl}/permissions`)
+      .get<BaseResponse<PermissionApiResponse[]>>(url)
       .pipe(map((response) => response.data.map((permission) => this.mapPermission(permission))));
   }
 
   getRolePermissionMatrix(): Observable<RolePermissionMatrix[]> {
+    const url = `${this.apiUrl}/role-permissions/matrix`;
+
     return this.http
-      .get<BaseResponse<RolePermissionsMatrixApiResponse>>(`${this.apiUrl}/role-permissions/matrix`)
+      .get<BaseResponse<RolePermissionsMatrixApiResponse>>(url)
       .pipe(map((response) => this.mapMatrix(response.data)));
   }
 
   saveRolePermissions(role: string, permissions: string[]): Observable<RolePermissionMatrix> {
+    const url = `${this.apiUrl}/roles/${role}/permissions`;
+    const body = { permissions };
+
     return this.http
-      .put<BaseResponse<RolePermissionsMatrixApiResponse>>(`${this.apiUrl}/roles/${role}/permissions`, { permissions })
+      .put<BaseResponse<RolePermissionsMatrixApiResponse>>(url, body)
       .pipe(
         map((response) => this.mapMatrix(response.data).find((item) => item.role === role)),
         map((updatedRole) => {
           if (!updatedRole) {
             throw new Error('Không tìm thấy role sau khi cập nhật.');
           }
+
           return updatedRole;
         })
       );
@@ -114,10 +93,19 @@ export class PermissionService {
 
   private resolveRisk(code: string): PermissionDefinition['risk'] {
     const normalizedCode = code.toUpperCase().replace(/^PERM_/, '');
+
     if (this.highRiskPermissions.has(normalizedCode)) {
       return 'HIGH';
     }
 
-    return this.mediumRiskKeywords.some((keyword) => normalizedCode.includes(keyword)) ? 'MEDIUM' : 'LOW';
+    const hasMediumRiskKeyword = this.mediumRiskKeywords.some((keyword) => {
+      return normalizedCode.includes(keyword);
+    });
+
+    if (hasMediumRiskKeyword) {
+      return 'MEDIUM';
+    }
+
+    return 'LOW';
   }
 }

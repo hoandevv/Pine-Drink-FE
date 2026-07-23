@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import { PageResponse } from '../../../shared/models/page-response.model';
-import { CreateReportJobRequest, ReportJobResponse, ReportJobStatsResponse } from '../models/report.model';
+import { CreateReportJobRequest, ReportJobResponse, ReportJobStatsResponse, ReportOptionsResponse } from '../models/report.model';
 
 @Injectable({ providedIn: 'root' })
 export class ReportService {
@@ -32,17 +32,30 @@ export class ReportService {
     return this.http.get(`${this.apiUrl}/${id}/download`, { responseType: 'blob' });
   }
 
-  getJobHistory(page = 0, size = 20): Observable<PageResponse<ReportJobResponse>> {
+  getJobHistory(
+    page = 0,
+    size = 20,
+    fromDate?: string | null,
+    toDate?: string | null
+  ): Observable<PageResponse<ReportJobResponse>> {
+    const params: Record<string, string | number> = { page, size, sort: 'createdAt,desc' };
+    if (fromDate) params['fromDate'] = fromDate;
+    if (toDate) params['toDate'] = toDate;
+
     return this.http
-      .get<BaseResponse<PageResponse<ReportJobResponse>>>(this.apiUrl, {
-        params: { page, size, sort: 'createdAt,desc' }
-      })
+      .get<BaseResponse<PageResponse<ReportJobResponse>>>(this.apiUrl, { params })
       .pipe(map((response) => response.data));
   }
 
   getJobStats(): Observable<ReportJobStatsResponse> {
     return this.http
       .get<BaseResponse<ReportJobStatsResponse>>(`${this.apiUrl}/stats`)
+      .pipe(map((response) => response.data));
+  }
+
+  getOptions(): Observable<ReportOptionsResponse> {
+    return this.http
+      .get<BaseResponse<ReportOptionsResponse>>(`${this.apiUrl}/options`)
       .pipe(map((response) => response.data));
   }
 }

@@ -4,7 +4,8 @@ import { catchError } from 'rxjs/operators';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { Order, OrderStatus, PaymentMethod, TimelineStatus } from '../../models/order.model';
-import { OrderRealtimeEnvelope, OrderRealtimeService } from '../../services/order-realtime.service';
+import { OrderRealtimeEnvelope } from '../../models/order-realtime.model';
+import { OrderRealtimeService } from '../../services/order-realtime.service';
 import { OrderService } from '../../services/order.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -141,7 +142,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
         console.error('Load orders failed', error);
         this.orders = [];
         this.allOrders = [];
-        this.toastService.error('Failed to load orders');
+        this.toastService.error('Không tải được danh sách đơn hàng');
       },
       complete: () => {
         this.isLoading = false;
@@ -209,6 +210,14 @@ export class OrderListComponent implements OnInit, OnDestroy {
   updatePaginatedOrders(): void {
     const start = (this.currentPage - 1) * this.pageSize;
     this.paginatedOrders = this.orders.slice(start, start + this.pageSize);
+  }
+
+  goToOrderPage(page: number): void {
+    const nextPage = page + 1;
+    if (nextPage >= 1 && nextPage <= this.totalPages && nextPage !== this.currentPage) {
+      this.currentPage = nextPage;
+      this.updatePaginatedOrders();
+    }
   }
 
   nextPage(): void {
@@ -291,11 +300,11 @@ export class OrderListComponent implements OnInit, OnDestroy {
         }
         this.updateStats();
         this.updateTabCounts();
-        this.toastService.success(`Order status updated to ${status}`);
+        this.toastService.success(`Đã cập nhật trạng thái đơn sang ${status}`);
       },
       error: (error) => {
         console.error('Update order status failed', error);
-        this.toastService.error('Failed to update order status');
+        this.toastService.error('Không thể cập nhật trạng thái đơn hàng');
       }
     });
   }
@@ -527,10 +536,18 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   getItemsBrief(order: Order): string {
-    if (!order.items || order.items.length === 0) return 'No items';
+    if (order.itemsPreview) {
+      return order.itemsPreview;
+    }
+
+    if (!order.items || order.items.length === 0) {
+      return 'No items';
+    }
+
     const firstItem = order.items[0];
+    const itemName = firstItem.name || firstItem.productName || 'Item';
     const restCount = order.items.length - 1;
-    let brief = `${firstItem.name} x${firstItem.quantity}`;
+    let brief = `${itemName} x${firstItem.quantity}`;
     if (restCount > 0) {
       brief += ` and ${restCount} other item${restCount > 1 ? 's' : ''}`;
     }
@@ -558,9 +575,9 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   copyToClipboard(text: string): void {
     navigator.clipboard.writeText(text).then(() => {
-      this.toastService.success('Order code copied to clipboard');
+      this.toastService.success('Đã sao chép mã đơn hàng');
     }).catch(() => {
-      this.toastService.error('Failed to copy');
+      this.toastService.error('Không thể sao chép mã đơn hàng');
     });
   }
 
@@ -573,7 +590,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
       win.document.close();
       win.print();
     } else {
-      this.toastService.error('Failed to open print window');
+      this.toastService.error('Không thể mở cửa sổ in hóa đơn');
     }
   }
 

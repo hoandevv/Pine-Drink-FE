@@ -9,88 +9,15 @@ import { BaseResponse } from 'src/app/shared/models/base-response.model';
 import { PageResponse } from 'src/app/shared/models/page-response.model';
 import { TokenService } from 'src/app/core/services/token.service';
 
-export interface ChatRoomResponse {
-  id: string;
-  roomCode: string;
-  roomType: string;
-  customerAccountId?: string | null;
-  customerName?: string | null;
-  customerPhone?: string | null;
-  customerAvatarUrl?: string | null;
-  avatarUrl?: string | null;
-  customerId?: string | null;
-  customerAddress?: string | null;
-  assignedStaffAccountId?: string | null;
-  assignedStaffName?: string | null;
-  branchId?: string | null;
-  orderId?: string | null;
-  title?: string | null;
-  lastMessagePreview?: string | null;
-  lastMessageAt?: string | null;
-  unreadCount?: number;
-  isCustomerOnline?: boolean;
-  status: string;
-  createdAt?: string | null;
-}
-
-export interface ChatMessageResponse {
-  id: string;
-  roomId: string;
-  senderAccountId: string;
-  senderType?: 'CUSTOMER' | 'STAFF' | 'ADMIN' | 'BOT' | 'SYSTEM' | string | null;
-  senderName?: string | null;
-  messageType: string;
-  content?: string | null;
-  metadata?: string | null;
-  status: string;
-  createdAt: string;
-}
-
-export interface CreateChatRoomRequest {
-  branchId?: string | null;
-  orderId?: string | null;
-  title?: string | null;
-}
-
-export interface SendChatMessageRequest {
-  roomId: string;
-  messageType: string;
-  content: string;
-  metadata?: string | null;
-}
-
-export interface ChatRoomRealtimeEvent {
-  eventType?: string;
-  type?: string;
-  room?: ChatRoomResponse;
-  message?: ChatMessageResponse;
-  data?: ChatRoomResponse | ChatMessageResponse | ChatMessagePayload;
-  payload?: ChatRoomResponse | ChatMessageResponse | ChatMessagePayload;
-}
-
-interface ChatMessagePayload {
-  roomId: string;
-  messageId?: string;
-  id?: string;
-  senderId?: string;
-  senderAccountId?: string;
-  senderType?: string | null;
-  senderName?: string | null;
-  messageType?: string;
-  content?: string | null;
-  metadata?: string | null;
-  sentAt?: string;
-  createdAt?: string;
-}
-
-interface RealtimeEnvelope<T> {
-  eventId?: string;
-  type?: string;
-  eventType?: string;
-  data?: T;
-  payload?: T;
-  occurredAt?: string;
-}
+import {
+  ChatRoomResponse,
+  ChatMessageResponse,
+  CreateChatRoomRequest,
+  SendChatMessageRequest,
+  ChatRoomRealtimeEvent,
+  ChatMessagePayload,
+  RealtimeEnvelope
+} from '../../models/chat-realtime.model';
 
 @Injectable({ providedIn: 'root' })
 export class ChatRealtimeService implements OnDestroy {
@@ -98,13 +25,12 @@ export class ChatRealtimeService implements OnDestroy {
   private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}${API_ENDPOINTS.websocket.base}`;
   private client?: Client;
   private roomSubscription?: StompSubscription;
-  private branchSubscription?: StompSubscription;
+  private readonly branchSubscriptions = new Map<string, StompSubscription>();
   private userSubscription?: StompSubscription;
   private isActivating = false;
   private pendingRoomId?: string;
-  private pendingBranchId?: string;
+  private readonly pendingBranchIds = new Set<string>();
   private subscribedRoomId?: string;
-  private subscribedBranchId?: string;
   private readonly connectedSubject = new BehaviorSubject<boolean>(false);
   private readonly messagesSubject = new Subject<ChatMessageResponse>();
   private readonly roomsSubject = new Subject<ChatRoomResponse>();
@@ -160,7 +86,9 @@ export class ChatRealtimeService implements OnDestroy {
     }
 
     this.pendingRoomId = roomId || this.pendingRoomId;
-    this.pendingBranchId = branchId || this.pendingBranchId;
+    if (branchId) {
+      this.pendingBranchIds.add(branchId);
+    }
 
     if (this.client?.connected) {
       this.flushPendingSubscriptions();
@@ -214,32 +142,62 @@ export class ChatRealtimeService implements OnDestroy {
   }
 
   subscribeBranch(branchId: string): void {
-    this.pendingBranchId = branchId;
+    this.pendingBranchIds.add(branchId);
     if (!this.client?.connected) {
       this.connect(undefined, branchId);
       return;
     }
 
-    if (this.subscribedBranchId === branchId && this.branchSubscription) {
+    if (this.branchSubscriptions.has(branchId)) {
       return;
     }
 
-    this.branchSubscription?.unsubscribe();
-    this.subscribedBranchId = branchId;
-    this.branchSubscription = this.client.subscribe(`/topic/branches.${branchId}.chat.rooms`, (message) => this.handleRealtime(message));
+    const subscription = this.client.subscribe(`/topic/branches.${branchId}.chat.rooms`, (message) => this.handleRealtime(message));
+    this.branchSubscriptions.set(branchId, subscription);
+  }
+
+  subscribeBranches(branchIds: string[]): void {
+    const uniqueBranchIds = [...new Set(branchIds.filter(Boolean))];
+    uniqueBranchIds.forEach((branchId) => this.pendingBranchIds.add(branchId));
+
+    if (!this.client?.connected) {
+      this.connect();
+      return;
+    }
+
+    uniqueBranchIds.forEach((branchId) => this.subscribeBranch(branchId));
+  }
+
+  setBranchSubscriptions(branchIds: string[]): void {
+    const nextBranchIds = new Set(branchIds.filter(Boolean));
+
+    this.pendingBranchIds.clear();
+    nextBranchIds.forEach((branchId) => this.pendingBranchIds.add(branchId));
+
+    for (const [branchId, subscription] of this.branchSubscriptions.entries()) {
+      if (!nextBranchIds.has(branchId)) {
+        subscription.unsubscribe();
+        this.branchSubscriptions.delete(branchId);
+      }
+    }
+
+    if (!this.client?.connected) {
+      this.connect();
+      return;
+    }
+
+    nextBranchIds.forEach((branchId) => this.subscribeBranch(branchId));
   }
 
   private flushPendingSubscriptions(): void {
     const roomId = this.pendingRoomId;
-    const branchId = this.pendingBranchId;
+    const branchIds = [...this.pendingBranchIds];
 
     if (roomId) {
       this.subscribeRoom(roomId);
     }
 
-    if (branchId) {
-      this.subscribeBranch(branchId);
-    }
+    branchIds.forEach((branchId) => this.subscribeBranch(branchId));
   }
 
   sendMessage(request: SendChatMessageRequest): void {
@@ -248,23 +206,27 @@ export class ChatRealtimeService implements OnDestroy {
       return;
     }
 
+    let metadataValue = null;
+    if (request.metadata !== undefined && request.metadata !== null) {
+      metadataValue = request.metadata;
+    }
+
     this.client.publish({
       destination: '/app/chat.send',
-      body: JSON.stringify({ ...request, metadata: request.metadata ?? null })
+      body: JSON.stringify({ ...request, metadata: metadataValue })
     });
   }
 
   disconnect(): void {
     this.roomSubscription?.unsubscribe();
-    this.branchSubscription?.unsubscribe();
+    this.branchSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.userSubscription?.unsubscribe();
     this.roomSubscription = undefined;
-    this.branchSubscription = undefined;
+    this.branchSubscriptions.clear();
     this.userSubscription = undefined;
     this.subscribedRoomId = undefined;
-    this.subscribedBranchId = undefined;
     this.pendingRoomId = undefined;
-    this.pendingBranchId = undefined;
+    this.pendingBranchIds.clear();
     this.isActivating = false;
     this.client?.deactivate();
     this.client = undefined;
@@ -326,17 +288,73 @@ export class ChatRealtimeService implements OnDestroy {
   }
 
   private toMessageResponse(payload: ChatMessagePayload): ChatMessageResponse {
+    let messageId = '';
+    if (payload.id) {
+      messageId = payload.id;
+    } else if (payload.messageId) {
+      messageId = payload.messageId;
+    } else {
+      let time = '';
+      if (payload.sentAt) {
+        time = payload.sentAt;
+      } else {
+        time = Date.now().toString();
+      }
+      messageId = `${payload.roomId}-${time}`;
+    }
+
+    let senderAccountId = '';
+    if (payload.senderAccountId) {
+      senderAccountId = payload.senderAccountId;
+    } else if (payload.senderId) {
+      senderAccountId = payload.senderId;
+    }
+
+    let senderType = null;
+    if (payload.senderType !== undefined && payload.senderType !== null) {
+      senderType = payload.senderType;
+    }
+
+    let senderName = null;
+    if (payload.senderName !== undefined && payload.senderName !== null) {
+      senderName = payload.senderName;
+    }
+
+    let messageType = 'TEXT';
+    if (payload.messageType) {
+      messageType = payload.messageType;
+    }
+
+    let content = null;
+    if (payload.content !== undefined && payload.content !== null) {
+      content = payload.content;
+    }
+
+    let metadata = null;
+    if (payload.metadata !== undefined && payload.metadata !== null) {
+      metadata = payload.metadata;
+    }
+
+    let createdAt = '';
+    if (payload.createdAt) {
+      createdAt = payload.createdAt;
+    } else if (payload.sentAt) {
+      createdAt = payload.sentAt;
+    } else {
+      createdAt = new Date().toISOString();
+    }
+
     return {
-      id: payload.id || payload.messageId || `${payload.roomId}-${payload.sentAt || Date.now()}`,
+      id: messageId,
       roomId: payload.roomId,
-      senderAccountId: payload.senderAccountId || payload.senderId || '',
-      senderType: payload.senderType ?? null,
-      senderName: payload.senderName ?? null,
-      messageType: payload.messageType || 'TEXT',
-      content: payload.content ?? null,
-      metadata: payload.metadata ?? null,
+      senderAccountId: senderAccountId,
+      senderType: senderType,
+      senderName: senderName,
+      messageType: messageType,
+      content: content,
+      metadata: metadata,
       status: 'ACTIVE',
-      createdAt: payload.createdAt || payload.sentAt || new Date().toISOString()
+      createdAt: createdAt
     };
   }
 }

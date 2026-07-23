@@ -31,7 +31,7 @@ export class AccountsPageComponent implements OnInit {
   isDrawerOpen = false;
   isEditDrawerOpen = false;
   isDetailDrawerOpen = false;
-  isCreating = false;
+  isCreating = false; 
   isUpdating = false;
   isLoadingDetail = false;
   isUploadingAvatar = false;
@@ -130,7 +130,7 @@ export class AccountsPageComponent implements OnInit {
     this.loadAccounts();
   }
 
-  changePageSize(size: string): void {
+  changePageSize(size: number | string): void {
     this.pageSize = Number(size);
     this.currentPage = 0;
     this.loadAccounts();
@@ -329,8 +329,13 @@ export class AccountsPageComponent implements OnInit {
       return 'Mật khẩu phải có ít nhất 8 ký tự.';
     }
 
-    if (!/[A-Z]/.test(payload.password) || !/[a-z]/.test(payload.password) || !/\d/.test(payload.password)) {
-      return 'Mật khẩu cần có chữ hoa, chữ thường và số.';
+    if (
+      !/[A-Z]/.test(payload.password) ||
+      !/[a-z]/.test(payload.password) ||
+      !/\d/.test(payload.password) ||
+      !/[@$!%*?&]/.test(payload.password)
+    ) {
+      return 'Mật khẩu cần có chữ hoa, chữ thường, số và ký tự đặc biệt @$!%*?&.';
     }
 
     if (payload.phone && !/^(0|\+84)\d{9,10}$/.test(payload.phone)) {

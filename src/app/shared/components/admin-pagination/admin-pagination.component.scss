@@ -1,12 +1,13 @@
 :host {
   display: block;
   width: 100%;
+  container-type: inline-size;
 }
 
 .admin-pagination {
   min-height: 58px;
   display: grid;
-  grid-template-columns: minmax(160px, 0.85fr) minmax(180px, auto) minmax(92px, auto);
+  grid-template-columns: minmax(160px, 0.75fr) minmax(180px, auto) minmax(300px, auto);
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -100,6 +101,22 @@
   color: #94a39a;
 }
 
+.admin-pagination__actions .admin-pagination__page {
+  min-width: 36px;
+  padding: 0 10px;
+  color: #31513a;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.admin-pagination__actions .admin-pagination__page.is-active {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  box-shadow: 0 12px 22px rgba(22, 163, 74, 0.2);
+  opacity: 1;
+}
+
 .admin-pagination__actions .material-symbols-outlined {
   font-size: 20px;
 }
@@ -177,11 +194,80 @@
   }
 
   .admin-pagination__actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .admin-pagination__actions button {
     width: 100%;
+  }
+}
+
+@container (max-width: 430px) {
+  .admin-pagination {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "status"
+      "size"
+      "actions";
+    min-height: auto;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .admin-pagination__status {
+    grid-area: status;
+    white-space: normal;
+  }
+
+  .desktop-status {
+    display: none;
+  }
+
+  .mobile-status {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .mobile-status strong {
+    color: #163d28;
+    font-size: 13px;
+    font-weight: 950;
+  }
+
+  .mobile-status small {
+    color: #64705d;
+    font-size: 12px;
+    font-weight: 850;
+    text-align: right;
+  }
+
+  .admin-pagination__size {
+    grid-area: size;
+    justify-content: flex-start;
+    font-size: 12px;
+  }
+
+  .admin-pagination__actions {
+    grid-area: actions;
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .admin-pagination__actions button {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+  }
+
+  .admin-pagination__actions .admin-pagination__page {
+    min-width: 34px;
+    padding: 0 8px;
   }
 }

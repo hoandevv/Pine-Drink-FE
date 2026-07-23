@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastService } from '../../../../core/services/toast.service';
 import { Topping } from '../../models/topping.model';
 import { ToppingService } from '../../services/topping.service';
 
@@ -27,6 +28,7 @@ export class ToppingsPageComponent implements OnInit {
   pageData: PageResponse<Topping> = this.createEmptyPage();
   selectedTopping: Topping | null = null;
   loading = false;
+  loadingDetail = false;
   saving = false;
   drawerOpen = false;
   errorMessage = '';
@@ -37,7 +39,8 @@ export class ToppingsPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly toppingService: ToppingService,
-    private readonly confirmDialog: ConfirmDialogService
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly toast: ToastService
   ) { }
 
   ngOnInit(): void {
@@ -75,14 +78,25 @@ export class ToppingsPageComponent implements OnInit {
   }
 
   openEditDrawer(topping: Topping): void {
-    this.selectedTopping = topping;
-    this.form.reset({
-      name: topping.name,
-      price: topping.price || 0,
-      imageUrl: topping.imageUrl || '',
-      groupName: topping.groupName || ''
-    });
-    this.drawerOpen = true;
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.toppingService.getTopping(topping.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedTopping = detail;
+          this.form.reset({
+            name: detail.name,
+            price: detail.price || 0,
+            imageUrl: detail.imageUrl || '',
+            groupName: detail.groupName || ''
+          });
+          this.drawerOpen = true;
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết topping. Vui lòng thử lại.';
+        }
+      });
   }
 
   closeDrawer(): void {
@@ -94,6 +108,7 @@ export class ToppingsPageComponent implements OnInit {
   saveTopping(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 

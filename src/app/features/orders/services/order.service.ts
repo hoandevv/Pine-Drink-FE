@@ -29,68 +29,112 @@ export class OrderService {
   }
 
   getOrderById(id: string): Observable<Order> {
+    const url = `${this.apiUrl}/${id}`;
+
     return this.http
-      .get<BaseResponse<Order>>(`${this.apiUrl}/${id}`)
+      .get<BaseResponse<Order>>(url)
       .pipe(map((response) => response.data));
   }
 
   getOrderByCode(orderCode: string): Observable<Order> {
+    const url = `${this.apiUrl}/code/${orderCode}`;
+
     return this.http
-      .get<BaseResponse<Order>>(`${this.apiUrl}/code/${orderCode}`)
+      .get<BaseResponse<Order>>(url, { headers: { 'X-Skip-Error-Toast': 'true' } })
       .pipe(map((response) => response.data));
   }
 
   getMyOrders(page = 0, size = 10): Observable<PageResponse<Order>> {
-    const params = new HttpParams().set('page', page).set('size', size);
+    const url = `${this.apiUrl}/my-orders`;
+    const params = this.createPageParams(page, size);
+
     return this.http
-      .get<BaseResponse<PageResponse<Order>>>(`${this.apiUrl}/my-orders`, { params })
+      .get<BaseResponse<PageResponse<Order>>>(url, { params })
       .pipe(map((response) => response.data));
   }
 
-  getBranchOrders(branchId: string, page = 0, size = 10, status?: OrderStatus | 'ALL'): Observable<PageResponse<Order>> {
-    let params = new HttpParams().set('page', page).set('size', size);
-    if (status && status !== 'ALL') {
-      params = params.set('status', status);
-    }
+  getBranchOrders(
+    branchId: string,
+    page = 0,
+    size = 10,
+    status?: OrderStatus | 'ALL'
+  ): Observable<PageResponse<Order>> {
+    const url = `${this.apiUrl}/branch/${branchId}/summaries`;
+    const params = this.createOrderListParams(page, size, status);
 
     return this.http
-      .get<BaseResponse<PageResponse<Order>>>(`${this.apiUrl}/branch/${branchId}`, { params })
+      .get<BaseResponse<PageResponse<Order>>>(url, { params })
       .pipe(map((response) => response.data));
   }
 
-  getOrders(page = 0, size = 10, status?: OrderStatus | 'ALL', branchId?: string): Observable<PageResponse<Order>> {
+  getOrders(
+    page = 0,
+    size = 10,
+    status?: OrderStatus | 'ALL',
+    branchId?: string
+  ): Observable<PageResponse<Order>> {
     if (branchId) {
       return this.getBranchOrders(branchId, page, size, status);
     }
 
-    let params = new HttpParams().set('page', page).set('size', size);
-    if (status && status !== 'ALL') {
-      params = params.set('status', status);
-    }
+    const url = `${this.apiUrl}/summaries`;
+    const params = this.createOrderListParams(page, size, status);
 
     return this.http
-      .get<BaseResponse<PageResponse<Order>>>(this.apiUrl, { params })
+      .get<BaseResponse<PageResponse<Order>>>(url, { params })
       .pipe(map((response) => response.data));
   }
 
-  updateOrderStatus(id: string, status: OrderStatus, reason?: string, paymentMethod?: string): Observable<Order> {
+  updateOrderStatus(
+    id: string,
+    status: OrderStatus,
+    reason?: string,
+    paymentMethod?: string
+  ): Observable<Order> {
+    const url = `${this.apiUrl}/${id}/status`;
     const request: UpdateOrderStatusRequest = { status };
-    if (reason && reason.trim()) {
-      request.reason = reason.trim();
+
+    const cleanReason = reason?.trim();
+    if (cleanReason) {
+      request.reason = cleanReason;
     }
-    if (paymentMethod && paymentMethod.trim()) {
-      request.paymentMethod = paymentMethod.trim();
+
+    const cleanPaymentMethod = paymentMethod?.trim();
+    if (cleanPaymentMethod) {
+      request.paymentMethod = cleanPaymentMethod;
     }
+
     return this.http
-      .patch<BaseResponse<Order>>(`${this.apiUrl}/${id}/status`, request)
+      .patch<BaseResponse<Order>>(url, request)
       .pipe(map((response) => response.data));
   }
 
   cancelOrder(id: string, reason: string): Observable<Order> {
+    const url = `${this.apiUrl}/${id}/cancel`;
     const request: CancelOrderRequest = { reason };
+
     return this.http
-      .post<BaseResponse<Order>>(`${this.apiUrl}/${id}/cancel`, request)
+      .post<BaseResponse<Order>>(url, request)
       .pipe(map((response) => response.data));
   }
-}
 
+  private createPageParams(page: number, size: number): HttpParams {
+    return new HttpParams()
+      .set('page', page)
+      .set('size', size);
+  }
+
+  private createOrderListParams(
+    page: number,
+    size: number,
+    status?: OrderStatus | 'ALL'
+  ): HttpParams {
+    let params = this.createPageParams(page, size);
+
+    if (status && status !== 'ALL') {
+      params = params.set('status', status);
+    }
+
+    return params;
+  }
+}

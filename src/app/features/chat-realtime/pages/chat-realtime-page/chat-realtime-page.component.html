@@ -44,7 +44,9 @@
           <div class="select-container">
             <select id="chat-branch-filter" [(ngModel)]="branchId" (change)="onBranchChanged()"
               [disabled]="loadingBranches || !branches.length">
-              <option value="" disabled>{{ loadingBranches ? 'Đang tải...' : 'Chọn chi nhánh' }}</option>
+              <option value="" [disabled]="!isSystemScope && !isClientChat">
+                {{ loadingBranches ? 'Đang tải...' : ((isSystemScope && !isClientChat) ? 'Tất cả chi nhánh' : 'Chọn chi nhánh') }}
+              </option>
               <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
             </select>
           </div>

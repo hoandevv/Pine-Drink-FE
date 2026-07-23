@@ -5,7 +5,9 @@ import { AuthGuard } from './core/guards/auth.guard';
 import { AdminLayoutComponent } from './layout/admin-layout/admin-layout.component';
 import { AuthLayoutComponent } from './layout/auth-layout/auth-layout.component';
 import { ClientLayoutComponent } from './layout/client-layout/client-layout.component';
-
+/**
+ * Định nghĩa cấu hình route cho ứng dụng.
+ */
 const routes: Routes = [
   {
     path: '',

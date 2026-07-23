@@ -1,0 +1,50 @@
+
+<div class="filter-card">
+  <form [formGroup]="filterForm" class="filter-content">
+    <div class="search-group">
+      <div class="search-input">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" formControlName="search" placeholder="Search order ID, customer, phone...">
+      </div>
+    </div>
+
+    <div class="selectors-group">
+      <select formControlName="status">
+        <option value="">All Status</option>
+        <option value="PENDING">Pending</option>
+        <option value="CONFIRMED">Confirmed</option>
+        <option value="PREPARING">Preparing</option>
+        <option value="READY">Ready</option>
+        <option value="COMPLETED">Completed</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+
+      <select formControlName="payment">
+        <option value="">All Payment</option>
+        <option value="PAID">Paid</option>
+        <option value="UNPAID">Unpaid</option>
+        <option value="REFUNDED">Refunded</option>
+      </select>
+
+      <select formControlName="type">
+        <option value="">All Types</option>
+        <option value="DELIVERY">Delivery</option>
+        <option value="PICKUP">Pickup</option>
+        <option value="WALK_IN">Walk-in</option>
+      </select>
+
+      <select formControlName="dateRange">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="last7days">Last 7 days</option>
+        <option value="custom">Custom Range</option>
+      </select>
+
+      <button type="button" class="btn-clear" (click)="reset()">
+        <span class="material-symbols-outlined">restart_alt</span>
+        Clear
+      </button>
+    </div>
+  </form>
+</div>
+  

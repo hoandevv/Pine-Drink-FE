@@ -94,7 +94,16 @@
     <span>Thao tác</span>
   </div>
 
-  <article class="voucher-row" *ngFor="let voucher of vouchers" [class.is-muted]="voucher.status !== 'ACTIVE'">
+  <article
+    class="voucher-row"
+    *ngFor="let voucher of vouchers"
+    [class.is-muted]="voucher.status !== 'ACTIVE'"
+    tabindex="0"
+    role="button"
+    [attr.aria-label]="'Xem chi tiết voucher ' + voucher.name"
+    (click)="openEdit(voucher)"
+    (keydown.enter)="openEdit(voucher)"
+    (keydown.space)="openEdit(voucher); $event.preventDefault()">
     <div class="voucher-main-info">
       <span class="ticket-code">{{ voucher.code }}</span>
       <div>
@@ -128,34 +137,24 @@
     </div>
 
     <div class="ticket-actions">
-      <button type="button" class="ticket-btn edit" (click)="openEdit(voucher)"><span>✎</span> Sửa</button>
-      <button type="button" class="ticket-btn toggle" (click)="updateStatus(voucher, voucher.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')"><span>{{ voucher.status === 'ACTIVE' ? '⏸' : '▶' }}</span> {{ voucher.status === 'ACTIVE' ? 'Tắt' : 'Bật' }}</button>
-      <button type="button" class="ticket-btn danger" (click)="remove(voucher)"><span>🗑</span></button>
+      <button type="button" class="ticket-btn edit" (click)="$event.stopPropagation(); openEdit(voucher)"><span>✎</span> Sửa</button>
+      <button type="button" class="ticket-btn toggle" (click)="$event.stopPropagation(); updateStatus(voucher, voucher.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE')"><span>{{ voucher.status === 'ACTIVE' ? '⏸' : '▶' }}</span> {{ voucher.status === 'ACTIVE' ? 'Tắt' : 'Bật' }}</button>
+      <button type="button" class="ticket-btn danger" (click)="$event.stopPropagation(); remove(voucher)"><span>🗑</span></button>
     </div>
   </article>
 </section>
 
 <app-empty-state *ngIf="!loading && !vouchers.length" icon="confirmation_number" title="Chưa có voucher" description="Tạo campaign đầu tiên để bắt đầu chạy ưu đãi."></app-empty-state>
 
-<div class="pagination-bar" *ngIf="totalElements > 0">
-  <div class="page-size-control">
-    <span>Hiển thị</span>
-    <select id="voucher-page-size-select" [ngModel]="size" (ngModelChange)="changePageSize($event)">
-      <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
-    </select>
-    <span>/ trang</span>
-  </div>
-
-  <div class="page-status">
-    Trang {{ page + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} voucher
-  </div>
-
-  <div class="page-actions">
-    <button id="voucher-prev-page-btn" type="button" (click)="changePage(page - 1)" [disabled]="page === 0 || loading">
-      <span class="material-symbols-outlined">chevron_left</span>
-    </button>
-    <button id="voucher-next-page-btn" type="button" (click)="changePage(page + 1)" [disabled]="page + 1 >= totalPages || loading">
-      <span class="material-symbols-outlined">chevron_right</span>
-    </button>
-  </div>
-</div>
+<app-admin-pagination
+  *ngIf="totalElements > 0"
+  [page]="page"
+  [totalPages]="totalPages"
+  [totalItems]="totalElements"
+  [pageSize]="size"
+  [pageSizeOptions]="pageSizeOptions"
+  itemLabel="voucher"
+  [disabled]="loading"
+  (pageChange)="changePage($event)"
+  (pageSizeChange)="changePageSize($event)">
+</app-admin-pagination>

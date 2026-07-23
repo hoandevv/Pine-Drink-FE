@@ -1,0 +1,22 @@
+
+<div class="stats-grid">
+  <div *ngFor="let stat of stats" class="stat-card" [ngClass]="stat.color">
+    <div class="stat-icon">
+      <span class="material-symbols-outlined">{{ stat.icon }}</span>
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">{{ stat.label }}</span>
+      <div class="stat-value-row">
+        <h2 class="stat-value">{{ stat.value }}</h2>
+        <div class="stat-trend" [ngClass]="stat.trend">
+          <span class="material-symbols-outlined">{{ stat.trend === 'up' ? 'trending_up' : 'trending_down' }}</span>
+          <span>{{ stat.change }}%</span>
+        </div>
+      </div>
+      <div class="stat-progress">
+        <div class="progress-bar" [style.width.%]="70"></div>
+      </div>
+    </div>
+  </div>
+</div>
+  

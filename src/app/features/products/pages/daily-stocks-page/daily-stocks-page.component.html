@@ -81,7 +81,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let stock of stocks; trackBy: trackStock">
+          <tr
+            *ngFor="let stock of stocks; trackBy: trackStock"
+            class="stock-row"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Xem chi tiết tồn kho ' + (stock.variantName || variantLabel(stock.variantId))"
+            (click)="openEditDrawer(stock)"
+            (keydown.enter)="openEditDrawer(stock)"
+            (keydown.space)="openEditDrawer(stock); $event.preventDefault()">
             <td data-label="Biến thể">
               <div class="variant-cell"><span>{{ (stock.variantName || variantLabel(stock.variantId)).charAt(0)
                   }}</span>
@@ -99,7 +107,7 @@
                 [class.low]="stock.availableQuantity > 0 && stock.availableQuantity <= 5">{{ stockStatusLabel(stock)
                 }}</span></td>
             <td data-label="Thao tác"><button id="edit-daily-stock-{{ stock.id }}" type="button" class="action-btn"
-                (click)="openEditDrawer(stock)">Sửa / Log</button></td>
+                (click)="$event.stopPropagation(); openEditDrawer(stock)">Sửa / Log</button></td>
           </tr>
         </tbody>
       </table>

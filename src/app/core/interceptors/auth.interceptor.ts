@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 
 import { TokenService } from '../services/token.service';
 
+/**
+ * Thực hiện gắn accessToken vào request headers cho các API request.
+ */
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   constructor(private readonly tokenService: TokenService) {}

@@ -1,10 +1,8 @@
 export type ProductVariantStatus = 'ACTIVE' | 'INACTIVE';
 
-export interface ProductVariant {
+export interface ProductVariantSummary {
   id: string;
   productId: string;
-  productCode?: string;
-  productName?: string;
   variantCode?: string;
   variantName: string;
   sizeLabel?: string;
@@ -12,6 +10,11 @@ export interface ProductVariant {
   finalPrice?: number;
   displayOrder: number;
   status: ProductVariantStatus;
+}
+
+export interface ProductVariant extends ProductVariantSummary {
+  productCode?: string;
+  productName?: string;
   createdAt?: string;
   updatedAt?: string;
 }

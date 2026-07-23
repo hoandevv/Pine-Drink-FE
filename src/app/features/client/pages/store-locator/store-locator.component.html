@@ -68,6 +68,7 @@
         *ngFor="let branch of filteredBranches" 
         class="branch-card"
         [class.selected]="selectedBranch?.id === branch.id"
+        [class.unavailable]="!isBranchOrderable(branch)"
         (click)="selectBranch(branch)"
       >
         <div class="branch-header">
@@ -141,9 +142,10 @@
 
         <button 
           class="primary-button full-width" 
+          [disabled]="!isBranchOrderable(branch)"
           (click)="confirmBranch(branch); $event.stopPropagation()"
         >
-          Chọn chi nhánh này
+          {{ isBranchOrderable(branch) ? 'Chọn chi nhánh này' : 'Chi nhánh tạm ngưng' }}
         </button>
       </article>
 

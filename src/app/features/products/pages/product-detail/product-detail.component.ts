@@ -71,6 +71,7 @@ export class ProductDetailComponent implements OnInit {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toastService.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 

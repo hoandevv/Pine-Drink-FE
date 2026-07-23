@@ -1,52 +1,16 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
-import { PaymentMethod, PaymentStatus } from '../models/order.model';
-
-export interface RecordOfflinePaymentRequest {
-  orderId: string;
-  paymentMethod: PaymentMethod;
-}
-
-export interface PaymentTransactionResponse {
-  id: string;
-  transactionCode: string;
-  orderId: string;
-  orderCode: string;
-  provider: PaymentMethod;
-  paymentMethod: PaymentMethod;
-  amount: number;
-  currency: string;
-  status: PaymentStatus | 'PENDING' | 'FAILED' | string;
-  orderPaymentStatus: PaymentStatus;
-  paidAt?: string;
-  failedReason?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface MomoCreatePaymentRequest {
-  orderId: string;
-  orderInfo: string;
-  extraData?: string;
-}
-
-export interface MomoCreatePaymentResponse {
-  orderId: string;
-  requestId: string;
-  payUrl: string;
-  deeplink: string;
-  qrCodeUrl: string;
-  resultCode: number;
-  message: string;
-  provider: string;
-  paymentMethod: string;
-  transactionId: string;
-}
+import {
+  MomoCreatePaymentRequest,
+  MomoCreatePaymentResponse,
+  PaymentTransactionResponse,
+  RecordOfflinePaymentRequest
+} from '../models/payment.model';
 
 @Injectable({
   providedIn: 'root'
@@ -57,20 +21,26 @@ export class PaymentService {
   constructor(private readonly http: HttpClient) {}
 
   recordOfflinePayment(request: RecordOfflinePaymentRequest): Observable<PaymentTransactionResponse> {
+    const url = `${this.apiUrl}/offline/record`;
+
     return this.http
-      .post<BaseResponse<PaymentTransactionResponse>>(`${this.apiUrl}/offline/record`, request)
+      .post<BaseResponse<PaymentTransactionResponse>>(url, request)
       .pipe(map((response) => response.data));
   }
 
   getOrderPaymentStatus(orderId: string): Observable<PaymentTransactionResponse> {
+    const url = `${this.apiUrl}/orders/${orderId}/status`;
+
     return this.http
-      .get<BaseResponse<PaymentTransactionResponse>>(`${this.apiUrl}/orders/${orderId}/status`)
+      .get<BaseResponse<PaymentTransactionResponse>>(url)
       .pipe(map((response) => response.data));
   }
 
   createMomoPayment(request: MomoCreatePaymentRequest): Observable<MomoCreatePaymentResponse> {
+    const url = `${this.apiUrl}/momo/create`;
+
     return this.http
-      .post<BaseResponse<MomoCreatePaymentResponse>>(`${this.apiUrl}/momo/create`, request)
+      .post<BaseResponse<MomoCreatePaymentResponse>>(url, request)
       .pipe(map((response) => response.data));
   }
 }

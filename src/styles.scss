@@ -1020,6 +1020,166 @@ textarea {
   transform: translateY(-2px);
 }
 
+/* Shared admin row actions */
+.admin-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-action-btn {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+
+.admin-action-btn .material-symbols-outlined {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.admin-action-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 47, 28, 0.08);
+}
+
+.admin-action-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.admin-action-btn.edit {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.admin-action-btn.toggle {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.admin-action-btn.danger {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.admin-action-btn.icon-only {
+  width: 34px;
+  padding: 0;
+}
+
+.row-actions,
+.ticket-actions {
+  gap: 8px;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn),
+.ticket-actions > .ticket-btn {
+  height: 34px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):hover:not(:disabled),
+.ticket-actions > .ticket-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(15, 47, 28, 0.08) !important;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):disabled,
+.ticket-actions > .ticket-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):nth-child(1),
+.ticket-actions > .ticket-btn.edit {
+  border-color: #bbf7d0 !important;
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):nth-child(2),
+.ticket-actions > .ticket-btn.toggle {
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+  color: #92400e !important;
+}
+
+.row-actions > :where(.mini-btn.danger, .action-btn.danger, .icon-btn.danger),
+.ticket-actions > .ticket-btn.danger {
+  border-color: #fecaca !important;
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):not(:has(.material-symbols-outlined))::before,
+.ticket-actions > .ticket-btn:not(:has(.material-symbols-outlined))::before {
+  font-family: 'Material Symbols Outlined';
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 1;
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):nth-child(1):not(:has(.material-symbols-outlined))::before,
+.ticket-actions > .ticket-btn.edit:not(:has(.material-symbols-outlined))::before {
+  content: 'edit';
+}
+
+.row-actions > :where(.mini-btn, .action-btn, .icon-btn):nth-child(2):not(:has(.material-symbols-outlined))::before,
+.ticket-actions > .ticket-btn.toggle:not(:has(.material-symbols-outlined))::before {
+  content: 'visibility_off';
+}
+
+.row-actions > :where(.mini-btn.danger, .action-btn.danger, .icon-btn.danger):not(:has(.material-symbols-outlined))::before,
+.ticket-actions > .ticket-btn.danger:not(:has(.material-symbols-outlined))::before {
+  content: 'delete';
+}
+
+.ticket-actions > .ticket-btn.danger:not(:has(.material-symbols-outlined))::after {
+  content: 'Xóa';
+}
+
+.ticket-actions > .ticket-btn span:not(.material-symbols-outlined) {
+  display: none;
+}
+
+.ticket-actions > .ticket-btn.danger {
+  width: auto !important;
+}
+
 .badge {
   background-color: var(--color-accent);
   color: #4B3A05;

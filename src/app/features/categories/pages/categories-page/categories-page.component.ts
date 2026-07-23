@@ -4,6 +4,7 @@ import { finalize } from 'rxjs';
 
 import { PageResponse } from '../../../../shared/models/page-response.model';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
+import { ToastNotificationService } from '../../../../core/services/toast.service';
 import { Category } from '../../models/category.model';
 import { CategoryService } from '../../services/category.service';
 
@@ -27,6 +28,7 @@ export class CategoriesPageComponent implements OnInit {
   pageData: PageResponse<Category> = this.createEmptyPage();
   selectedCategory: Category | null = null;
   loading = false;
+  loadingDetail = false;
   saving = false;
   errorMessage = '';
   drawerOpen = false;
@@ -40,7 +42,8 @@ export class CategoriesPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly categoryService: CategoryService,
-    private readonly confirmDialog: ConfirmDialogService
+    private readonly confirmDialog: ConfirmDialogService,
+    private readonly toast: ToastNotificationService
   ) {}
 
   ngOnInit(): void {
@@ -88,16 +91,27 @@ export class CategoriesPageComponent implements OnInit {
   }
 
   openEditDrawer(category: Category): void {
-    this.selectedCategory = category;
-    this.selectedImageFile = null;
-    this.previewImageUrl = '';
-    this.form.reset({
-      name: category.name,
-      description: category.description || '',
-      imageUrl: category.imageUrl || '',
-      displayOrder: category.displayOrder || 0
-    });
-    this.drawerOpen = true;
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.categoryService.getCategoryById(category.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedCategory = detail;
+          this.selectedImageFile = null;
+          this.previewImageUrl = '';
+          this.form.reset({
+            name: detail.name,
+            description: detail.description || '',
+            imageUrl: detail.imageUrl || '',
+            displayOrder: detail.displayOrder || 0
+          });
+          this.drawerOpen = true;
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết danh mục. Vui lòng thử lại.';
+        }
+      });
   }
 
   closeDrawer(): void {
@@ -111,6 +125,7 @@ export class CategoriesPageComponent implements OnInit {
   saveCategory(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
       return;
     }
 
@@ -137,40 +152,34 @@ export class CategoriesPageComponent implements OnInit {
 
   toggleStatus(category: Category): void {
     const nextStatus = category.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    this.loading = true;
-    this.errorMessage = '';
+    const isHiding = nextStatus === 'INACTIVE';
 
-    this.categoryService.updateCategoryStatus(category.id, { status: nextStatus })
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: () => this.loadCategories(this.pageData.page),
-        error: () => {
-          this.errorMessage = 'Không đổi được trạng thái danh mục. Vui lòng thử lại.';
-        }
-      });
-  }
-
-  deleteCategory(category: Category): void {
     this.confirmDialog.confirm({
-      title: 'Xác nhận xóa danh mục?',
-      message: `Danh mục ${category.name} sẽ bị xóa khỏi hệ thống.`,
-      description: 'Thao tác này không thể hoàn tác.',
-      confirmText: 'Xóa danh mục',
+      title: isHiding ? 'Xác nhận ẩn danh mục?' : 'Xác nhận hiện danh mục?',
+      message: `${isHiding ? 'Ẩn' : 'Hiện'} danh mục ${category.name}?`,
+      description: isHiding
+        ? 'Danh mục bị ẩn sẽ không hiển thị ở khu vực khách hàng.'
+        : 'Danh mục sẽ được hiển thị lại ở khu vực khách hàng.',
+      confirmText: isHiding ? 'Ẩn danh mục' : 'Hiện danh mục',
       cancelText: 'Hủy',
-      type: 'danger',
-      risks: ['Sản phẩm thuộc danh mục có thể bị ảnh hưởng', 'Không thể khôi phục sau khi xóa']
+      type: isHiding ? 'warning' : 'info'
     }).subscribe((confirmed) => {
       if (!confirmed) return;
 
       this.loading = true;
       this.errorMessage = '';
 
-      this.categoryService.deleteCategory(category.id)
+      this.categoryService.updateCategoryStatus(category.id, { status: nextStatus })
         .pipe(finalize(() => (this.loading = false)))
         .subscribe({
-          next: () => this.loadCategories(this.pageData.page),
+          next: () => {
+            const actionText = nextStatus === 'ACTIVE' ? 'hiện' : 'ẩn';
+            this.toast.success(`Đã ${actionText} danh mục ${category.name}.`);
+            this.loadCategories(this.pageData.page);
+          },
           error: () => {
-            this.errorMessage = 'Không xóa được danh mục. Có thể danh mục đang được sản phẩm sử dụng.';
+            this.errorMessage = 'Không đổi được trạng thái danh mục. Vui lòng thử lại.';
+            this.toast.error('Không đổi được trạng thái danh mục. Vui lòng thử lại.');
           }
         });
     });

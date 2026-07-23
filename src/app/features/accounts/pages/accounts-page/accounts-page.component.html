@@ -107,28 +107,18 @@
     <p>Thử đổi từ khóa hoặc bộ lọc vai trò.</p>
   </div>
 
-  <div class="pagination-bar" *ngIf="totalElements > 0">
-    <div class="page-size-control">
-      <span>Hiển thị</span>
-      <select [ngModel]="pageSize" (ngModelChange)="changePageSize($event)">
-        <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
-      </select>
-      <span>/ trang</span>
-    </div>
-
-    <div class="page-status">
-      Trang {{ currentPage + 1 }} / {{ totalPages || 1 }} · {{ totalElements }} bản ghi
-    </div>
-
-    <div class="page-actions">
-      <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 0 || isLoading">
-        <span class="material-symbols-outlined">chevron_left</span>
-      </button>
-      <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage + 1 >= totalPages || isLoading">
-        <span class="material-symbols-outlined">chevron_right</span>
-      </button>
-    </div>
-  </div>
+  <app-admin-pagination
+    *ngIf="totalElements > 0"
+    [page]="currentPage"
+    [totalPages]="totalPages"
+    [totalItems]="totalElements"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    itemLabel="bản ghi"
+    [disabled]="isLoading"
+    (pageChange)="changePage($event)"
+    (pageSizeChange)="changePageSize($event)">
+  </app-admin-pagination>
 </section>
 
 <div class="drawer-backdrop" *ngIf="isDetailDrawerOpen" (click)="closeDetailDrawer()"></div>
@@ -205,15 +195,15 @@
     </button>
   </div>
 
-  <form class="create-form" (ngSubmit)="createAccount()">
+  <form class="create-form" (ngSubmit)="createAccount()" autocomplete="off">
     <label>
       <span>Họ tên</span>
-      <input name="fullName" type="text" [(ngModel)]="createForm.fullName" placeholder="Nguyễn Văn A" required>
+      <input name="fullName" type="text" [(ngModel)]="createForm.fullName" placeholder="Nguyễn Văn A" autocomplete="off" required>
     </label>
 
     <label>
       <span>Username</span>
-      <input name="username" type="text" [(ngModel)]="createForm.username" placeholder="staff_01" required>
+      <input name="username" type="text" [(ngModel)]="createForm.username" placeholder="staff_01" autocomplete="off" required>
     </label>
 
     <label>
@@ -224,6 +214,7 @@
           [type]="showCreatePassword ? 'text' : 'password'"
           [(ngModel)]="createForm.password"
           placeholder="Aa@123456"
+          autocomplete="new-password"
           required>
         <button type="button" (click)="toggleCreatePassword()" [attr.aria-label]="showCreatePassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'">
           <span class="material-symbols-outlined">{{ showCreatePassword ? 'visibility_off' : 'visibility' }}</span>

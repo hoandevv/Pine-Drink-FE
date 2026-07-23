@@ -7,7 +7,7 @@ import { BranchCreateRequest } from '../../models/branch-request.model';
 import { BranchHours } from '../../models/branch-hours.model';
 import { Branch } from '../../models/branch.model';
 import { BranchService } from '../../services/branch.service';
-import { MapPickerResult } from '../../../../features/client/components/map-picker/map-picker.component';
+import { MapPickerResult } from '../../../client/models/map-picker.model';
 import { AccessControlService } from '../../../../core/services/access-control.service';
 import { ConfirmDialogService } from '../../../../shared/components/confirm-dialog/confirm-dialog.service';
 
@@ -59,6 +59,7 @@ export class BranchesPageComponent implements OnInit {
 
   branches: Branch[] = [];
   loading = false;
+  loadingDetail = false;
   saving = false;
   formOpen = false;
   editingBranch: Branch | null = null;
@@ -154,21 +155,28 @@ export class BranchesPageComponent implements OnInit {
       return;
     }
 
-    this.editingBranch = branch;
-    this.formOpen = true;
-    this.resetBranchHoursForm();
-    this.loadBranchHours(branch.id);
-    this.branchForm.patchValue({
-      name: branch.name,
-      address: branch.address || '',
-      phone: branch.phone || '',
-      email: branch.email || '',
-      latitude: branch.latitude ?? null,
-      longitude: branch.longitude ?? null,
-      supportsPickup: branch.supportsPickup ?? true,
-      supportsDelivery: branch.supportsDelivery ?? false,
-      averagePreparationMinutes: branch.averagePreparationMinutes || 15
-    });
+    this.loadingDetail = true;
+    this.branchService.getBranchById(branch.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.editingBranch = detail;
+          this.formOpen = true;
+          this.resetBranchHoursForm();
+          this.loadBranchHours(detail.id);
+          this.branchForm.patchValue({
+            name: detail.name,
+            address: detail.address || '',
+            phone: detail.phone || '',
+            email: detail.email || '',
+            latitude: detail.latitude ?? null,
+            longitude: detail.longitude ?? null,
+            supportsPickup: detail.supportsPickup ?? true,
+            supportsDelivery: detail.supportsDelivery ?? false,
+            averagePreparationMinutes: detail.averagePreparationMinutes || 15
+          });
+        }
+      });
   }
 
   closeForm(): void {

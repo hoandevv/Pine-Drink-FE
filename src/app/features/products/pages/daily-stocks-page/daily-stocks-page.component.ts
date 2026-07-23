@@ -1,15 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, forkJoin } from 'rxjs';
 
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { ProductVariant } from '../../models/product-variant.model';
+import { ProductSummary } from '../../models/product.model';
+import { ProductVariantSummary } from '../../models/product-variant.model';
 import { DailyStock, DailyStockLog } from '../../models/daily-stock.model';
 import { DailyStockService } from '../../services/daily-stock.service';
+import { ProductService } from '../../services/product.service';
 import { ProductVariantService } from '../../services/product-variant.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
-interface VariantOption extends ProductVariant { productId: string; productName: string; }
+interface VariantOption extends ProductVariantSummary { productName: string; }
 
 @Component({
   selector: 'app-daily-stocks-page',
@@ -38,6 +41,7 @@ export class DailyStocksPageComponent implements OnInit {
   selectedStock: DailyStock | null = null;
   variantSearchTerm = '';
   loading = false;
+  loadingDetail = false;
   saving = false;
   bootLoading = false;
   logLoading = false;
@@ -50,8 +54,10 @@ export class DailyStocksPageComponent implements OnInit {
   constructor(
     private readonly formBuilder: FormBuilder,
     private readonly branchService: BranchService,
+    private readonly productService: ProductService,
     private readonly variantService: ProductVariantService,
-    private readonly dailyStockService: DailyStockService
+    private readonly dailyStockService: DailyStockService,
+    private readonly toast: ToastService
   ) { }
 
   ngOnInit(): void { this.loadInitialData(); }
@@ -86,14 +92,25 @@ export class DailyStocksPageComponent implements OnInit {
   }
 
   openEditDrawer(stock: DailyStock): void {
-    this.selectedStock = stock;
-    this.quotaForm.reset({
-      variantId: stock.variantId,
-      dailyQuantity: stock.dailyQuantity || 0,
-      reason: 'Điều chỉnh quota trong ngày'
-    });
-    this.drawerOpen = true;
-    this.loadLogs(stock);
+    this.loadingDetail = true;
+    this.errorMessage = '';
+    this.dailyStockService.getById(stock.id)
+      .pipe(finalize(() => (this.loadingDetail = false)))
+      .subscribe({
+        next: (detail) => {
+          this.selectedStock = detail;
+          this.quotaForm.reset({
+            variantId: detail.variantId,
+            dailyQuantity: detail.dailyQuantity || 0,
+            reason: 'Điều chỉnh quota trong ngày'
+          });
+          this.drawerOpen = true;
+          this.loadLogs(detail);
+        },
+        error: () => {
+          this.errorMessage = 'Không tải được chi tiết daily stock.';
+        }
+      });
   }
 
   closeDrawer(): void { if (!this.saving) { this.drawerOpen = false; this.selectedStock = null; } }
@@ -101,7 +118,11 @@ export class DailyStocksPageComponent implements OnInit {
   closeCopyPanel(): void { if (!this.saving) { this.copyOpen = false; } }
 
   saveQuota(): void {
-    if (!this.selectedBranchId || this.quotaForm.invalid) { this.quotaForm.markAllAsTouched(); return; }
+    if (!this.selectedBranchId || this.quotaForm.invalid) {
+      this.quotaForm.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
     const value = this.quotaForm.getRawValue();
     this.saving = true;
     this.clearMessages();
@@ -128,7 +149,11 @@ export class DailyStocksPageComponent implements OnInit {
   }
 
   copyQuota(): void {
-    if (!this.selectedBranchId || this.copyForm.invalid) { this.copyForm.markAllAsTouched(); return; }
+    if (!this.selectedBranchId || this.copyForm.invalid) {
+      this.copyForm.markAllAsTouched();
+      this.toast.error('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
     const value = this.copyForm.getRawValue();
     this.saving = true;
     this.clearMessages();
@@ -186,14 +211,17 @@ export class DailyStocksPageComponent implements OnInit {
 
   private loadAllVariants(): void {
     this.variantsLoading = true;
-    this.variantService.getAllActiveVariants()
+    forkJoin({
+      variants: this.variantService.getAllActiveVariants(),
+      products: this.productService.getProductSummaries(0, 100)
+    })
       .pipe(finalize(() => (this.variantsLoading = false)))
       .subscribe({
-        next: (variants) => {
+        next: ({ variants, products }) => {
+          const productNameById = this.buildProductNameMap(products.content || []);
           this.variants = variants.map((variant) => ({
             ...variant,
-            productId: variant.productId,
-            productName: variant.productName || variant.productCode || 'Sản phẩm'
+            productName: productNameById.get(variant.productId) || 'Sản phẩm'
           }));
         },
         error: () => {
@@ -221,6 +249,10 @@ export class DailyStocksPageComponent implements OnInit {
     this.dailyStockService.getLogs(stock.id, 0, 20)
       .pipe(finalize(() => (this.logLoading = false)))
       .subscribe({ next: (page) => { this.logs = page.content || []; }, error: () => { this.logs = []; } });
+  }
+
+  private buildProductNameMap(products: ProductSummary[]): Map<string, string> {
+    return new Map(products.map((product) => [product.id, product.name || product.code || 'Sản phẩm']));
   }
 
   private clearMessages(clearSuccess = true): void { this.errorMessage = ''; if (clearSuccess) { this.successMessage = ''; } }

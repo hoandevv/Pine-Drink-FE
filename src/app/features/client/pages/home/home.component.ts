@@ -1,12 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { Product } from '../../../products/models/product.model';
+import { ProductSummary } from '../../../products/models/product.model';
 import { ProductService } from '../../../products/services/product.service';
 import { Branch } from '../../../branches/models/branch.model';
 import { BranchHours } from '../../../branches/models/branch-hours.model';
 import { BranchService } from '../../../branches/services/branch.service';
-import { VoucherResponse, VoucherService } from '../../../vouchers/services/voucher.service';
+import { VoucherResponse } from '../../../vouchers/models/voucher.model';
+import { VoucherService } from '../../../vouchers/services/voucher.service';
 
 @Component({
   selector: 'app-home',
@@ -14,7 +15,7 @@ import { VoucherResponse, VoucherService } from '../../../vouchers/services/vouc
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  bestSellerProducts: Product[] = [];
+  bestSellerProducts: ProductSummary[] = [];
   activeHeroIndex = 0;
   private heroRotationTimer?: ReturnType<typeof setInterval>;
   vouchers: VoucherResponse[] = [];
@@ -49,11 +50,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   loadProducts(): void {
     this.loadingProducts = true;
     this.productError = '';
-    this.productService.getProducts(0, 24, undefined, undefined, 'ACTIVE').subscribe({
+    this.productService.getProductSummaries(0, 24, undefined, undefined, 'ACTIVE').subscribe({
       next: page => {
         const products = (page.content || []).filter(product => product.status === 'ACTIVE');
         this.bestSellerProducts = products
-          .sort((a, b) => Number(b.bestSeller) - Number(a.bestSeller) || Number(b.featured) - Number(a.featured))
+          .filter(product => this.isHighlightedProduct(product))
+          .sort((a, b) => this.highlightPriority(b) - this.highlightPriority(a))
           .slice(0, 4);
         this.startHeroRotation();
         this.loadingProducts = false;
@@ -66,7 +68,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  get heroProduct(): Product | null {
+  get heroProduct(): ProductSummary | null {
     return this.bestSellerProducts[this.activeHeroIndex] || this.bestSellerProducts[0] || null;
   }
 
@@ -137,7 +139,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  addToCart(product: Product): void {
+  addToCart(product: ProductSummary): void {
     this.persistOrderContext();
     const branchId = this.selectedBranch?.id || sessionStorage.getItem('selectedBranchId') || '';
     this.router.navigate(['/product', product.id], {
@@ -145,10 +147,22 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  getProductBadge(product: Product): string {
-    if (product.bestSeller) { return 'Best seller'; }
-    if (product.featured) { return 'Nổi bật'; }
+  getProductBadge(product: ProductSummary): string {
+    if (this.isFlagEnabled(product.bestSeller)) { return 'Best seller'; }
+    if (this.isFlagEnabled(product.featured)) { return 'Nổi bật'; }
     return '';
+  }
+
+  private isHighlightedProduct(product: ProductSummary): boolean {
+    return this.isFlagEnabled(product.bestSeller) || this.isFlagEnabled(product.featured);
+  }
+
+  private highlightPriority(product: ProductSummary): number {
+    return (this.isFlagEnabled(product.bestSeller) ? 2 : 0) + (this.isFlagEnabled(product.featured) ? 1 : 0);
+  }
+
+  private isFlagEnabled(value: unknown): boolean {
+    return value === true || value === 1 || value === 'true' || value === '1';
   }
 
   private loadBranches(): void {

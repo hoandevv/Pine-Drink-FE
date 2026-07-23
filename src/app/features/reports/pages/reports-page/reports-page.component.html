@@ -33,8 +33,27 @@
             <option value="INACTIVE">Ngừng bán</option>
           </select>
         </div>
-      </div>
 
+        <div class="form-group">
+          <label for="fromDate">Từ ngày</label>
+          <input
+            id="fromDate"
+            type="date"
+            formControlName="fromDate"
+            class="form-control"
+            [max]="filterForm.get('toDate')?.value || null">
+        </div>
+
+        <div class="form-group">
+          <label for="toDate">Đến ngày</label>
+          <input
+            id="toDate"
+            type="date"
+            formControlName="toDate"
+            class="form-control"
+            [min]="filterForm.get('fromDate')?.value || null">
+        </div>
+      </div>
       <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="resetFilter()">
           Đặt lại
@@ -154,14 +173,7 @@
                 <span class="action-spinner" *ngIf="isDownloading(job.id)" aria-hidden="true"></span>
                 <span *ngIf="!isDownloading(job.id)" aria-hidden="true">↓</span>
               </button>
-              <button 
-                type="button" 
-                class="action-btn btn-retry"
-                *ngIf="job.status === 'FAILED'"
-                (click)="retryReport(job)"
-                title="Tạo lại">
-                🔄
-              </button>
+
             </td>
           </tr>
         </tbody>
@@ -175,42 +187,18 @@
         </div>
       </ng-template>
 
-      <div class="pagination-bar" *ngIf="historyTotalElements > 0">
-        <div class="page-size-control">
-          <span>Hiển thị</span>
-          <select
-            id="historyPageSize"
-            [ngModel]="historySize"
-            (ngModelChange)="changeHistorySize($event)">
-            <option [ngValue]="5">5</option>
-            <option [ngValue]="10">10</option>
-            <option [ngValue]="20">20</option>
-            <option [ngValue]="50">50</option>
-          </select>
-          <span>/ trang</span>
-        </div>
-
-        <div class="page-status">
-          Trang {{ historyPage + 1 }} / {{ historyTotalPages || 1 }} · {{ historyTotalElements }} báo cáo
-        </div>
-
-        <div class="page-actions">
-          <button
-            id="historyPrevPageBtn"
-            type="button"
-            (click)="goToHistoryPage(historyPage - 1)"
-            [disabled]="historyFirst || isLoadingHistory">
-            <span class="material-symbols-outlined">chevron_left</span>
-          </button>
-          <button
-            id="historyNextPageBtn"
-            type="button"
-            (click)="goToHistoryPage(historyPage + 1)"
-            [disabled]="historyLast || isLoadingHistory">
-            <span class="material-symbols-outlined">chevron_right</span>
-          </button>
-        </div>
-      </div>
+      <app-admin-pagination
+        *ngIf="historyTotalElements > 0"
+        [page]="historyPage"
+        [totalPages]="historyTotalPages"
+        [totalItems]="historyTotalElements"
+        [pageSize]="historySize"
+        [pageSizeOptions]="[5, 10, 20, 50]"
+        itemLabel="báo cáo"
+        [disabled]="isLoadingHistory"
+        (pageChange)="goToHistoryPage($event)"
+        (pageSizeChange)="changeHistorySize($event)">
+      </app-admin-pagination>
     </div>
 
     <div class="loading-state" *ngIf="isLoadingHistory">

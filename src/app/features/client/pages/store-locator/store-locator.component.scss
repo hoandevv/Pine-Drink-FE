@@ -154,6 +154,10 @@
         box-shadow: 0 0 0 2px rgba(22, 74, 47, 0.15);
       }
 
+      &.unavailable {
+        opacity: 0.78;
+      }
+
       .branch-header {
         display: flex;
         justify-content: space-between;
@@ -407,6 +411,18 @@
         &:hover {
           transform: translateY(-1px);
           box-shadow: 0 4px 12px rgba(22, 74, 47, 0.3);
+        }
+
+        &:disabled {
+          background: #eef2f7;
+          color: #94a3b8;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        &:disabled:hover {
+          transform: none;
+          box-shadow: none;
         }
       }
     }

@@ -7,7 +7,7 @@ import { ProfileComponent } from './pages/profile/profile.component';
 import { ProductDetailComponent } from './pages/product-detail/product-detail.component';
 import { PromotionsComponent } from './pages/promotions/promotions.component';
 import { OrderTrackingComponent } from './pages/order-tracking/order-tracking.component';
-import { CartComponent } from './components/cart/cart.component';
+import { CartComponent } from './pages/cart/cart.component';
 import { AddressListComponent } from './pages/address-list/address-list.component';
 import { AddressFormComponent } from './pages/address-form/address-form.component';
 import { PaymentResultComponent } from './pages/payment-result/payment-result.component';

@@ -307,11 +307,15 @@ td {
 }
 
 tbody tr {
-  transition: background 0.16s ease;
+  cursor: pointer;
+  transition: background 0.16s ease, box-shadow 0.16s ease;
 }
 
-tbody tr:hover {
+tbody tr:hover,
+tbody tr:focus-visible {
   background: #fbfef7;
+  box-shadow: inset 4px 0 0 #22c55e;
+  outline: none;
 }
 
 .topping-cell {

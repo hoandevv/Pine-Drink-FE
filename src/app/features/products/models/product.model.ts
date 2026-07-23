@@ -1,21 +1,25 @@
 export type ProductStatus = 'ACTIVE' | 'INACTIVE' | 'OUT_OF_STOCK';
 
-export interface Product {
+export interface ProductSummary {
   id: string;
   code: string;
   name: string;
-  description?: string;
   price: number;
   basePrice?: number;
   imageUrl?: string;
-  categoryId: string;
+  categoryId?: string;
   categoryName?: string;
   preparationMinutes?: number;
-  availableIceLevels?: string;
-  availableSugarLevels?: string;
   featured?: boolean;
   bestSeller?: boolean;
-  status: ProductStatus;
+  description?: string;
   createdAt?: string;
+  status: ProductStatus;
+}
+
+export interface Product extends ProductSummary {
+  categoryId: string;
+  availableIceLevels?: string;
+  availableSugarLevels?: string;
   updatedAt?: string;
 }

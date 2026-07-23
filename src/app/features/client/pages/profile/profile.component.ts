@@ -9,27 +9,8 @@ import { CustomerAddressService } from 'src/app/features/client/services/custome
 import { CustomerAddress } from 'src/app/features/client/models/customer-address.model';
 import { catchError, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  gender: string;
-  avatar: string;
-  loyaltyPoints: number;
-  memberSince: string;
-  authProvider: string;
-  hasLocalPassword: boolean;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  items: number;
-  total: number;
-  status: 'completed' | 'processing' | 'cancelled';
-}
+import { ApiErrorMessageService } from '../../../../core/services/api-error-message.service';
+import { Order, UserProfile } from '../../models/profile.model';
 
 @Component({
   selector: 'app-profile',
@@ -82,7 +63,8 @@ export class ProfileComponent implements OnInit {
     private readonly fb: FormBuilder,
     public languageService: LanguageService,
     public translate: TranslateService,
-    private readonly addressService: CustomerAddressService
+    private readonly addressService: CustomerAddressService,
+    private readonly apiErrorMessage: ApiErrorMessageService
   ) { }
 
   ngOnInit(): void {
@@ -474,10 +456,8 @@ export class ProfileComponent implements OnInit {
           errorMsg += 'File quá lớn.';
         } else if (error.status === 415) {
           errorMsg += 'Định dạng file không được hỗ trợ.';
-        } else if (error.error?.message) {
-          errorMsg += error.error.message;
         } else {
-          errorMsg += 'Vui lòng thử lại.';
+          errorMsg += this.apiErrorMessage.resolve(error, 'Vui lòng thử lại.');
         }
 
         this.errorMessage = errorMsg;

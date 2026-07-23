@@ -1,0 +1,124 @@
+
+<div class="drawer-overlay" [class.open]="isOpen" (click)="close.emit()">
+  <div class="drawer-content" [class.open]="isOpen" (click)="$event.stopPropagation()">
+    <header class="drawer-header">
+      <div class="header-main">
+        <div class="title-area">
+          <h2>Order #{{ order?.orderCode }}</h2>
+          <span class="time">Created at {{ order?.createdAt }}</span>
+        </div>
+        <button class="btn-close" (click)="close.emit()">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="status-row" *ngIf="order">
+        <app-order-status-badge [status]="order.status"></app-order-status-badge>
+        <app-payment-badge [status]="order.paymentStatus"></app-payment-badge>
+        <span class="type-tag">{{ order.type }}</span>
+      </div>
+    </header>
+
+    <div class="drawer-body" *ngIf="order">
+      <!-- Customer Info -->
+      <section class="info-section">
+        <h3>Customer Info</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Name</span>
+            <span class="value">{{ order.customerName || 'Walk-in' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Phone</span>
+            <span class="value">{{ order.customerPhone || 'N/A' }}</span>
+          </div>
+          <div class="info-item full">
+            <span class="label">Address</span>
+            <span class="value">{{ order.customerAddress || 'N/A' }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Items -->
+      <section class="info-section">
+        <h3>Order Items ({{ order.items.length }})</h3>
+        <div class="items-list">
+          <div *ngFor="let item of order.items" class="order-item">
+            <div class="item-img">
+              <span class="material-symbols-outlined">local_drink</span>
+            </div>
+            <div class="item-details">
+              <div class="item-name-row">
+                <span class="name">{{ item.name }}</span>
+                <span class="price">{{ item.totalPrice | number }} đ</span>
+              </div>
+              <div class="item-meta">
+                <span class="variant">{{ item.size }} · {{ item.variant }}</span>
+                <div class="toppings" *ngIf="item.toppings.length">
+                  + <ng-container *ngFor="let t of item.toppings; let last = last">
+                    {{ t.name }}{{ !last ? ', ' : '' }}
+                  </ng-container>
+                </div>
+              </div>
+              <div class="item-qty">Qty: {{ item.quantity }}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="payment-summary">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>{{ order.subtotal | number }} đ</span>
+          </div>
+          <div class="summary-row">
+            <span>Discount</span>
+            <span class="discount">-{{ order.discount | number }} đ</span>
+          </div>
+          <div class="summary-row grand-total">
+            <span>Total Amount</span>
+            <span>{{ order.totalAmount | number }} đ</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section class="info-section">
+        <h3>History Timeline</h3>
+        <div class="timeline">
+          <div *ngFor="let step of order.timeline" class="timeline-item">
+            <div class="dot"></div>
+            <div class="content">
+              <span class="status">{{ step.status }}</span>
+              <span class="time">{{ step.time }}</span>
+              <p class="note" *ngIf="step.note">{{ step.note }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="drawer-footer" *ngIf="order">
+      <button class="btn-secondary danger" (click)="statusChange.emit({order: order, status: 'REJECTED'})">
+        Reject Order
+      </button>
+      <div class="main-actions">
+        <button class="btn-secondary">
+          <span class="material-symbols-outlined">print</span>
+          Print
+        </button>
+        <button *ngIf="order.status === 'PENDING'" class="btn-primary" (click)="statusChange.emit({order: order, status: 'CONFIRMED'})">
+          Confirm Order
+        </button>
+        <button *ngIf="order.status === 'CONFIRMED'" class="btn-primary" (click)="statusChange.emit({order: order, status: 'PREPARING'})">
+          Start Preparing
+        </button>
+        <button *ngIf="order.status === 'PREPARING'" class="btn-primary success" (click)="statusChange.emit({order: order, status: 'READY'})">
+          Mark as Ready
+        </button>
+        <button *ngIf="order.status === 'READY'" class="btn-primary success" (click)="statusChange.emit({order: order, status: 'COMPLETED'})">
+          Complete Order
+        </button>
+      </div>
+    </footer>
+  </div>
+</div>
+  

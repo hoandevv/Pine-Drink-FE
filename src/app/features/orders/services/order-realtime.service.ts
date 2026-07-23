@@ -7,35 +7,20 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { TokenService } from '../../../core/services/token.service';
 import { Order } from '../models/order.model';
-
-export type OrderRealtimeEventType =
-  | 'ORDER_CREATED'
-  | 'ORDER_STATUS_CHANGED'
-  | 'ORDER_UPDATED'
-  | string;
-
-export interface OrderRealtimeEnvelope<T = Order | Partial<Order> | Record<string, unknown>> {
-  eventId?: string;
-  type?: OrderRealtimeEventType;
-  eventType?: OrderRealtimeEventType;
-  targetType?: string;
-  targetId?: string;
-  orderId?: string;
-  branchId?: string;
-  payload?: T;
-  data?: T;
-  occurredAt?: string;
-}
+import { OrderRealtimeEnvelope, OrderRealtimePayload } from '../models/order-realtime.model';
 
 @Injectable({ providedIn: 'root' })
 export class OrderRealtimeService implements OnDestroy {
   private readonly wsUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}${API_ENDPOINTS.websocket.base}`;
+
   private client?: Client;
+  private isActivating = false;
+
   private readonly orderSubscriptions = new Map<string, StompSubscription>();
   private readonly branchSubscriptions = new Map<string, StompSubscription>();
+
   private readonly pendingOrderIds = new Set<string>();
   private readonly pendingBranchIds = new Set<string>();
-  private isActivating = false;
 
   private readonly connectedSubject = new BehaviorSubject<boolean>(false);
   private readonly orderEventsSubject = new Subject<OrderRealtimeEnvelope>();
@@ -52,8 +37,9 @@ export class OrderRealtimeService implements OnDestroy {
 
   connect(): void {
     const token = this.tokenService.getAccessToken();
+
     if (!token) {
-      this.errorsSubject.next('Missing access token for order realtime');
+      this.sendError('Missing access token for order realtime');
       return;
     }
 
@@ -67,33 +53,7 @@ export class OrderRealtimeService implements OnDestroy {
     }
 
     this.isActivating = true;
-    this.client = new Client({
-      webSocketFactory: () => new SockJS(this.wsUrl),
-      connectHeaders: { Authorization: `Bearer ${token}` },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 10000,
-      heartbeatOutgoing: 10000,
-      onConnect: () => {
-        this.ngZone.run(() => {
-          this.isActivating = false;
-          this.connectedSubject.next(true);
-          this.flushPendingSubscriptions();
-        });
-      },
-      onStompError: (frame) => this.ngZone.run(() => {
-        this.errorsSubject.next(frame.headers['message'] || 'Order realtime STOMP error');
-      }),
-      onWebSocketClose: () => {
-        this.ngZone.run(() => {
-          this.isActivating = false;
-          this.connectedSubject.next(false);
-        });
-      },
-      onWebSocketError: () => this.ngZone.run(() => {
-        this.errorsSubject.next('Order realtime websocket error');
-      })
-    });
-
+    this.client = this.createClient(token);
     this.client.activate();
   }
 
@@ -103,11 +63,7 @@ export class OrderRealtimeService implements OnDestroy {
     }
 
     this.pendingOrderIds.add(orderId);
-    if (!this.client?.connected) {
-      this.connect();
-      return;
-    }
-
+    this.connectIfNeeded();
     this.subscribePendingOrder(orderId);
   }
 
@@ -117,11 +73,7 @@ export class OrderRealtimeService implements OnDestroy {
     }
 
     this.pendingBranchIds.add(branchId);
-    if (!this.client?.connected) {
-      this.connect();
-      return;
-    }
-
+    this.connectIfNeeded();
     this.subscribePendingBranch(branchId);
   }
 
@@ -138,12 +90,9 @@ export class OrderRealtimeService implements OnDestroy {
   }
 
   disconnect(): void {
-    this.orderSubscriptions.forEach(subscription => subscription.unsubscribe());
-    this.branchSubscriptions.forEach(subscription => subscription.unsubscribe());
-    this.orderSubscriptions.clear();
-    this.branchSubscriptions.clear();
-    this.pendingOrderIds.clear();
-    this.pendingBranchIds.clear();
+    this.unsubscribeAll();
+    this.clearPendingSubscriptions();
+
     this.isActivating = false;
     this.client?.deactivate();
     this.client = undefined;
@@ -154,31 +103,83 @@ export class OrderRealtimeService implements OnDestroy {
     this.disconnect();
   }
 
+  private createClient(token: string): Client {
+    return new Client({
+      webSocketFactory: () => new SockJS(this.wsUrl),
+      connectHeaders: { Authorization: `Bearer ${token}` },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+      onConnect: () => this.handleConnected(),
+      onStompError: (frame) => this.sendError(frame.headers['message'] || 'Order realtime STOMP error'),
+      onWebSocketClose: () => this.handleDisconnected(),
+      onWebSocketError: () => this.sendError('Order realtime websocket error')
+    });
+  }
+
+  private handleConnected(): void {
+    this.ngZone.run(() => {
+      this.isActivating = false;
+      this.connectedSubject.next(true);
+      this.flushPendingSubscriptions();
+    });
+  }
+
+  private handleDisconnected(): void {
+    this.ngZone.run(() => {
+      this.isActivating = false;
+      this.connectedSubject.next(false);
+    });
+  }
+
+  private sendError(message: string): void {
+    this.ngZone.run(() => this.errorsSubject.next(message));
+  }
+
+  private connectIfNeeded(): void {
+    if (!this.client?.connected) {
+      this.connect();
+    }
+  }
+
   private flushPendingSubscriptions(): void {
-    [...this.pendingOrderIds].forEach(orderId => this.subscribePendingOrder(orderId));
-    [...this.pendingBranchIds].forEach(branchId => this.subscribePendingBranch(branchId));
+    this.pendingOrderIds.forEach((orderId) => this.subscribePendingOrder(orderId));
+    this.pendingBranchIds.forEach((branchId) => this.subscribePendingBranch(branchId));
   }
 
   private subscribePendingOrder(orderId: string): void {
-    if (this.orderSubscriptions.has(orderId)) {
+    if (!this.client?.connected || this.orderSubscriptions.has(orderId)) {
       return;
     }
 
-    const subscription = this.client?.subscribe(this.getOrderTopic(orderId), (message) => this.handleMessage(message));
-    if (subscription) {
-      this.orderSubscriptions.set(orderId, subscription);
-    }
+    const topic = this.getOrderTopic(orderId);
+    const subscription = this.client.subscribe(topic, (message) => this.handleMessage(message));
+
+    this.orderSubscriptions.set(orderId, subscription);
   }
 
   private subscribePendingBranch(branchId: string): void {
-    if (this.branchSubscriptions.has(branchId)) {
+    if (!this.client?.connected || this.branchSubscriptions.has(branchId)) {
       return;
     }
 
-    const subscription = this.client?.subscribe(this.getBranchOrdersTopic(branchId), (message) => this.handleMessage(message));
-    if (subscription) {
-      this.branchSubscriptions.set(branchId, subscription);
-    }
+    const topic = this.getBranchOrdersTopic(branchId);
+    const subscription = this.client.subscribe(topic, (message) => this.handleMessage(message));
+
+    this.branchSubscriptions.set(branchId, subscription);
+  }
+
+  private unsubscribeAll(): void {
+    this.orderSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.branchSubscriptions.forEach((subscription) => subscription.unsubscribe());
+
+    this.orderSubscriptions.clear();
+    this.branchSubscriptions.clear();
+  }
+
+  private clearPendingSubscriptions(): void {
+    this.pendingOrderIds.clear();
+    this.pendingBranchIds.clear();
   }
 
   private getOrderTopic(orderId: string): string {
@@ -192,32 +193,52 @@ export class OrderRealtimeService implements OnDestroy {
   private handleMessage(message: IMessage): void {
     this.ngZone.run(() => {
       try {
-        const parsed = JSON.parse(message.body) as OrderRealtimeEnvelope | Order | Partial<Order>;
-        this.orderEventsSubject.next(this.normalizeEnvelope(parsed));
+        const parsed = JSON.parse(message.body) as OrderRealtimePayload;
+        const event = this.normalizeEnvelope(parsed);
+        this.orderEventsSubject.next(event);
       } catch {
         this.errorsSubject.next('Không parse được order realtime payload');
       }
     });
   }
 
-  private normalizeEnvelope(value: OrderRealtimeEnvelope | Order | Partial<Order>): OrderRealtimeEnvelope {
+  private normalizeEnvelope(value: OrderRealtimePayload): OrderRealtimeEnvelope {
     if (this.isEnvelope(value)) {
-      const payload = this.extractPayload(value);
-      const orderId = this.extractOrderId(value, payload);
-      const branchId = this.extractBranchId(value, payload);
-
-      return {
-        ...value,
-        type: value.type ?? value.eventType ?? 'ORDER_UPDATED',
-        eventType: value.eventType ?? value.type ?? 'ORDER_UPDATED',
-        targetId: value.targetId ?? orderId,
-        orderId,
-        branchId,
-        payload
-      };
+      return this.normalizeExistingEnvelope(value);
     }
 
-    const order = value as Partial<Order>;
+    return this.createEnvelopeFromOrder(value);
+  }
+
+  private normalizeExistingEnvelope(envelope: OrderRealtimeEnvelope): OrderRealtimeEnvelope {
+    const payload = this.extractPayload(envelope);
+    const orderId = this.extractOrderId(envelope, payload);
+    const branchId = this.extractBranchId(envelope, payload);
+    let eventType = envelope.eventType;
+    if (!eventType) {
+      eventType = envelope.type;
+    }
+    if (!eventType) {
+      eventType = 'ORDER_UPDATED';
+    }
+
+    let targetId = envelope.targetId;
+    if (!targetId) {
+      targetId = orderId;
+    }
+
+    return {
+      ...envelope,
+      type: eventType,
+      eventType,
+      targetId,
+      orderId,
+      branchId,
+      payload
+    };
+  }
+
+  private createEnvelopeFromOrder(order: Partial<Order>): OrderRealtimeEnvelope {
     return {
       type: 'ORDER_UPDATED',
       eventType: 'ORDER_UPDATED',
@@ -229,7 +250,7 @@ export class OrderRealtimeService implements OnDestroy {
     };
   }
 
-  private isEnvelope(value: OrderRealtimeEnvelope | Order | Partial<Order>): value is OrderRealtimeEnvelope {
+  private isEnvelope(value: OrderRealtimePayload): value is OrderRealtimeEnvelope {
     return 'payload' in value
       || 'data' in value
       || 'type' in value
@@ -240,22 +261,49 @@ export class OrderRealtimeService implements OnDestroy {
 
   private extractPayload(envelope: OrderRealtimeEnvelope): Record<string, unknown> {
     const rawPayload = envelope.payload || envelope.data || {};
-    const payload = typeof rawPayload === 'object' && rawPayload !== null
-      ? rawPayload as Record<string, unknown>
-      : {};
+    const payload = this.toRecord(rawPayload);
+
+    let id = payload['id'];
+    if (!id) {
+      id = payload['orderId'];
+    }
+    if (!id) {
+      id = envelope.orderId;
+    }
+    if (!id) {
+      id = envelope.targetId;
+    }
+
+    let branchId = payload['branchId'];
+    if (!branchId) {
+      branchId = envelope.branchId;
+    }
 
     return {
       ...payload,
-      id: payload['id'] ?? payload['orderId'] ?? envelope.orderId ?? envelope.targetId,
-      branchId: payload['branchId'] ?? envelope.branchId
+      id,
+      branchId
     };
   }
 
+  private toRecord(value: unknown): Record<string, unknown> {
+    if (typeof value === 'object' && value !== null) {
+      return value as Record<string, unknown>;
+    }
+
+    return {};
+  }
+
   private extractOrderId(envelope: OrderRealtimeEnvelope, payload: Record<string, unknown>): string | undefined {
-    return String(payload['id'] || payload['orderId'] || envelope.orderId || envelope.targetId || '') || undefined;
+    return this.toOptionalString(payload['id'] || payload['orderId'] || envelope.orderId || envelope.targetId);
   }
 
   private extractBranchId(envelope: OrderRealtimeEnvelope, payload: Record<string, unknown>): string | undefined {
-    return String(payload['branchId'] || envelope.branchId || '') || undefined;
+    return this.toOptionalString(payload['branchId'] || envelope.branchId);
+  }
+
+  private toOptionalString(value: unknown): string | undefined {
+    const text = String(value || '');
+    return text || undefined;
   }
 }

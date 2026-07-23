@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, forkJoin, finalize, of } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import * as L from 'leaflet';
 import { BranchHours } from '../../../branches/models/branch-hours.model';
@@ -21,9 +21,11 @@ export class StoreLocatorComponent implements OnInit {
   expandedHoursBranchId: string | null = null;
 
   loading = false;
-  
+
   map!: L.Map;
   markers: L.Marker[] = [];
+  markerByBranchId = new Map<string, L.Marker>();
+  private geocodeCache = new Map<string, L.LatLngLiteral>();
   userLocationMarker: L.Marker | null = null;
   private tileLayers: Record<string, L.TileLayer> = {};
   private branchIcon!: L.Icon;
@@ -39,7 +41,7 @@ export class StoreLocatorComponent implements OnInit {
   constructor(
     private readonly router: Router,
     private readonly branchService: BranchService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initMap();
@@ -84,9 +86,9 @@ export class StoreLocatorComponent implements OnInit {
       .subscribe({
         next: (pageData) => {
           this.allBranches = pageData.content;
+          this.hydrateBranchHours(this.allBranches);
           this.applyFilters();
           this.selectedBranch = this.filteredBranches[0] || null;
-          this.loadBranchHours(this.allBranches);
         },
         error: () => {
           this.allBranches = [];
@@ -143,19 +145,22 @@ export class StoreLocatorComponent implements OnInit {
 
     this.markers.forEach(m => this.map.removeLayer(m));
     this.markers = [];
+    this.markerByBranchId.clear();
 
     const bounds = L.latLngBounds([]);
 
     this.filteredBranches.forEach(branch => {
-      if (branch.latitude && branch.longitude) {
-        const marker = L.marker([branch.latitude, branch.longitude], { icon: this.getBranchIcon(branch) })
+      const latLng = this.getBranchLatLng(branch);
+      if (latLng) {
+        const marker = L.marker(latLng, { icon: this.getBranchIcon(branch) })
           .addTo(this.map)
           .bindPopup(this.branchPopup(branch), { className: 'pine-map-popup' })
           .on('click', () => {
             this.selectBranch(branch);
           });
         this.markers.push(marker);
-        bounds.extend([branch.latitude, branch.longitude]);
+        this.markerByBranchId.set(branch.id, marker);
+        bounds.extend(latLng);
       }
     });
 
@@ -192,12 +197,39 @@ export class StoreLocatorComponent implements OnInit {
 
   selectBranch(branch: Branch): void {
     this.selectedBranch = branch;
-    if (branch.latitude && branch.longitude && this.map) {
-      this.map.setView([branch.latitude, branch.longitude], 15, { animate: true });
+    this.refreshMarkerIcons();
+    void this.focusBranchOnMap(branch);
+  }
+
+  private async focusBranchOnMap(branch: Branch): Promise<void> {
+    if (!this.map) return;
+
+    const latLng = this.getBranchLatLng(branch) ?? await this.geocodeBranchAddress(branch);
+    if (!latLng) return;
+
+    let marker = this.markerByBranchId.get(branch.id);
+    if (!marker) {
+      marker = L.marker(latLng, { icon: this.getBranchIcon(branch) })
+        .addTo(this.map)
+        .bindPopup(this.branchPopup(branch), { className: 'pine-map-popup' })
+        .on('click', () => this.selectBranch(branch));
+      this.markers.push(marker);
+      this.markerByBranchId.set(branch.id, marker);
     }
+
+    marker.setLatLng(latLng);
+    this.map.flyTo(latLng, 17, { animate: true, duration: 0.8 });
+
+    window.setTimeout(() => {
+      marker?.openPopup();
+    }, 850);
   }
 
   confirmBranch(branch: Branch): void {
+    if (!this.isBranchOrderable(branch)) {
+      return;
+    }
+
     sessionStorage.setItem('selectedBranchId', branch.id);
     sessionStorage.setItem('selectedBranchName', branch.name);
     this.router.navigate(['/menu']);
@@ -216,6 +248,10 @@ export class StoreLocatorComponent implements OnInit {
 
   getStatusText(branch: Branch): string {
     return this.getOperatingState(branch).label;
+  }
+
+  isBranchOrderable(branch: Branch): boolean {
+    return this.isActiveBranch(branch);
   }
 
   getTodayHoursLabel(branch: Branch): string {
@@ -367,6 +403,13 @@ export class StoreLocatorComponent implements OnInit {
     return this.selectedBranch?.id === branch.id ? this.selectedBranchIcon : this.branchIcon;
   }
 
+  private refreshMarkerIcons(): void {
+    this.filteredBranches.forEach(branch => {
+      const marker = this.markerByBranchId.get(branch.id);
+      marker?.setIcon(this.getBranchIcon(branch));
+    });
+  }
+
   private createUserIcon(): L.DivIcon {
     return L.divIcon({
       className: 'pine-user-marker',
@@ -376,12 +419,67 @@ export class StoreLocatorComponent implements OnInit {
     });
   }
 
+  private getBranchLatLng(branch: Branch): L.LatLngLiteral | null {
+    const lat = Number(branch.latitude);
+    const lng = Number(branch.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null;
+    }
+
+    return { lat, lng };
+  }
+
+  private async geocodeBranchAddress(branch: Branch): Promise<L.LatLngLiteral | null> {
+    const address = branch.address?.trim();
+    if (!address) return null;
+
+    const cacheKey = address.toLowerCase();
+    const cached = this.geocodeCache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const params = new URLSearchParams({
+        q: address,
+        format: 'json',
+        limit: '1'
+      });
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`);
+      const results = await response.json() as Array<{ lat: string; lon: string }>;
+      const first = results[0];
+      if (!first) return null;
+
+      const latLng = { lat: Number(first.lat), lng: Number(first.lon) };
+      if (!Number.isFinite(latLng.lat) || !Number.isFinite(latLng.lng)) return null;
+
+      branch.latitude = latLng.lat;
+      branch.longitude = latLng.lng;
+      this.geocodeCache.set(cacheKey, latLng);
+      return latLng;
+    } catch {
+      return null;
+    }
+  }
+
+  private hydrateBranchHours(branches: Branch[]): void {
+    const hasEmbeddedHours = branches.some((branch) => Array.isArray(branch.hours));
+
+    if (hasEmbeddedHours) {
+      this.branchHoursByBranchId = branches.reduce<Record<string, BranchHours[]>>((acc, branch) => {
+        acc[branch.id] = branch.hours ?? [];
+        return acc;
+      }, {});
+      return;
+    }
+
+    this.loadBranchHours(branches);
+  }
+
   private loadBranchHours(branches: Branch[]): void {
     if (!branches.length) {
       this.branchHoursByBranchId = {};
       return;
     }
-
     const requests = branches.map((branch) =>
       this.branchService.getBranchHours(branch.id).pipe(
         catchError(() => of([] as BranchHours[]))
@@ -408,7 +506,7 @@ export class StoreLocatorComponent implements OnInit {
   }
 
   private getOperatingState(branch: Branch): { status: 'open' | 'closing-soon' | 'closed' | 'unknown'; label: string } {
-    if (branch.status !== 'ACTIVE') {
+    if (!this.isActiveBranch(branch)) {
       return { status: 'closed', label: 'Tạm ngưng' };
     }
 
@@ -466,6 +564,10 @@ export class StoreLocatorComponent implements OnInit {
 
   private formatTime(time: string): string {
     return time?.slice(0, 5) || '--:--';
+  }
+
+  private isActiveBranch(branch: Branch): boolean {
+    return (branch.status ?? 'ACTIVE') === 'ACTIVE';
   }
 
   private branchPopup(branch: Branch): string {
