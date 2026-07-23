@@ -72,11 +72,6 @@ export class RegisterPageComponent implements OnInit {
       },
       error: (error: ApiError) => {
         this.submitting = false;
-
-        if (error.errorCode === 'AUTH_014') {
-          this.toastService.warning('Email này đã đăng ký nhưng có thể chưa kích hoạt. Vui lòng xác thực OTP hoặc gửi lại mã.');
-          this.navigateToVerifyOtp(request.email, true);
-        }
       },
       complete: () => {
         this.submitting = false;

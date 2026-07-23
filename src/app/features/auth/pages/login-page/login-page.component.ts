@@ -7,6 +7,7 @@ import { AccessControlService } from '../../../../core/services/access-control.s
 import { ToastService } from '../../../../core/services/toast.service';
 import { environment } from '../../../../../environments/environment';
 import { LoginRequest } from '../../models/login-request.model';
+import { ApiError } from '../../../../shared/models/api-error.model';
 
 declare global {
   interface Window {
@@ -76,11 +77,11 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    // Check for reset password success message
+    // Kiểm tra thông báo đặt lại mật khẩu thành công
     const resetSuccess = this.route.snapshot.queryParamMap.get('resetSuccess');
     if (resetSuccess === 'true') {
       this.toastService.success('Đặt lại mật khẩu thành công! Vui lòng đăng nhập.');
-      // Clear the query param
+      // Xóa query param sau khi hiển thị thông báo
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: {},
@@ -89,7 +90,7 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (this.authService.isAuthenticated()) {
-      // Redirect based on user role
+      // Chuyển hướng theo vai trò người dùng
       const redirectUrl = this.getRedirectUrlByRole();
       this.router.navigate([redirectUrl]);
     }
@@ -108,8 +109,18 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
       next: () => {
         this.handleLoginSuccess('Đăng nhập thành công.');
       },
-      error: () => {
+      error: (error: ApiError) => {
         this.submitting = false;
+        
+        if (error.errorCode === 'AUTH_006') {
+          // Nếu người dùng nhập email, tự điền email ở trang OTP
+          const queryParams: { email?: string } = {};
+          if (request.username.includes('@')) {
+            queryParams.email = request.username;
+          }
+
+          this.router.navigate(['/auth/verify-otp'], { queryParams });
+        }
       },
       complete: () => {
         this.submitting = false;
@@ -152,7 +163,7 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
       error: (error) => {
         console.error('[Google OAuth] Login failed:', error);
         this.googleSubmitting = false;
-        // Error toast is handled by HTTP interceptor
+        // Toast lỗi được xử lý trong HTTP interceptor
       },
       complete: () => {
         this.googleSubmitting = false;
@@ -163,16 +174,16 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private handleLoginSuccess(message: string): void {
     this.toastService.success(message);
 
-    // Check if there's a redirect URL from query params
+    // Kiểm tra redirect URL từ query params
     const requestedRedirect = this.route.snapshot.queryParamMap.get('redirectUrl');
 
-    // If there's a requested redirect and it's not an auth page, use it
+    // Nếu có redirect URL hợp lệ và không phải trang auth thì dùng redirect đó
     if (requestedRedirect && !requestedRedirect.startsWith('/auth')) {
       this.router.navigateByUrl(requestedRedirect);
       return;
     }
 
-    // Otherwise, redirect based on user role
+    // Nếu không có redirect URL thì chuyển hướng theo vai trò người dùng
     const redirectUrl = this.getRedirectUrlByRole();
     this.router.navigate([redirectUrl]);
   }
@@ -188,7 +199,7 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     if (!window.google?.accounts?.id) {
-      // Retry up to 10 times (3 seconds total) waiting for script to load
+      // Thử lại tối đa 10 lần (tổng 3 giây) để chờ script Google tải xong
       if (retryCount < 10) {
         this.googleInitTimerId = window.setTimeout(
           () => this.initGoogleIdentity(retryCount + 1),
@@ -200,7 +211,7 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Initialize Google Identity Services and render the official button.
+    // Khởi tạo Google Identity Services và render nút Google chính thức.
     window.google.accounts.id.initialize({
       client_id: environment.googleClientId,
       callback: (response) => this.handleGoogleCredential(response)
@@ -221,6 +232,10 @@ export class LoginPageComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private getRedirectUrlByRole(): string {
-    return this.accessControl.isAdminConsoleUser() ? '/admin/dashboard' : '/';
+    if (this.accessControl.isAdminConsoleUser()) {
+      return '/admin/dashboard';
+    }
+
+    return '/';
   }
 }
