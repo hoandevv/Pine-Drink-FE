@@ -11,6 +11,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { PromptDialogService } from '../../../../shared/components/prompt-dialog/prompt-dialog.service';
 import { PaymentService } from '../../services/payment.service';
+import { AccessControlService } from '../../../../core/services/access-control.service';
 
 @Component({
   selector: 'app-order-list',
@@ -28,6 +29,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
   searchQuery = '';
   selectedDate = '';
   recordingPaymentOrderId: string | null = null;
+  refundingOrderId: string | null = null;
 
   private readonly subscriptions = new Subscription();
   private readonly subscribedBranchIds = new Set<string>();
@@ -67,7 +69,8 @@ export class OrderListComponent implements OnInit, OnDestroy {
     private readonly toastService: ToastService,
     private readonly authService: AuthService,
     private readonly promptDialog: PromptDialogService,
-    private readonly paymentService: PaymentService
+    private readonly paymentService: PaymentService,
+    private readonly accessControl: AccessControlService
   ) {}
 
   ngOnInit(): void {
@@ -289,10 +292,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
     this.orderService.updateOrderStatus(order.id, status, reason, paymentMethod).subscribe({
       next: (updatedOrder) => {
-        const existingOrder = this.allOrders.find(o => o.id === order.id) ?? order;
-        const normalized = this.isOrderPaid(existingOrder)
-          ? this.markOrderAsPaid(this.normalizeOrder(updatedOrder), existingOrder.paymentMethod)
-          : this.normalizeOrder(updatedOrder);
+        const normalized = this.normalizeOrder(updatedOrder);
         this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
         this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
         if (this.selectedOrder?.id === order.id) {
@@ -393,6 +393,14 @@ export class OrderListComponent implements OnInit, OnDestroy {
     return (order.paymentStatus || '').toUpperCase() === 'PAID';
   }
 
+  isOrderRefunded(order: Order): boolean {
+    return (order.paymentStatus || '').toUpperCase() === 'REFUNDED';
+  }
+
+  hasPaymentCaptured(order: Order): boolean {
+    return this.isOrderPaid(order) || this.isOrderRefunded(order);
+  }
+
   canRecordOfflinePayment(order: Order): boolean {
     const method = (order.paymentMethod || '').toUpperCase();
     return ['CASH', 'COD', 'BANK_TRANSFER'].includes(method);
@@ -420,8 +428,12 @@ export class OrderListComponent implements OnInit, OnDestroy {
   }
 
   getPaymentHint(order: Order): string {
+    if (this.isOrderRefunded(order)) {
+      return `Đã hoàn tiền qua ${this.getPaymentMethodLabel(order.paymentMethod)}.`;
+    }
+
     if (this.isOrderPaid(order)) {
-      return `Đã thanh toán qua ${this.getPaymentMethodLabel(order.paymentMethod)}`;
+      return `Đã thanh toán qua ${this.getPaymentMethodLabel(order.paymentMethod)}. Đơn đang chờ cửa hàng xác nhận nếu còn ở trạng thái PENDING.`;
     }
 
     if (order.status === 'PENDING') {
@@ -453,6 +465,93 @@ export class OrderListComponent implements OnInit, OnDestroy {
     };
   }
 
+  canRefundOrder(order: Order): boolean {
+    return this.accessControl.can('PERM_ORDER_UPDATE_STATUS')
+      && (order.paymentMethod || '').toUpperCase() === 'MOMO'
+      && this.isOrderPaid(order);
+  }
+
+  startRefund(order: Order): void {
+    if (this.refundingOrderId || !this.canRefundOrder(order)) {
+      return;
+    }
+
+    this.promptDialog.prompt({
+      title: 'Nhập lý do hoàn tiền MoMo',
+      message: `Đơn ${order.orderCode || order.id} sẽ được hoàn ${Number(order.totalAmount || 0).toLocaleString()} đ.`,
+      label: 'Lý do hoàn tiền',
+      placeholder: 'Ví dụ: Khách yêu cầu hủy / lỗi thanh toán',
+      confirmText: 'Hoàn tiền',
+      cancelText: 'Đóng',
+      type: 'warning',
+      required: true
+    }).subscribe((reason) => {
+      if (reason === null) {
+        return;
+      }
+
+      this.refundOrder(order, reason.trim());
+    });
+  }
+
+  private refundOrder(order: Order, reason: string): void {
+    this.refundingOrderId = order.id;
+
+    this.paymentService.getOrderPaymentStatus(order.id).subscribe({
+      next: (transaction) => {
+        const transactionId = transaction.id;
+        if (!transactionId) {
+          this.toastService.error('Không tìm thấy mã giao dịch để hoàn tiền.');
+          this.refundingOrderId = null;
+          return;
+        }
+
+        this.paymentService.createRefund({
+          transactionId,
+          amount: Number(order.totalAmount || transaction.amount || 0),
+          reason
+        }).subscribe({
+          next: (refund) => {
+            const normalized = this.markOrderAsRefunded(order, refund.reason || reason);
+
+            this.allOrders = this.allOrders.map(o => o.id === order.id ? normalized : o);
+            this.orders = this.orders.map(o => o.id === order.id ? normalized : o);
+            this.selectedOrder = normalized;
+
+            this.toastService.success(`Đã tạo hoàn tiền ${Number(refund.amount || order.totalAmount || 0).toLocaleString()} đ cho đơn ${order.orderCode}`);
+          },
+          error: (error) => {
+            console.error('Create refund failed', error);
+            this.toastService.error('Không thể hoàn tiền. Vui lòng thử lại.');
+          },
+          complete: () => {
+            this.refundingOrderId = null;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Load payment transaction failed', error);
+        this.toastService.error('Không thể lấy thông tin giao dịch để hoàn tiền.');
+        this.refundingOrderId = null;
+      }
+    });
+  }
+
+  private markOrderAsRefunded(order: Order, reason: string): Order {
+    return {
+      ...order,
+      paymentStatus: 'REFUNDED',
+      timeline: [
+        {
+          status: 'PAID',
+          time: new Date().toISOString(),
+          note: `Đã tạo yêu cầu hoàn tiền MoMo${reason ? `: ${reason}` : ''}`
+        },
+        ...(order.timeline ?? [])
+      ]
+    };
+  }
+
   getStagesForOrder(order: Order): { label: string; value: TimelineStatus }[] {
     const isDelivery = order.type === 'DELIVERY';
     const baseStages: { label: string; value: TimelineStatus }[] = [
@@ -470,7 +569,7 @@ export class OrderListComponent implements OnInit, OnDestroy {
 
   isStepCompleted(order: Order, stepValue: TimelineStatus): boolean {
     if (stepValue === 'PAID') {
-      return this.isOrderPaid(order);
+      return this.hasPaymentCaptured(order);
     }
 
     const stages = this.getStagesForOrder(order).map(s => s.value);

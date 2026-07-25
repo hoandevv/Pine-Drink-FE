@@ -310,18 +310,18 @@
             </div>
           </div>
 
-          <div class="payment-status-card" [class.paid]="isOrderPaid(selectedOrder)" [class.unpaid]="!isOrderPaid(selectedOrder)">
+          <div class="payment-status-card" [class.paid]="isOrderPaid(selectedOrder)" [class.refunded]="isOrderRefunded(selectedOrder)" [class.unpaid]="!hasPaymentCaptured(selectedOrder)">
             <div class="payment-status-icon">
-              <span class="material-symbols-outlined">{{ isOrderPaid(selectedOrder) ? 'verified' : 'priority_high' }}</span>
+              <span class="material-symbols-outlined">{{ isOrderRefunded(selectedOrder) ? 'currency_exchange' : (isOrderPaid(selectedOrder) ? 'verified' : 'priority_high') }}</span>
             </div>
             <div class="payment-status-copy">
-              <strong>{{ isOrderPaid(selectedOrder) ? 'Đã thanh toán' : 'Chờ xác nhận thanh toán' }}</strong>
+              <strong>{{ isOrderRefunded(selectedOrder) ? 'Đã hoàn tiền' : (isOrderPaid(selectedOrder) ? 'Đã thanh toán' : 'Chờ xác nhận thanh toán') }}</strong>
               <span>{{ getPaymentHint(selectedOrder) }}</span>
             </div>
           </div>
 
           <!-- Thu tiền tại quầy interface -->
-          <div class="counter-payment-action" *ngIf="selectedOrder.paymentStatus !== 'PAID' && (selectedOrder.type === 'WALK_IN' || selectedOrder.type === 'PICKUP') && selectedOrder.status !== 'COMPLETED' && selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REJECTED'">
+          <div class="counter-payment-action" *ngIf="!hasPaymentCaptured(selectedOrder) && (selectedOrder.type === 'WALK_IN' || selectedOrder.type === 'PICKUP') && selectedOrder.status !== 'COMPLETED' && selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REJECTED'">
             <div class="payment-panel">
               <div class="panel-header">
                 <span class="material-symbols-outlined">payments</span>
@@ -344,6 +344,7 @@
               </ng-template>
             </div>
           </div>
+
         </section>
 
         <!-- Financial Summary -->

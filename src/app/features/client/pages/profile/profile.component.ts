@@ -11,6 +11,8 @@ import { catchError, of } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import { ApiErrorMessageService } from '../../../../core/services/api-error-message.service';
 import { Order, UserProfile } from '../../models/profile.model';
+import { OrderService } from '../../../orders/services/order.service';
+import { Order as OrderSummary } from '../../../orders/models/order.model';
 
 @Component({
   selector: 'app-profile',
@@ -32,6 +34,11 @@ export class ProfileComponent implements OnInit {
   };
 
   recentOrders: Order[] = [];
+  ordersLoading = false;
+  ordersPage = 0;
+  ordersSize = 5;
+  ordersTotalElements = 0;
+  ordersTotalPages = 0;
 
   activeTab: 'info' | 'orders' | 'favorites' | 'settings' = 'info';
   showLanguageSelector: boolean = false;
@@ -64,13 +71,15 @@ export class ProfileComponent implements OnInit {
     public languageService: LanguageService,
     public translate: TranslateService,
     private readonly addressService: CustomerAddressService,
-    private readonly apiErrorMessage: ApiErrorMessageService
+    private readonly apiErrorMessage: ApiErrorMessageService,
+    private readonly orderService: OrderService
   ) { }
 
   ngOnInit(): void {
     this.initForms();
     this.loadUserProfile();
     this.loadAddresses();
+    this.loadRecentOrders();
 
     // Clear data and redirect if user logs out while on this page
     this.authService.currentUser$.subscribe(user => {
@@ -95,6 +104,9 @@ export class ProfileComponent implements OnInit {
       hasLocalPassword: true
     };
     this.recentOrders = [];
+    this.ordersPage = 0;
+    this.ordersTotalElements = 0;
+    this.ordersTotalPages = 0;
     this.addresses = [];
   }
 
@@ -204,6 +216,65 @@ export class ProfileComponent implements OnInit {
 
   setActiveTab(tab: 'info' | 'orders' | 'favorites' | 'settings'): void {
     this.activeTab = tab;
+
+    if (tab === 'orders' && this.recentOrders.length === 0) {
+      this.loadRecentOrders();
+    }
+  }
+
+  loadRecentOrders(page = this.ordersPage): void {
+    this.ordersLoading = true;
+    this.orderService
+      .getMyOrderSummaries(page, this.ordersSize)
+      .pipe(
+        catchError((error) => {
+          console.error('Failed to load recent orders:', error);
+          return of({ content: [], page, size: this.ordersSize, totalElements: 0, totalPages: 0, first: true, last: true });
+        })
+      )
+      .subscribe((pageData) => {
+        this.recentOrders = (pageData.content || []).map((order) => this.mapProfileOrder(order));
+        this.ordersPage = pageData.page ?? page;
+        this.ordersSize = pageData.size ?? this.ordersSize;
+        this.ordersTotalElements = pageData.totalElements ?? this.recentOrders.length;
+        this.ordersTotalPages = pageData.totalPages ?? 0;
+        this.ordersLoading = false;
+      });
+  }
+
+  goToOrdersPage(page: number): void {
+    if (page < 0 || page >= this.ordersTotalPages || page === this.ordersPage || this.ordersLoading) {
+      return;
+    }
+
+    this.loadRecentOrders(page);
+  }
+
+  changeOrdersPageSize(size: string): void {
+    this.ordersSize = Number(size);
+    this.loadRecentOrders(0);
+  }
+
+  get ordersPageNumbers(): number[] {
+    return Array.from({ length: this.ordersTotalPages }, (_, index) => index);
+  }
+
+  get ordersRangeStart(): number {
+    return this.ordersTotalElements === 0 ? 0 : this.ordersPage * this.ordersSize + 1;
+  }
+
+  get ordersRangeEnd(): number {
+    return Math.min((this.ordersPage + 1) * this.ordersSize, this.ordersTotalElements);
+  }
+
+  private mapProfileOrder(order: OrderSummary): Order {
+    return {
+      id: order.orderCode || order.id,
+      date: order.createdAt,
+      items: order.totalItems || order.items?.length || 0,
+      total: order.totalAmount || 0,
+      status: order.status
+    };
   }
 
   formatPrice(price: number): string {
@@ -235,7 +306,21 @@ export class ProfileComponent implements OnInit {
   }
 
   getStatusText(status: string): string {
-    return this.translate.instant(`profile.orders.${status}`);
+    const statusLabels: Record<string, string> = {
+      PENDING: 'Chờ thanh toán/xác nhận',
+      CONFIRMED: 'Đã xác nhận',
+      PREPARING: 'Đang pha chế',
+      READY: 'Sẵn sàng',
+      DELIVERING: 'Đang giao',
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+      REJECTED: 'Bị từ chối',
+      completed: 'Hoàn thành',
+      processing: 'Đang xử lý',
+      cancelled: 'Đã hủy'
+    };
+
+    return statusLabels[status] || status;
   }
 
   getStatusClass(status: string): string {

@@ -202,6 +202,20 @@
         </div>
 
         <div *ngIf="recentOrders.length > 0">
+          <div class="orders-toolbar">
+            <span>
+              Hiển thị {{ ordersRangeStart }}-{{ ordersRangeEnd }} / {{ ordersTotalElements }} đơn
+            </span>
+            <label>
+              Mỗi trang
+              <select [value]="ordersSize" (change)="changeOrdersPageSize($any($event.target).value)">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+              </select>
+            </label>
+          </div>
+
           <div class="order-card" *ngFor="let order of recentOrders">
             <div class="order-header">
               <div class="order-id">
@@ -217,6 +231,25 @@
               </div>
               <div class="total">{{ formatPrice(order.total) }}</div>
             </div>
+          </div>
+
+          <div class="orders-pagination" *ngIf="ordersTotalPages > 1">
+            <button type="button" class="page-btn" [disabled]="ordersPage === 0 || ordersLoading" (click)="goToOrdersPage(ordersPage - 1)">
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <button
+              type="button"
+              class="page-btn"
+              *ngFor="let page of ordersPageNumbers"
+              [class.active]="page === ordersPage"
+              [disabled]="ordersLoading"
+              (click)="goToOrdersPage(page)"
+            >
+              {{ page + 1 }}
+            </button>
+            <button type="button" class="page-btn" [disabled]="ordersPage >= ordersTotalPages - 1 || ordersLoading" (click)="goToOrdersPage(ordersPage + 1)">
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
           </div>
         </div>
       </div>

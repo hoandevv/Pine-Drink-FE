@@ -53,6 +53,15 @@ export class OrderService {
       .pipe(map((response) => response.data));
   }
 
+  getMyOrderSummaries(page = 0, size = 10): Observable<PageResponse<Order>> {
+    const url = `${this.apiUrl}/my-orders/summaries`;
+    const params = this.createPageParams(page, size);
+
+    return this.http
+      .get<BaseResponse<PageResponse<Order>>>(url, { params })
+      .pipe(map((response) => response.data));
+  }
+
   getBranchOrders(
     branchId: string,
     page = 0,

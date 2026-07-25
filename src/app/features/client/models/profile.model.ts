@@ -16,5 +16,5 @@ export interface Order {
   date: string;
   items: number;
   total: number;
-  status: 'completed' | 'processing' | 'cancelled';
+  status: string;
 }

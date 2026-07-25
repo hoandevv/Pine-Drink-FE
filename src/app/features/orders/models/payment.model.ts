@@ -40,3 +40,25 @@ export interface MomoCreatePaymentResponse {
   paymentMethod: string;
   transactionId: string;
 }
+
+export interface CreateRefundRequest {
+  transactionId: string;
+  amount: number;
+  reason?: string;
+}
+
+export interface RefundResponse {
+  id: string;
+  refundCode: string;
+  transactionId: string;
+  transactionCode: string;
+  orderId: string;
+  orderCode: string;
+  amount: number;
+  reason?: string;
+  status: string;
+  requestedById?: string;
+  requestedByUsername?: string;
+  requestedAt?: string;
+  completedAt?: string;
+}

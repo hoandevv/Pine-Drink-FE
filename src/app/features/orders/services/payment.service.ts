@@ -6,10 +6,12 @@ import { environment } from '../../../../environments/environment';
 import { API_ENDPOINTS } from '../../../core/constants/api-endpoints';
 import { BaseResponse } from '../../../shared/models/base-response.model';
 import {
+  CreateRefundRequest,
   MomoCreatePaymentRequest,
   MomoCreatePaymentResponse,
   PaymentTransactionResponse,
-  RecordOfflinePaymentRequest
+  RecordOfflinePaymentRequest,
+  RefundResponse
 } from '../models/payment.model';
 
 @Injectable({
@@ -41,6 +43,14 @@ export class PaymentService {
 
     return this.http
       .post<BaseResponse<MomoCreatePaymentResponse>>(url, request)
+      .pipe(map((response) => response.data));
+  }
+
+  createRefund(request: CreateRefundRequest): Observable<RefundResponse> {
+    const url = `${this.apiUrl}/refunds`;
+
+    return this.http
+      .post<BaseResponse<RefundResponse>>(url, request)
       .pipe(map((response) => response.data));
   }
 }

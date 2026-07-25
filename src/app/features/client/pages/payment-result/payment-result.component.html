@@ -89,9 +89,19 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button class="btn btn-primary" (click)="goToMenu()">
-          Đặt hàng lại
+        <button
+          *ngIf="canRetryPayment; else reorderButton"
+          class="btn btn-primary"
+          [disabled]="retryingPayment"
+          (click)="retryMomoPayment()">
+          <span *ngIf="retryingPayment" class="btn-spinner"></span>
+          {{ retryingPayment ? 'Đang tạo thanh toán...' : 'Thanh toán lại' }}
         </button>
+        <ng-template #reorderButton>
+          <button class="btn btn-primary" (click)="goToMenu()">
+            Đặt hàng lại
+          </button>
+        </ng-template>
         <button class="btn btn-secondary" (click)="goToHome()">
           Về trang chủ
         </button>
@@ -100,7 +110,10 @@
       <!-- Note -->
       <div class="info-note error-note">
         <span class="note-icon">⚠️</span>
-        <span>Nếu bạn gặp vấn đề, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></span>
+        <span *ngIf="canRetryPayment; else contactNote">Đơn hàng vẫn được giữ lại. Bạn chỉ cần thanh toán lại, không cần đặt đơn mới.</span>
+        <ng-template #contactNote>
+          <span>Nếu bạn gặp vấn đề, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></span>
+        </ng-template>
       </div>
     </div>
   </div>
